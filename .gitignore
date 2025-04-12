@@ -1,2 +1,3 @@
 data/geofabrik/*
 logs/*
+config/api_config.js
