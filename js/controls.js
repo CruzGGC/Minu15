@@ -182,11 +182,11 @@ function initCalculateButton() {
     if (calculateButton) {
         calculateButton.addEventListener('click', function() {
             if (currentMarker) {
-                generateIsochrone(currentMarker.getLatLng());
-                fetchPOIs(currentMarker.getLatLng());
+                // Mostrar indicador de carregamento
+                showLoading();
                 
-                // Mostrar painel de estatísticas
-                showStatisticsPanel();
+                // Gerar isócrona usando Open Route Service
+                generateIsochrone(currentMarker.getLatLng());
             } else {
                 alert('Por favor, selecione primeiro uma localização no mapa');
             }

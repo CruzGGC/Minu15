@@ -12,7 +12,14 @@ let selectedPoi = null;
 let selectedTransportMode = 'cycling'; // Bicicleta como modo padrão
 let selectedMaxDistance = 15; // em minutos
 
-// Velocidades dos modos de transporte em km/h
+// Mapeamento dos modos de transporte para os perfis da API Open Route Service
+const orsProfiles = {
+    walking: 'foot-walking',
+    cycling: 'cycling-regular',
+    driving: 'driving-car'
+};
+
+// Velocidades dos modos de transporte em km/h (usado como fallback)
 const transportSpeeds = {
     walking: 5,  // A pé
     cycling: 15, // Bicicleta
@@ -225,23 +232,148 @@ function handleMapClick(latlng) {
     // Adicionar um marcador na localização clicada
     currentMarker = L.marker(latlng).addTo(map);
     
-    // Mostrar indicador de carregamento
-    showLoading();
-    
-    // Gerar isócrona ao redor do ponto clicado
-    generateIsochrone(latlng);
-    
-    // Buscar POIs dentro da área
-    fetchPOIs(latlng);
+    // Não gerar isócrona automaticamente - aguardar clique no botão Calcular
 }
 
-// Gerar polígono de isócrona
+// Gerar polígono de isócrona usando Open Route Service
 function generateIsochrone(latlng) {
     // Limpar isócrona existente, se houver
     if (isochroneLayer) {
         map.removeLayer(isochroneLayer);
     }
     
+    // Mostrar indicador de carregamento
+    showLoading();
+    
+    // Obter o perfil ORS correspondente ao modo de transporte selecionado
+    const profile = orsProfiles[selectedTransportMode];
+    
+    // Preparar parâmetros para a API do Open Route Service
+    const params = {
+        locations: [[latlng.lng, latlng.lat]],
+        range: [selectedMaxDistance * 60], // Converter minutos para segundos
+        attributes: ['area'],
+        area_units: 'km',
+        range_type: 'time'
+    };
+    
+    // URL da API para isócronas
+    const url = `${ORS_API_URL}/v2/isochrones/${profile}`;
+    
+    // Realizar a chamada à API
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json, application/geo+json, application/gpx+xml',
+            'Content-Type': 'application/json',
+            'Authorization': ORS_API_KEY
+        },
+        body: JSON.stringify(params)
+    })
+    .then(response => {
+        if (!response.ok) {
+            // Se houver erro, lançar para ser tratado pelo catch
+            return response.json().then(errData => {
+                throw new Error(`Erro na API: ${errData.error || response.statusText}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Processar a resposta e mostrar isócrona no mapa
+        displayIsochrone(data, latlng);
+        
+        // Buscar POIs dentro da área
+        fetchPOIsWithinIsochrone(latlng, data);
+    })
+    .catch(error => {
+        console.error('Erro ao gerar isócrona:', error);
+        
+        // Em caso de erro, usar o fallback com Turf.js
+        useCircleBufferFallback(latlng);
+        
+        // Esconder indicador de carregamento
+        hideLoading();
+        
+        // Mostrar erro ao usuário
+        alert('Não foi possível gerar a isócrona precisa. Usando método alternativo.');
+    });
+}
+
+// Exibir isócrona no mapa
+function displayIsochrone(data, latlng) {
+    // Criar camada GeoJSON a partir da resposta da API
+    isochroneLayer = L.geoJSON(data, {
+        style: function() {
+            return {
+                fillColor: getIsochroneColor(),
+                weight: 2,
+                opacity: 1,
+                color: getIsochroneColor(),
+                dashArray: getIsochroneDashArray(),
+                fillOpacity: 0.3
+            };
+        }
+    }).addTo(map);
+    
+    // Ajustar o mapa à isócrona
+    map.fitBounds(isochroneLayer.getBounds());
+    
+    // Extrair área da isócrona se disponível
+    let radiusInMeters;
+    if (data.features && data.features[0] && data.features[0].properties && data.features[0].properties.area) {
+        // Converter km² para m² para manter consistência com o resto do código
+        const areaInKm2 = data.features[0].properties.area;
+        radiusInMeters = Math.sqrt(areaInKm2 * 1000000 / Math.PI);
+    } else {
+        // Fallback: usar estimativa baseada na velocidade
+        const speedKmPerHour = transportSpeeds[selectedTransportMode];
+        const distanceInKm = (speedKmPerHour * selectedMaxDistance) / 60;
+        radiusInMeters = distanceInKm * 1000;
+    }
+    
+    // Atualizar painel de estatísticas
+    updateAreaStats(latlng, radiusInMeters);
+    
+    // Mostrar painel de estatísticas
+    showStatisticsPanel();
+    
+    // Esconder indicador de carregamento
+    hideLoading();
+}
+
+// Buscar POIs dentro da isócrona
+function fetchPOIsWithinIsochrone(latlng, isochroneData) {
+    // Limpar camadas de POI existentes
+    Object.keys(poiTypes).forEach(type => {
+        poiLayers[type].clearLayers();
+    });
+    
+    // Extrair área da isócrona se disponível
+    let radiusInMeters;
+    if (isochroneData.features && isochroneData.features[0] && isochroneData.features[0].properties && isochroneData.features[0].properties.area) {
+        // Converter km² para m² para manter consistência com o resto do código
+        const areaInKm2 = isochroneData.features[0].properties.area;
+        radiusInMeters = Math.sqrt(areaInKm2 * 1000000 / Math.PI);
+    } else {
+        // Fallback: usar estimativa baseada na velocidade
+        const speedKmPerHour = transportSpeeds[selectedTransportMode];
+        const distanceInKm = (speedKmPerHour * selectedMaxDistance) / 60;
+        radiusInMeters = distanceInKm * 1000;
+    }
+    
+    // Buscar tipos de POI habilitados
+    Object.keys(poiTypes).forEach(type => {
+        const checkbox = document.getElementById(`poi-${type}`);
+        if (checkbox && checkbox.checked) {
+            // Buscar POIs deste tipo no servidor
+            fetchPOIsByType(type, latlng, radiusInMeters);
+        }
+    });
+}
+
+// Método de fallback usando buffer circular com Turf.js
+function useCircleBufferFallback(latlng) {
     // Calcular distância em metros com base no modo de transporte e tempo máximo
     const speedKmPerHour = transportSpeeds[selectedTransportMode];
     const distanceInKm = (speedKmPerHour * selectedMaxDistance) / 60;
@@ -273,6 +405,9 @@ function generateIsochrone(latlng) {
     
     // Mostrar painel de estatísticas
     showStatisticsPanel();
+    
+    // Buscar POIs dentro da área
+    fetchPOIs(latlng);
 }
 
 // Obter cor com base no modo de transporte
