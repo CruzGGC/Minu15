@@ -1,34 +1,35 @@
 /**
- * 15-Minute City Explorer - Control Functionality
- * Handles UI controls interactions and their effects on the map
+ * Explorador de Cidade em 15 Minutos - Funcionalidade de Controles
+ * Lida com interações dos controles da UI e seus efeitos no mapa
  */
 
-// Initialize controls when DOM is loaded
+// Inicializar controles quando o DOM estiver carregado
 function initControls() {
-    // Initialize collapsible panels
+    // Inicializar painéis retráteis
     initCollapsiblePanels();
     
-    // Initialize transport mode selector
+    // Inicializar seletor de modo de transporte
     initTransportModeSelector();
     
-    // Initialize distance slider
+    // Inicializar slider de distância
     initDistanceSlider();
     
-    // Initialize POI checkboxes
+    // Inicializar checkboxes de POI
     initPoiCheckboxes();
     
-    // Initialize calculate button
+    // Inicializar botão de calcular
     initCalculateButton();
     
-    // Initialize search functionality
+    // Inicializar funcionalidade de pesquisa
     initSearchBox();
     
-    // Initialize panel close buttons
+    // Inicializar botões de fechar painéis
     initPanelCloseButtons();
 }
 
-// Initialize collapsible panels
+// Inicializar painéis retráteis
 function initCollapsiblePanels() {
+    // Inicializar cabeçalhos de painéis principais
     document.querySelectorAll('.panel-header').forEach(header => {
         header.addEventListener('click', function() {
             const content = this.nextElementSibling;
@@ -42,7 +43,24 @@ function initCollapsiblePanels() {
         });
     });
     
-    // Start with POI panel expanded
+    // Inicializar cabeçalhos de categorias POI
+    document.querySelectorAll('.category-header').forEach(header => {
+        header.addEventListener('click', function(e) {
+            // Evitar que o clique se propague para o painel pai
+            e.stopPropagation();
+            
+            const content = this.nextElementSibling;
+            if (content && content.classList.contains('category-content')) {
+                content.classList.toggle('expanded');
+                const arrow = this.querySelector('.dropdown-arrow');
+                if (arrow) {
+                    arrow.classList.toggle('up');
+                }
+            }
+        });
+    });
+    
+    // Começar com o painel de POI expandido
     const poiContent = document.getElementById('poi-content');
     if (poiContent) {
         poiContent.classList.add('expanded');
@@ -51,26 +69,36 @@ function initCollapsiblePanels() {
             arrow.classList.add('up');
         }
     }
+    
+    // Começar com a primeira categoria expandida (Saúde)
+    const firstCategory = document.querySelector('.category-content');
+    if (firstCategory) {
+        firstCategory.classList.add('expanded');
+        const arrow = firstCategory.previousElementSibling.querySelector('.dropdown-arrow');
+        if (arrow) {
+            arrow.classList.add('up');
+        }
+    }
 }
 
-// Initialize transport mode selector
+// Inicializar seletor de modo de transporte
 function initTransportModeSelector() {
     const transportOptions = document.querySelectorAll('.transport-option');
     
     transportOptions.forEach(option => {
         option.addEventListener('click', function() {
-            // Remove active class from all options
+            // Remover classe ativa de todas as opções
             transportOptions.forEach(opt => {
                 opt.classList.remove('active');
             });
             
-            // Add active class to selected option
+            // Adicionar classe ativa à opção selecionada
             this.classList.add('active');
             
-            // Update the selected transport mode
+            // Atualizar o modo de transporte selecionado
             selectedTransportMode = this.getAttribute('data-mode');
             
-            // Update the map if there's a current marker
+            // Atualizar o mapa se houver um marcador atual
             if (currentMarker) {
                 generateIsochrone(currentMarker.getLatLng());
                 fetchPOIs(currentMarker.getLatLng());
@@ -78,30 +106,30 @@ function initTransportModeSelector() {
         });
     });
     
-    // Set initial transport mode
+    // Definir modo de transporte inicial
     const activeModeElement = document.querySelector('.transport-option.active');
     if (activeModeElement) {
         selectedTransportMode = activeModeElement.getAttribute('data-mode');
     }
 }
 
-// Initialize distance slider
+// Inicializar slider de distância
 function initDistanceSlider() {
     const distanceSlider = document.getElementById('max-distance');
     const distanceValue = document.getElementById('distance-value');
     
-    // Set initial distance value display
-    distanceValue.textContent = distanceSlider.value + ' minutes';
+    // Definir valor inicial de distância
+    distanceValue.textContent = distanceSlider.value + ' minutos';
     
-    // Add event listener to slider
+    // Adicionar listener de evento ao slider
     distanceSlider.addEventListener('input', function() {
-        // Update display value
-        distanceValue.textContent = this.value + ' minutes';
+        // Atualizar valor exibido
+        distanceValue.textContent = this.value + ' minutos';
         
-        // Update selected max distance
+        // Atualizar distância máxima selecionada
         selectedMaxDistance = parseInt(this.value);
         
-        // Update the map if there's a current marker
+        // Atualizar o mapa se houver um marcador atual
         if (currentMarker) {
             generateIsochrone(currentMarker.getLatLng());
             fetchPOIs(currentMarker.getLatLng());
@@ -109,7 +137,7 @@ function initDistanceSlider() {
     });
 }
 
-// Initialize POI checkboxes
+// Inicializar checkboxes de POI
 function initPoiCheckboxes() {
     Object.keys(poiTypes).forEach(type => {
         const checkbox = document.getElementById(`poi-${type}`);
@@ -119,15 +147,15 @@ function initPoiCheckboxes() {
     });
 }
 
-// Handle POI type toggle
+// Tratar alternância de tipo de POI
 function handlePoiToggle(type) {
     const checkbox = document.getElementById(`poi-${type}`);
     const isChecked = checkbox.checked;
     
-    // Show or hide the layer based on checkbox state
+    // Mostrar ou ocultar a camada com base no estado da checkbox
     if (isChecked) {
         if (currentMarker) {
-            // Fetch POIs of this type if a point is selected
+            // Buscar POIs deste tipo se um ponto estiver selecionado
             const latlng = currentMarker.getLatLng();
             const speedKmPerHour = transportSpeeds[selectedTransportMode];
             const distanceInKm = (speedKmPerHour * selectedMaxDistance) / 60;
@@ -136,19 +164,19 @@ function handlePoiToggle(type) {
             fetchPOIsByType(type, latlng, radiusInMeters);
         }
         
-        // Make sure the layer is added to the map
+        // Garantir que a camada seja adicionada ao mapa
         if (!map.hasLayer(poiLayers[type])) {
             map.addLayer(poiLayers[type]);
         }
     } else {
-        // Remove the layer from the map
+        // Remover a camada do mapa
         if (map.hasLayer(poiLayers[type])) {
             map.removeLayer(poiLayers[type]);
         }
     }
 }
 
-// Initialize calculate button
+// Inicializar botão de calcular
 function initCalculateButton() {
     const calculateButton = document.querySelector('.calculate-button');
     if (calculateButton) {
@@ -157,27 +185,27 @@ function initCalculateButton() {
                 generateIsochrone(currentMarker.getLatLng());
                 fetchPOIs(currentMarker.getLatLng());
                 
-                // Show statistics panel
+                // Mostrar painel de estatísticas
                 showStatisticsPanel();
             } else {
-                alert('Please select a location on the map first');
+                alert('Por favor, selecione primeiro uma localização no mapa');
             }
         });
     }
 }
 
-// Initialize search box
+// Inicializar caixa de pesquisa
 function initSearchBox() {
     const searchBox = document.querySelector('.search-box');
     const searchButton = document.querySelector('.search-button');
     
     if (searchBox && searchButton) {
-        // Search on button click
+        // Pesquisar ao clicar no botão
         searchButton.addEventListener('click', function() {
             performSearch(searchBox.value);
         });
         
-        // Search on Enter key
+        // Pesquisar ao pressionar Enter
         searchBox.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 performSearch(this.value);
@@ -186,16 +214,16 @@ function initSearchBox() {
     }
 }
 
-// Perform location search
+// Realizar pesquisa de localização
 function performSearch(searchTerm) {
     if (!searchTerm.trim()) {
         return;
     }
     
-    // Show loading indicator
+    // Mostrar indicador de carregamento
     showLoading();
     
-    // Use Nominatim for geocoding (OpenStreetMap's geocoding service)
+    // Usar Nominatim para geocodificação (serviço de geocodificação do OpenStreetMap)
     const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)},Portugal&limit=1`;
     
     fetch(searchUrl)
@@ -207,37 +235,37 @@ function performSearch(searchTerm) {
                 const result = data[0];
                 const latlng = L.latLng(result.lat, result.lon);
                 
-                // Set map view to found location
+                // Definir visualização do mapa para a localização encontrada
                 map.setView(latlng, 15);
                 
-                // Create marker at found location
+                // Criar marcador na localização encontrada
                 if (currentMarker) {
                     map.removeLayer(currentMarker);
                 }
                 currentMarker = L.marker(latlng).addTo(map);
                 
-                // Generate isochrone
+                // Gerar isócrona
                 generateIsochrone(latlng);
                 
-                // Fetch POIs
+                // Buscar POIs
                 fetchPOIs(latlng);
                 
-                // Show statistics panel
+                // Mostrar painel de estatísticas
                 showStatisticsPanel();
             } else {
-                alert('Location not found. Please try another search term.');
+                alert('Localização não encontrada. Por favor, tente outro termo de pesquisa.');
             }
         })
         .catch(error => {
             hideLoading();
-            console.error('Error searching for location:', error);
-            alert('An error occurred while searching for the location.');
+            console.error('Erro ao pesquisar localização:', error);
+            alert('Ocorreu um erro ao pesquisar a localização.');
         });
 }
 
-// Initialize panel close buttons
+// Inicializar botões de fechar painéis
 function initPanelCloseButtons() {
-    // Statistics panel close button
+    // Botão de fechar painel de estatísticas
     const closeStatsButton = document.querySelector('.close-stats');
     if (closeStatsButton) {
         closeStatsButton.addEventListener('click', function() {
@@ -245,7 +273,7 @@ function initPanelCloseButtons() {
         });
     }
     
-    // POI details panel close button
+    // Botão de fechar painel de detalhes do POI
     const closePoiDetailsButton = document.querySelector('.close-poi-details');
     if (closePoiDetailsButton) {
         closePoiDetailsButton.addEventListener('click', function() {
@@ -254,7 +282,7 @@ function initPanelCloseButtons() {
     }
 }
 
-// Show statistics panel
+// Mostrar painel de estatísticas
 function showStatisticsPanel() {
     const statsPanel = document.querySelector('.statistics-panel');
     if (statsPanel) {
@@ -262,7 +290,7 @@ function showStatisticsPanel() {
     }
 }
 
-// Hide statistics panel
+// Ocultar painel de estatísticas
 function hideStatisticsPanel() {
     const statsPanel = document.querySelector('.statistics-panel');
     if (statsPanel) {
@@ -270,7 +298,7 @@ function hideStatisticsPanel() {
     }
 }
 
-// Show POI details panel
+// Mostrar painel de detalhes do POI
 function showPoiDetailsPanel() {
     const poiDetailsPanel = document.querySelector('.poi-details-panel');
     if (poiDetailsPanel) {
@@ -278,7 +306,7 @@ function showPoiDetailsPanel() {
     }
 }
 
-// Hide POI details panel
+// Ocultar painel de detalhes do POI
 function hidePoiDetailsPanel() {
     const poiDetailsPanel = document.querySelector('.poi-details-panel');
     if (poiDetailsPanel) {
@@ -286,19 +314,19 @@ function hidePoiDetailsPanel() {
     }
 }
 
-// Function to reset the UI
+// Função para redefinir a UI
 function resetUI() {
-    // Clear the area stats panel
-    document.getElementById('area-stats').innerHTML = '<p>Click on the map to see statistics</p>';
+    // Limpar o painel de estatísticas da área
+    document.getElementById('area-stats').innerHTML = '<p>Clique no mapa para ver estatísticas</p>';
     
-    // Clear the POI info panel
-    document.getElementById('poi-info').innerHTML = '<p>Click on a point of interest for details</p>';
+    // Limpar o painel de informações do POI
+    document.getElementById('poi-info').innerHTML = '<p>Clique num ponto de interesse para ver detalhes</p>';
     
-    // Hide panels
+    // Ocultar painéis
     hideStatisticsPanel();
     hidePoiDetailsPanel();
     
-    // Reset all layers
+    // Redefinir todas as camadas
     if (isochroneLayer) {
         map.removeLayer(isochroneLayer);
         isochroneLayer = null;
@@ -309,7 +337,7 @@ function resetUI() {
         currentMarker = null;
     }
     
-    // Clear POI layers
+    // Limpar camadas de POI
     Object.keys(poiLayers).forEach(type => {
         poiLayers[type].clearLayers();
     });

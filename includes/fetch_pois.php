@@ -38,25 +38,96 @@ $conn = getDbConnection();
 
 // POI type definitions - must match with the ones in map.js
 $poiTypes = [
+    // Saúde
     'hospitals' => [
         'table' => 'planet_osm_point',
         'condition' => "amenity = 'hospital'"
     ],
+    'health_centers' => [
+        'table' => 'planet_osm_point',
+        'condition' => "amenity = 'clinic' OR amenity = 'doctors'"
+    ],
+    'pharmacies' => [
+        'table' => 'planet_osm_point',
+        'condition' => "amenity = 'pharmacy'"
+    ],
+    'dentists' => [
+        'table' => 'planet_osm_point',
+        'condition' => "amenity = 'dentist'"
+    ],
+    
+    // Educação
     'schools' => [
         'table' => 'planet_osm_point',
-        'condition' => "amenity IN ('school', 'university', 'college', 'kindergarten')"
+        'condition' => "amenity = 'school'"
     ],
-    'health' => [
+    'universities' => [
         'table' => 'planet_osm_point',
-        'condition' => "amenity IN ('clinic', 'doctors', 'dentist', 'pharmacy')"
+        'condition' => "amenity IN ('university', 'college')"
     ],
-    'culture' => [
+    'kindergartens' => [
         'table' => 'planet_osm_point',
-        'condition' => "amenity IN ('theatre', 'cinema', 'library', 'arts_centre', 'community_centre', 'museum')"
+        'condition' => "amenity = 'kindergarten'"
     ],
-    'shops' => [
+    'libraries' => [
         'table' => 'planet_osm_point',
-        'condition' => "shop IS NOT NULL"
+        'condition' => "amenity = 'library'"
+    ],
+    
+    // Comércio e serviços
+    'supermarkets' => [
+        'table' => 'planet_osm_point',
+        'condition' => "shop IN ('supermarket', 'grocery', 'convenience')"
+    ],
+    'malls' => [
+        'table' => 'planet_osm_point',
+        'condition' => "shop = 'mall' OR amenity = 'marketplace'"
+    ],
+    'restaurants' => [
+        'table' => 'planet_osm_point',
+        'condition' => "amenity IN ('restaurant', 'cafe', 'bar', 'pub', 'fast_food')"
+    ],
+    'atms' => [
+        'table' => 'planet_osm_point',
+        'condition' => "amenity = 'atm' OR amenity = 'bank'"
+    ],
+    
+    // Segurança e emergência
+    'police' => [
+        'table' => 'planet_osm_point',
+        'condition' => "amenity = 'police'"
+    ],
+    'fire_stations' => [
+        'table' => 'planet_osm_point',
+        'condition' => "amenity = 'fire_station'"
+    ],
+    'civil_protection' => [
+        'table' => 'planet_osm_point',
+        'condition' => "amenity = 'ranger_station' OR office = 'government' AND name ILIKE '%proteção civil%'"
+    ],
+    
+    // Administração pública
+    'parish_councils' => [
+        'table' => 'planet_osm_point',
+        'condition' => "office = 'government' AND name ILIKE '%junta de freguesia%'"
+    ],
+    'city_halls' => [
+        'table' => 'planet_osm_point',
+        'condition' => "office = 'government' AND (name ILIKE '%câmara municipal%' OR name ILIKE '%camara municipal%')"
+    ],
+    
+    // Cultura e lazer
+    'museums' => [
+        'table' => 'planet_osm_point',
+        'condition' => "tourism = 'museum' OR amenity = 'museum'"
+    ],
+    'theaters' => [
+        'table' => 'planet_osm_point',
+        'condition' => "amenity = 'theatre'"
+    ],
+    'sports' => [
+        'table' => 'planet_osm_point',
+        'condition' => "leisure IN ('sports_centre', 'stadium', 'pitch', 'swimming_pool', 'fitness_centre', 'fitness_station')"
     ],
     'parks' => [
         'table' => 'planet_osm_point',

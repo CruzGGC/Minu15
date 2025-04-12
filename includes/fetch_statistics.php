@@ -65,11 +65,37 @@ $areaKm2 = $bufferData['area_km2'];
 
 // Define the POI categories to count
 $poiCategories = [
+    // Saúde
     'hospitals' => "amenity = 'hospital'",
-    'schools' => "amenity IN ('school', 'university', 'college', 'kindergarten')",
-    'health' => "amenity IN ('clinic', 'doctors', 'dentist', 'pharmacy')",
-    'culture' => "amenity IN ('theatre', 'cinema', 'library', 'arts_centre', 'community_centre', 'museum')",
-    'shops' => "shop IS NOT NULL",
+    'health_centers' => "amenity = 'clinic' OR amenity = 'doctors'",
+    'pharmacies' => "amenity = 'pharmacy'",
+    'dentists' => "amenity = 'dentist'",
+    
+    // Educação
+    'schools' => "amenity = 'school'",
+    'universities' => "amenity IN ('university', 'college')",
+    'kindergartens' => "amenity = 'kindergarten'",
+    'libraries' => "amenity = 'library'",
+    
+    // Comércio e serviços
+    'supermarkets' => "shop IN ('supermarket', 'grocery', 'convenience')",
+    'malls' => "shop = 'mall' OR amenity = 'marketplace'",
+    'restaurants' => "amenity IN ('restaurant', 'cafe', 'bar', 'pub', 'fast_food')",
+    'atms' => "amenity = 'atm' OR amenity = 'bank'",
+    
+    // Segurança e emergência
+    'police' => "amenity = 'police'",
+    'fire_stations' => "amenity = 'fire_station'",
+    'civil_protection' => "amenity = 'ranger_station' OR office = 'government' AND name ILIKE '%proteção civil%'",
+    
+    // Administração pública
+    'parish_councils' => "office = 'government' AND name ILIKE '%junta de freguesia%'",
+    'city_halls' => "office = 'government' AND (name ILIKE '%câmara municipal%' OR name ILIKE '%camara municipal%')",
+    
+    // Cultura e lazer
+    'museums' => "tourism = 'museum' OR amenity = 'museum'",
+    'theaters' => "amenity = 'theatre'",
+    'sports' => "leisure IN ('sports_centre', 'stadium', 'pitch', 'swimming_pool', 'fitness_centre', 'fitness_station')",
     'parks' => "leisure IN ('park', 'garden', 'playground')"
 ];
 
