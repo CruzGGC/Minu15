@@ -9,7 +9,7 @@ let currentMarker;
 let isochroneLayer;
 let poiLayers = {};
 let selectedPoi = null;
-let selectedTransportMode = 'walking';
+let selectedTransportMode = 'cycling'; // Changed to cycling as default
 let selectedMaxDistance = 15; // in minutes
 
 // Transport mode speed in km/h
@@ -154,6 +154,9 @@ function generateIsochrone(latlng) {
     
     // Update statistics panel
     updateAreaStats(latlng, distanceInMeters);
+    
+    // Show statistics panel
+    showStatisticsPanel();
 }
 
 // Get color based on transport mode
@@ -193,7 +196,7 @@ function fetchPOIs(latlng) {
     // Fetch enabled POI types
     Object.keys(poiTypes).forEach(type => {
         const checkbox = document.getElementById(`poi-${type}`);
-        if (checkbox.checked) {
+        if (checkbox && checkbox.checked) {
             // Fetch POIs of this type from the server
             fetchPOIsByType(type, latlng, radiusInMeters);
         }
@@ -258,6 +261,9 @@ function addPOIsToMap(type, pois) {
         marker.on('click', function() {
             selectedPoi = poi;
             showPoiDetails(poi);
+            
+            // Show POI details panel
+            showPoiDetailsPanel();
         });
         
         // Add to layer group
@@ -302,8 +308,23 @@ function showPoiDetails(poi) {
         });
     }
     
+    // Add directions button
+    html += `
+        <div class="poi-detail">
+            <button class="direction-button" onclick="openDirections(${poi.latitude}, ${poi.longitude})">
+                <i class="fas fa-directions"></i> Get Directions
+            </button>
+        </div>
+    `;
+    
     // Set the HTML to the div
     poiInfoDiv.innerHTML = html;
+}
+
+// Open directions in Google Maps
+function openDirections(lat, lng) {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    window.open(url, '_blank');
 }
 
 // Update area statistics in the sidebar
@@ -348,6 +369,16 @@ function updateAreaStats(latlng, radius) {
                 </div>
             `;
             
+            // Add parish information if available
+            if (data.stats.parish && data.stats.parish !== 'Unknown') {
+                html += `
+                    <div class="stat-item">
+                        <span class="stat-label">Parish:</span>
+                        <span class="stat-value">${data.stats.parish}</span>
+                    </div>
+                `;
+            }
+            
             html += '</div>';
             statsDiv.innerHTML = html;
         } else {
@@ -360,29 +391,10 @@ function updateAreaStats(latlng, radius) {
     });
 }
 
-// Add legend to the map
+// Add legend to the map (keep original implementation)
 function addLegend() {
-    const legend = L.control({ position: 'bottomright' });
-    
-    legend.onAdd = function () {
-        const div = L.DomUtil.create('div', 'info legend');
-        
-        div.innerHTML = '<strong>Points of Interest</strong><br>';
-        
-        Object.keys(poiTypes).forEach(type => {
-            const poi = poiTypes[type];
-            div.innerHTML += `
-                <div>
-                    <i class="fas fa-${poi.icon} ${poi.class}"></i> 
-                    ${poi.name}
-                </div>
-            `;
-        });
-        
-        return div;
-    };
-    
-    legend.addTo(map);
+    // Using the POI legend that's now in the HTML
+    // No need for L.control legend anymore as we have a custom one in the UI
 }
 
 // Show loading indicator
@@ -411,5 +423,21 @@ function hideLoading() {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
         overlay.parentNode.removeChild(overlay);
+    }
+}
+
+// Show statistics panel
+function showStatisticsPanel() {
+    const statsPanel = document.querySelector('.statistics-panel');
+    if (statsPanel) {
+        statsPanel.classList.add('visible');
+    }
+}
+
+// Show POI details panel
+function showPoiDetailsPanel() {
+    const poiDetailsPanel = document.querySelector('.poi-details-panel');
+    if (poiDetailsPanel) {
+        poiDetailsPanel.classList.add('visible');
     }
 }

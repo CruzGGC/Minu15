@@ -12,6 +12,8 @@ body {
     line-height: 1.6;
     color: #333;
     background-color: #f8f9fa;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .container {
@@ -103,33 +105,212 @@ input[type="range"] {
 
 /* Map Container */
 #map {
-    flex-grow: 1;
-    height: 100%;
+    width: 100%;
+    height: 100vh;
     z-index: 1;
 }
 
-/* POI Icons and Legend */
-.poi-icon {
-    text-align: center;
-    font-weight: bold;
+/* Overlay Panel */
+.overlay-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 300px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    z-index: 999;
+    padding: 15px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
 }
 
-.poi-hospital { color: #e74c3c; }
-.poi-school { color: #f39c12; }
-.poi-health { color: #27ae60; }
-.poi-culture { color: #9b59b6; }
-.poi-shop { color: #3498db; }
-.poi-park { color: #2ecc71; }
+.overlay-panel h2 {
+    color: #2980b9;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.5rem;
+}
 
-/* Statistics Panels */
-#area-stats {
+.panel-section {
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.panel-section:last-child {
+    border-bottom: none;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 5px 0;
+    font-weight: bold;
+    color: #2980b9;
+}
+
+.panel-content {
+    margin-top: 10px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.panel-content.expanded {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.dropdown-arrow {
+    transition: transform 0.3s ease;
+}
+
+.dropdown-arrow.up {
+    transform: rotate(180deg);
+}
+
+/* POI Category Styles */
+.poi-category {
+    margin-bottom: 10px;
+}
+
+.poi-options {
+    margin-left: 15px;
+    margin-top: 8px;
+}
+
+.poi-options > div {
+    margin-bottom: 5px;
+}
+
+.poi-options input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+/* Transport Mode Selector */
+.transport-mode {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 10px;
+}
+
+.transport-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+}
+
+.transport-icon {
+    width: 40px;
+    height: 40px;
+    background-color: #f0f0f0;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 1.2rem;
+}
+
+.transport-option.active .transport-icon {
+    background-color: #4285f4;
+    color: white;
+}
+
+/* Distance Slider */
+.distance-slider {
+    width: 100%;
+    margin: 10px 0;
+    height: 8px;
+}
+
+#distance-value {
+    text-align: center;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+/* Search Box */
+.search-box {
+    width: calc(100% - 40px);
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.search-button {
+    width: 34px;
+    height: 34px;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+/* Calculate Button */
+.calculate-button {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 15px;
+    cursor: pointer;
+    width: 100%;
+    font-weight: bold;
+    margin-top: 10px;
+    font-size: 1rem;
+}
+
+.calculate-button:hover {
+    background-color: #27ae60;
+}
+
+/* Statistics Panel */
+.statistics-panel {
+    position: absolute;
+    bottom: 40px;
+    right: 20px;
+    width: 250px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    z-index: 998;
+    display: none;
+}
+
+.statistics-panel.visible {
+    display: block;
+}
+
+.statistics-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-stats {
+    cursor: pointer;
+}
+
+.stats-content {
     font-size: 0.9rem;
 }
 
 .stat-item {
     display: flex;
     justify-content: space-between;
-    padding: 0.3rem 0;
+    padding: 5px 0;
     border-bottom: 1px solid #eee;
 }
 
@@ -137,66 +318,126 @@ input[type="range"] {
     font-weight: bold;
 }
 
-/* POI Details */
-#poi-info {
+/* POI Details Panel */
+.poi-details-panel {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    z-index: 998;
+    display: none;
+}
+
+.poi-details-panel.visible {
+    display: block;
+}
+
+.poi-details-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-poi-details {
+    cursor: pointer;
+}
+
+.poi-details-content {
     font-size: 0.9rem;
 }
 
 .poi-detail {
-    margin-bottom: 0.5rem;
+    margin-bottom: 10px;
 }
 
 .poi-title {
     font-weight: bold;
-    margin-bottom: 0.3rem;
+    margin-bottom: 3px;
 }
 
-/* Footer */
-footer {
-    background-color: #34495e;
-    color: white;
-    text-align: center;
-    padding: 1rem;
-    font-size: 0.9rem;
+/* POI Legend */
+.poi-legend {
+    position: absolute;
+    bottom: 40px;
+    left: 20px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    z-index: 998;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-    .main-content {
-        flex-direction: column;
-    }
-    
-    .sidebar {
-        width: 100%;
-        max-height: 300px;
-    }
+.poi-legend-title {
+    margin-bottom: 5px;
 }
 
-/* Leaflet Custom Styles */
-.leaflet-popup-content {
-    max-width: 250px;
+.poi-legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
 }
 
-/* Custom Isochrone Styles */
-.isochrone-walking {
-    fill: rgba(52, 152, 219, 0.3);
-    stroke: #3498db;
-    stroke-width: 2;
-    stroke-dasharray: none;
+.poi-legend-color {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    margin-right: 8px;
 }
 
-.isochrone-cycling {
-    fill: rgba(46, 204, 113, 0.3);
-    stroke: #2ecc71;
-    stroke-width: 2;
-    stroke-dasharray: 5, 5;
+/* POI Icon Colors - Use same colors as in the map.js file */
+.poi-hospital { 
+    background-color: #e74c3c; 
+}
+.poi-school { 
+    background-color: #f39c12; 
+}
+.poi-health { 
+    background-color: #27ae60; 
+}
+.poi-culture { 
+    background-color: #9b59b6; 
+}
+.poi-shop { 
+    background-color: #3498db; 
+}
+.poi-park { 
+    background-color: #2ecc71; 
 }
 
-.isochrone-driving {
-    fill: rgba(231, 76, 60, 0.3);
-    stroke: #e74c3c;
-    stroke-width: 2;
-    stroke-dasharray: 10, 5;
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+}
+
+/* Footer Attribution */
+.footer-attribution {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    z-index: 997;
+}
+
+.footer-attribution a {
+    color: #2980b9;
+    text-decoration: none;
 }
 
 /* Loading Spinner */
@@ -225,4 +466,63 @@ footer {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* Custom Isochrone Styles */
+.isochrone-walking {
+    fill: rgba(52, 152, 219, 0.3);
+    stroke: #3498db;
+    stroke-width: 2;
+    stroke-dasharray: none;
+}
+
+.isochrone-cycling {
+    fill: rgba(46, 204, 113, 0.3);
+    stroke: #2ecc71;
+    stroke-width: 2;
+    stroke-dasharray: 5, 5;
+}
+
+.isochrone-driving {
+    fill: rgba(231, 76, 60, 0.3);
+    stroke: #e74c3c;
+    stroke-width: 2;
+    stroke-dasharray: 10, 5;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        max-height: 300px;
+    }
+    
+    .overlay-panel {
+        width: calc(100% - 40px);
+        max-height: 60vh;
+    }
+    
+    .statistics-panel, .poi-details-panel {
+        width: calc(100% - 40px);
+        right: 20px;
+        left: 20px;
+    }
+    
+    .poi-legend {
+        bottom: 100px;
+    }
+    
+    .footer-attribution {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* Leaflet Custom Styles */
+.leaflet-popup-content {
+    max-width: 250px;
 }

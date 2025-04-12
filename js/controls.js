@@ -5,58 +5,118 @@
 
 // Initialize controls when DOM is loaded
 function initControls() {
-    // Get control elements
-    const transportSelector = document.getElementById('transport-mode');
+    // Initialize collapsible panels
+    initCollapsiblePanels();
+    
+    // Initialize transport mode selector
+    initTransportModeSelector();
+    
+    // Initialize distance slider
+    initDistanceSlider();
+    
+    // Initialize POI checkboxes
+    initPoiCheckboxes();
+    
+    // Initialize calculate button
+    initCalculateButton();
+    
+    // Initialize search functionality
+    initSearchBox();
+    
+    // Initialize panel close buttons
+    initPanelCloseButtons();
+}
+
+// Initialize collapsible panels
+function initCollapsiblePanels() {
+    document.querySelectorAll('.panel-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const content = this.nextElementSibling;
+            if (content && content.classList.contains('panel-content')) {
+                content.classList.toggle('expanded');
+                const arrow = this.querySelector('.dropdown-arrow');
+                if (arrow) {
+                    arrow.classList.toggle('up');
+                }
+            }
+        });
+    });
+    
+    // Start with POI panel expanded
+    const poiContent = document.getElementById('poi-content');
+    if (poiContent) {
+        poiContent.classList.add('expanded');
+        const arrow = document.querySelector('#poi-header .dropdown-arrow');
+        if (arrow) {
+            arrow.classList.add('up');
+        }
+    }
+}
+
+// Initialize transport mode selector
+function initTransportModeSelector() {
+    const transportOptions = document.querySelectorAll('.transport-option');
+    
+    transportOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove active class from all options
+            transportOptions.forEach(opt => {
+                opt.classList.remove('active');
+            });
+            
+            // Add active class to selected option
+            this.classList.add('active');
+            
+            // Update the selected transport mode
+            selectedTransportMode = this.getAttribute('data-mode');
+            
+            // Update the map if there's a current marker
+            if (currentMarker) {
+                generateIsochrone(currentMarker.getLatLng());
+                fetchPOIs(currentMarker.getLatLng());
+            }
+        });
+    });
+    
+    // Set initial transport mode
+    const activeModeElement = document.querySelector('.transport-option.active');
+    if (activeModeElement) {
+        selectedTransportMode = activeModeElement.getAttribute('data-mode');
+    }
+}
+
+// Initialize distance slider
+function initDistanceSlider() {
     const distanceSlider = document.getElementById('max-distance');
     const distanceValue = document.getElementById('distance-value');
     
     // Set initial distance value display
-    distanceValue.textContent = distanceSlider.value;
+    distanceValue.textContent = distanceSlider.value + ' minutes';
     
-    // Add event listeners to controls
-    transportSelector.addEventListener('change', handleTransportChange);
-    distanceSlider.addEventListener('input', handleDistanceChange);
-    
-    // Add event listeners to POI checkboxes
+    // Add event listener to slider
+    distanceSlider.addEventListener('input', function() {
+        // Update display value
+        distanceValue.textContent = this.value + ' minutes';
+        
+        // Update selected max distance
+        selectedMaxDistance = parseInt(this.value);
+        
+        // Update the map if there's a current marker
+        if (currentMarker) {
+            generateIsochrone(currentMarker.getLatLng());
+            fetchPOIs(currentMarker.getLatLng());
+        }
+    });
+}
+
+// Initialize POI checkboxes
+function initPoiCheckboxes() {
     Object.keys(poiTypes).forEach(type => {
         const checkbox = document.getElementById(`poi-${type}`);
         if (checkbox) {
             checkbox.addEventListener('change', () => handlePoiToggle(type));
         }
     });
-}
-
-// Handle transport mode change
-function handleTransportChange(event) {
-    // Update selected transport mode
-    selectedTransportMode = event.target.value;
-    
-    // Update the map if there's a current marker
-    if (currentMarker) {
-        // Generate new isochrone with updated transport mode
-        generateIsochrone(currentMarker.getLatLng());
-        
-        // Fetch POIs with updated transport mode
-        fetchPOIs(currentMarker.getLatLng());
-    }
-}
-
-// Handle distance slider change
-function handleDistanceChange(event) {
-    // Update selected max distance
-    selectedMaxDistance = parseInt(event.target.value);
-    
-    // Update the distance value display
-    document.getElementById('distance-value').textContent = selectedMaxDistance;
-    
-    // Update the map if there's a current marker
-    if (currentMarker) {
-        // Generate new isochrone with updated distance
-        generateIsochrone(currentMarker.getLatLng());
-        
-        // Fetch POIs with updated distance
-        fetchPOIs(currentMarker.getLatLng());
-    }
 }
 
 // Handle POI type toggle
@@ -88,6 +148,144 @@ function handlePoiToggle(type) {
     }
 }
 
+// Initialize calculate button
+function initCalculateButton() {
+    const calculateButton = document.querySelector('.calculate-button');
+    if (calculateButton) {
+        calculateButton.addEventListener('click', function() {
+            if (currentMarker) {
+                generateIsochrone(currentMarker.getLatLng());
+                fetchPOIs(currentMarker.getLatLng());
+                
+                // Show statistics panel
+                showStatisticsPanel();
+            } else {
+                alert('Please select a location on the map first');
+            }
+        });
+    }
+}
+
+// Initialize search box
+function initSearchBox() {
+    const searchBox = document.querySelector('.search-box');
+    const searchButton = document.querySelector('.search-button');
+    
+    if (searchBox && searchButton) {
+        // Search on button click
+        searchButton.addEventListener('click', function() {
+            performSearch(searchBox.value);
+        });
+        
+        // Search on Enter key
+        searchBox.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                performSearch(this.value);
+            }
+        });
+    }
+}
+
+// Perform location search
+function performSearch(searchTerm) {
+    if (!searchTerm.trim()) {
+        return;
+    }
+    
+    // Show loading indicator
+    showLoading();
+    
+    // Use Nominatim for geocoding (OpenStreetMap's geocoding service)
+    const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)},Portugal&limit=1`;
+    
+    fetch(searchUrl)
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            
+            if (data && data.length > 0) {
+                const result = data[0];
+                const latlng = L.latLng(result.lat, result.lon);
+                
+                // Set map view to found location
+                map.setView(latlng, 15);
+                
+                // Create marker at found location
+                if (currentMarker) {
+                    map.removeLayer(currentMarker);
+                }
+                currentMarker = L.marker(latlng).addTo(map);
+                
+                // Generate isochrone
+                generateIsochrone(latlng);
+                
+                // Fetch POIs
+                fetchPOIs(latlng);
+                
+                // Show statistics panel
+                showStatisticsPanel();
+            } else {
+                alert('Location not found. Please try another search term.');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error searching for location:', error);
+            alert('An error occurred while searching for the location.');
+        });
+}
+
+// Initialize panel close buttons
+function initPanelCloseButtons() {
+    // Statistics panel close button
+    const closeStatsButton = document.querySelector('.close-stats');
+    if (closeStatsButton) {
+        closeStatsButton.addEventListener('click', function() {
+            hideStatisticsPanel();
+        });
+    }
+    
+    // POI details panel close button
+    const closePoiDetailsButton = document.querySelector('.close-poi-details');
+    if (closePoiDetailsButton) {
+        closePoiDetailsButton.addEventListener('click', function() {
+            hidePoiDetailsPanel();
+        });
+    }
+}
+
+// Show statistics panel
+function showStatisticsPanel() {
+    const statsPanel = document.querySelector('.statistics-panel');
+    if (statsPanel) {
+        statsPanel.classList.add('visible');
+    }
+}
+
+// Hide statistics panel
+function hideStatisticsPanel() {
+    const statsPanel = document.querySelector('.statistics-panel');
+    if (statsPanel) {
+        statsPanel.classList.remove('visible');
+    }
+}
+
+// Show POI details panel
+function showPoiDetailsPanel() {
+    const poiDetailsPanel = document.querySelector('.poi-details-panel');
+    if (poiDetailsPanel) {
+        poiDetailsPanel.classList.add('visible');
+    }
+}
+
+// Hide POI details panel
+function hidePoiDetailsPanel() {
+    const poiDetailsPanel = document.querySelector('.poi-details-panel');
+    if (poiDetailsPanel) {
+        poiDetailsPanel.classList.remove('visible');
+    }
+}
+
 // Function to reset the UI
 function resetUI() {
     // Clear the area stats panel
@@ -95,6 +293,10 @@ function resetUI() {
     
     // Clear the POI info panel
     document.getElementById('poi-info').innerHTML = '<p>Click on a point of interest for details</p>';
+    
+    // Hide panels
+    hideStatisticsPanel();
+    hidePoiDetailsPanel();
     
     // Reset all layers
     if (isochroneLayer) {
