@@ -1,126 +1,126 @@
-# 15-Minute City Explorer
+# Explorador de Cidade em 15 Minutos
 
-A GIS application exploring the concept of the "15-minute city" - a vision of urban planning where all necessities of daily life are accessible within a 15-minute trip from any location, whether by walking, cycling, or driving.
+Uma aplicação SIG que explora o conceito da "cidade de 15 minutos" - uma visão de planeamento urbano onde todas as necessidades da vida quotidiana são acessíveis a 15 minutos de distância de qualquer localização, seja a pé, de bicicleta ou de automóvel.
 
-## Project Overview
+## Visão Geral do Projeto
 
-This application allows users to:
+Esta aplicação permite aos utilizadores:
 
-- Explore what's accessible within a 15-minute range from any point in Portugal
-- Visualize different travel modes (walking, cycling, driving)
-- Discover various points of interest (hospitals, schools, health centers, etc.)
-- View statistics about the selected area
-- Access details about each point of interest
+- Explorar o que é acessível num raio de 15 minutos a partir de qualquer ponto em Portugal
+- Visualizar diferentes modos de deslocação (a pé, de bicicleta, de automóvel)
+- Descobrir vários pontos de interesse (hospitais, escolas, centros de saúde, etc.)
+- Ver estatísticas sobre a área selecionada
+- Aceder a detalhes sobre cada ponto de interesse
 
-## Features
+## Funcionalidades
 
-- **Interactive Map**: Click anywhere to see what's accessible within your chosen time frame
-- **Multiple Transportation Modes**: Toggle between walking, cycling, and driving
-- **Adjustable Travel Time**: Slide to adjust the maximum travel time (5-30 minutes)
-- **POI Filtering**: Show or hide specific types of points of interest
-- **Area Statistics**: View statistics about the selected area, including POI counts and estimated population
-- **POI Details**: Click on any point of interest to see detailed information about it
+- **Mapa Interativo**: Clique em qualquer lugar para ver o que é acessível dentro do intervalo de tempo escolhido
+- **Múltiplos Modos de Transporte**: Alterne entre andar a pé, de bicicleta e de automóvel
+- **Tempo de Viagem Ajustável**: Deslize para ajustar o tempo máximo de viagem (5-30 minutos)
+- **Filtragem de POI**: Mostrar ou ocultar tipos específicos de pontos de interesse
+- **Estatísticas da Área**: Visualize estatísticas sobre a área selecionada, incluindo contagens de POI e população estimada
+- **Detalhes de POI**: Clique em qualquer ponto de interesse para ver informações detalhadas sobre o mesmo
 
-## Technical Architecture
+## Arquitetura Técnica
 
-- **Frontend**: HTML, CSS, JavaScript with Leaflet.js and Turf.js
+- **Frontend**: HTML, CSS, JavaScript com Leaflet.js e Turf.js
 - **Backend**: PHP
-- **Database**: PostgreSQL with PostGIS extension
-- **Data Source**: OpenStreetMap data via Geofabrik
+- **Base de Dados**: PostgreSQL com extensão PostGIS
+- **Fonte de Dados**: Dados do OpenStreetMap via Geofabrik
 
-## Installation and Setup
+## Instalação e Configuração
 
-### Prerequisites
+### Pré-requisitos
 
-- Web server with PHP 7.4+ (e.g., Apache, Nginx with XAMPP/WAMP)
-- PostgreSQL 12+ with PostGIS extension
-- Osmosis tool for importing OSM data
+- Servidor web com PHP 7.4+ (ex: Apache, Nginx com XAMPP/WAMP)
+- PostgreSQL 12+ com extensão PostGIS
+- Ferramenta Osmosis para importação de dados OSM
 
-### Installation Steps
+### Passos de Instalação
 
-1. **Set up the database**:
-   - Install PostgreSQL and PostGIS
-   - Run the initialization script: `scripts/init_database.bat`
+1. **Configurar a base de dados**:
+   - Instalar PostgreSQL e PostGIS
+   - Executar o script de inicialização: `scripts/init_database.bat`
 
-2. **Import OpenStreetMap data**:
-   - Download Portugal OSM data from Geofabrik manually or use the provided script
-   - Run the update script: `php scripts/update_geofabrik_data.php`
-   - Wait for the import to complete (this may take some time)
+2. **Importar dados do OpenStreetMap**:
+   - Descarregar os dados OSM de Portugal do Geofabrik manualmente ou utilizar o script fornecido
+   - Executar o script de atualização: `php scripts/update_geofabrik_data.php`
+   - Aguardar pela conclusão da importação (isto pode demorar algum tempo)
    
-3. **Schedule weekly data updates** (optional):
-   - Run `scripts/schedule_geofabrik_update.bat` to create a scheduled task
-   - This will download fresh data from Geofabrik every Sunday at 3:00 AM
+3. **Agendar atualizações semanais de dados** (opcional):
+   - Executar `scripts/schedule_geofabrik_update.bat` para criar uma tarefa agendada
+   - Isto irá descarregar dados atualizados do Geofabrik todos os domingos às 3:00
 
-4. **Configure your web server**:
-   - Point your web server document root to the project directory
-   - Make sure PHP is configured to work with PostgreSQL
+4. **Configurar o servidor web**:
+   - Direcionar a raiz de documentos do servidor web para o diretório do projeto
+   - Certificar-se de que o PHP está configurado para funcionar com PostgreSQL
 
-5. **Access the application**:
-   - Open your web browser and navigate to your web server's URL
-   - Start exploring the 15-minute city concept!
+5. **Aceder à aplicação**:
+   - Abrir o navegador web e navegar para o URL do servidor web
+   - Começar a explorar o conceito de cidade de 15 minutos!
 
-## Usage Guide
+## Guia de Utilização
 
-1. **Select a location**: Click anywhere on the map to set your starting point
-2. **Choose transportation mode**: Select walking, cycling, or driving from the dropdown
-3. **Adjust travel time**: Move the slider to change the maximum travel time
-4. **Filter POIs**: Use the checkboxes to show or hide specific types of points of interest
-5. **View statistics**: Check the statistics panel for information about the selected area
-6. **Explore POI details**: Click on any point of interest marker for more information
+1. **Selecionar uma localização**: Clique em qualquer lugar no mapa para definir o seu ponto de partida
+2. **Escolher modo de transporte**: Selecione andar a pé, de bicicleta ou de automóvel
+3. **Ajustar tempo de viagem**: Mova o controlo deslizante para alterar o tempo máximo de viagem
+4. **Filtrar POIs**: Utilize as caixas de seleção para mostrar ou ocultar tipos específicos de pontos de interesse
+5. **Ver estatísticas**: Consulte o painel de estatísticas para obter informações sobre a área selecionada
+6. **Explorar detalhes dos POI**: Clique em qualquer marcador de ponto de interesse para obter mais informações
 
-## Data Structure
+## Estrutura de Dados
 
-The application uses OpenStreetMap data imported into PostgreSQL using the following structure:
+A aplicação utiliza dados do OpenStreetMap importados para PostgreSQL utilizando a seguinte estrutura:
 
-- **planet_osm_point**: Contains point features like hospitals, schools, shops
-- **planet_osm_line**: Contains linear features like roads, railways
-- **planet_osm_polygon**: Contains area features like buildings, parks
-- **planet_osm_roads**: Contains major roads network
+- **planet_osm_point**: Contém elementos pontuais como hospitais, escolas, lojas
+- **planet_osm_line**: Contém elementos lineares como estradas, ferrovias
+- **planet_osm_polygon**: Contém elementos de área como edifícios, parques
+- **planet_osm_roads**: Contém a rede de estradas principais
 
-## Project Structure
+## Estrutura do Projeto
 
 ```
 /
-├── assets/             # Images and other assets
-├── config/             # Configuration files
-│   └── db_config.php   # Database connection settings
-├── css/                # Stylesheets
-│   └── style.css       # Main CSS file
-├── includes/           # PHP include files
-│   ├── fetch_pois.php  # API endpoint to get POIs
-│   └── fetch_statistics.php # API endpoint to get area statistics
-├── js/                 # JavaScript files
-│   ├── controls.js     # UI control functionality
-│   └── map.js          # Map and geospatial functionality
-├── scripts/            # Utility scripts
-│   ├── init_database.php        # Database initialization
-│   ├── init_database.bat        # Windows batch for database init
-│   ├── update_geofabrik_data.php # Data update script
-│   └── schedule_geofabrik_update.bat # Task scheduler
-└── index.php           # Main application entry point
+├── assets/             # Imagens e outros recursos
+├── config/             # Ficheiros de configuração
+│   └── db_config.php   # Definições de ligação à base de dados
+├── css/                # Folhas de estilo
+│   └── style.css       # Ficheiro CSS principal
+├── includes/           # Ficheiros de inclusão PHP
+│   ├── fetch_pois.php  # Endpoint API para obter POIs
+│   └── fetch_statistics.php # Endpoint API para obter estatísticas da área
+├── js/                 # Ficheiros JavaScript
+│   ├── controls.js     # Funcionalidade dos controlos da interface
+│   └── map.js          # Funcionalidade do mapa e geoespacial
+├── scripts/            # Scripts utilitários
+│   ├── init_database.php        # Inicialização da base de dados
+│   ├── init_database.bat        # Batch Windows para inicialização da BD
+│   ├── update_geofabrik_data.php # Script de atualização de dados
+│   └── schedule_geofabrik_update.bat # Agendador de tarefas
+└── index.php           # Ponto de entrada principal da aplicação
 ```
 
-## Developer Notes
+## Notas para Desenvolvedores
 
-- The isochrone generation currently uses basic buffer circles based on travel speed. For more accurate results, consider implementing actual routing algorithms.
-- Travel speeds are estimated as: walking (5 km/h), cycling (15 km/h), driving (60 km/h).
-- Population estimates are rough approximations based on building counts.
+- A geração de isócronas atualmente utiliza círculos de buffer básicos baseados na velocidade de deslocação. Para resultados mais precisos, considere implementar algoritmos de encaminhamento reais.
+- As velocidades de deslocação são estimadas como: a pé (5 km/h), de bicicleta (15 km/h), de automóvel (60 km/h).
+- As estimativas de população são aproximações baseadas na contagem de edifícios.
 
-## Future Enhancements
+## Melhorias Futuras
 
-- Implement routing algorithms for more accurate travel time polygons
-- Add more detailed POI information
-- Integrate public transport options
-- Add ability to save and share locations
-- Include demographic data for better population estimates
-- Expand beyond Portugal to other regions
+- Implementar algoritmos de encaminhamento para polígonos de tempo de viagem mais precisos
+- Adicionar informações mais detalhadas sobre POI
+- Integrar opções de transporte público
+- Adicionar capacidade de guardar e partilhar localizações
+- Incluir dados demográficos para melhores estimativas populacionais
+- Expandir para além de Portugal para outras regiões
 
-## License
+## Licença
 
-This project is for educational purposes.
+Este projeto é para fins educativos.
 
-## Credits
+## Créditos
 
-- OpenStreetMap data from [Geofabrik](https://download.geofabrik.de/)
-- Map visualization with [Leaflet](https://leafletjs.com/)
-- Geospatial calculations with [Turf.js](https://turfjs.org/)
+- Dados OpenStreetMap de [Geofabrik](https://download.geofabrik.de/)
+- Visualização de mapas com [Leaflet](https://leafletjs.com/)
+- Cálculos geoespaciais com [Turf.js](https://turfjs.org/)
