@@ -98,11 +98,7 @@ function initTransportModeSelector() {
             // Atualizar o modo de transporte selecionado
             selectedTransportMode = this.getAttribute('data-mode');
             
-            // Atualizar o mapa se houver um marcador atual
-            if (currentMarker) {
-                generateIsochrone(currentMarker.getLatLng());
-                fetchPOIs(currentMarker.getLatLng());
-            }
+            // Não atualizar o mapa automaticamente - aguardar clique no botão Calcular
         });
     });
     
@@ -129,11 +125,7 @@ function initDistanceSlider() {
         // Atualizar distância máxima selecionada
         selectedMaxDistance = parseInt(this.value);
         
-        // Atualizar o mapa se houver um marcador atual
-        if (currentMarker) {
-            generateIsochrone(currentMarker.getLatLng());
-            fetchPOIs(currentMarker.getLatLng());
-        }
+        // Não atualizar o mapa automaticamente - aguardar clique no botão Calcular
     });
 }
 
@@ -154,17 +146,8 @@ function handlePoiToggle(type) {
     
     // Mostrar ou ocultar a camada com base no estado da checkbox
     if (isChecked) {
-        if (currentMarker) {
-            // Buscar POIs deste tipo se um ponto estiver selecionado
-            const latlng = currentMarker.getLatLng();
-            const speedKmPerHour = transportSpeeds[selectedTransportMode];
-            const distanceInKm = (speedKmPerHour * selectedMaxDistance) / 60;
-            const radiusInMeters = distanceInKm * 1000;
-            
-            fetchPOIsByType(type, latlng, radiusInMeters);
-        }
-        
-        // Garantir que a camada seja adicionada ao mapa
+        // Apenas garantir que a camada seja adicionada ao mapa
+        // Não buscar automaticamente novos POIs - isso acontecerá quando o botão Calcular for clicado
         if (!map.hasLayer(poiLayers[type])) {
             map.addLayer(poiLayers[type]);
         }
@@ -244,14 +227,10 @@ function performSearch(searchTerm) {
                 }
                 currentMarker = L.marker(latlng).addTo(map);
                 
-                // Gerar isócrona
-                generateIsochrone(latlng);
+                // Não gerar isócrona automaticamente - aguardar clique no botão Calcular
                 
-                // Buscar POIs
-                fetchPOIs(latlng);
-                
-                // Mostrar painel de estatísticas
-                showStatisticsPanel();
+                // Mostrar mensagem para orientar o usuário
+                alert('Localização encontrada! Clique em "Calcular" para gerar a isócrona.');
             } else {
                 alert('Localização não encontrada. Por favor, tente outro termo de pesquisa.');
             }

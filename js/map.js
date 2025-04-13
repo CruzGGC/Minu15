@@ -333,7 +333,7 @@ function displayIsochrone(data, latlng) {
     }
     
     // Atualizar painel de estatísticas
-    updateAreaStats(latlng, radiusInMeters);
+    updateAreaStats(latlng, radiusInMeters, JSON.stringify(data));
     
     // Mostrar painel de estatísticas
     showStatisticsPanel();
@@ -349,9 +349,15 @@ function fetchPOIsWithinIsochrone(latlng, isochroneData) {
         poiLayers[type].clearLayers();
     });
     
+    // Mostrar indicador de carregamento
+    showLoading();
+    
     // Extrair área da isócrona se disponível
     let radiusInMeters;
-    if (isochroneData.features && isochroneData.features[0] && isochroneData.features[0].properties && isochroneData.features[0].properties.area) {
+    if (isochroneData.features && 
+        isochroneData.features[0] && 
+        isochroneData.features[0].properties && 
+        isochroneData.features[0].properties.area) {
         // Converter km² para m² para manter consistência com o resto do código
         const areaInKm2 = isochroneData.features[0].properties.area;
         radiusInMeters = Math.sqrt(areaInKm2 * 1000000 / Math.PI);
@@ -362,14 +368,34 @@ function fetchPOIsWithinIsochrone(latlng, isochroneData) {
         radiusInMeters = distanceInKm * 1000;
     }
     
+    // Serializar o GeoJSON da isócrona para enviar ao servidor
+    const isochroneGeoJSON = JSON.stringify(isochroneData);
+    
+    // Array de promessas para controlar todas as requisições de POIs
+    const poiPromises = [];
+    
     // Buscar tipos de POI habilitados
     Object.keys(poiTypes).forEach(type => {
         const checkbox = document.getElementById(`poi-${type}`);
         if (checkbox && checkbox.checked) {
-            // Buscar POIs deste tipo no servidor
-            fetchPOIsByType(type, latlng, radiusInMeters);
+            // Adicionar promessa da requisição ao array
+            const promise = fetchPOIsByType(type, latlng, radiusInMeters, isochroneGeoJSON);
+            poiPromises.push(promise);
         }
     });
+    
+    // Quando todas as requisições terminarem, esconder o indicador de carregamento
+    Promise.all(poiPromises)
+        .then(() => {
+            hideLoading();
+        })
+        .catch(error => {
+            console.error("Erro ao buscar POIs:", error);
+            hideLoading();
+        });
+    
+    // Atualizar estatísticas usando o polígono da isócrona
+    updateAreaStats(latlng, radiusInMeters, isochroneGeoJSON);
 }
 
 // Método de fallback usando buffer circular com Turf.js
@@ -455,7 +481,7 @@ function fetchPOIs(latlng) {
 }
 
 // Buscar POIs de um tipo específico do servidor
-function fetchPOIsByType(type, latlng, radius) {
+function fetchPOIsByType(type, latlng, radius, isochroneGeoJSON) {
     // Criar dados do formulário para a requisição
     const formData = new FormData();
     formData.append('type', type);
@@ -463,26 +489,36 @@ function fetchPOIsByType(type, latlng, radius) {
     formData.append('lng', latlng.lng);
     formData.append('radius', radius);
     
-    // Fazer requisição AJAX para o servidor
-    fetch('includes/fetch_pois.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Adicionar POIs ao mapa
-            addPOIsToMap(type, data.pois);
-        } else {
-            console.error('Erro ao buscar POIs:', data.message);
-        }
-        
-        // Ocultar indicador de carregamento quando todas as requisições estiverem concluídas
-        hideLoading();
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        hideLoading();
+    // Adicionar o GeoJSON da isócrona se disponível
+    if (isochroneGeoJSON) {
+        formData.append('isochrone', isochroneGeoJSON);
+    }
+    
+    // Retornar uma promessa para que possamos controlar o fluxo de múltiplas requisições
+    return new Promise((resolve, reject) => {
+        // Fazer requisição AJAX para o servidor
+        fetch('includes/fetch_pois.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Adicionar POIs ao mapa
+                addPOIsToMap(type, data.pois);
+                resolve(data);
+            } else {
+                console.error(`Erro ao buscar POIs do tipo ${type}:`, data.message);
+                if (data.debug) {
+                    console.debug(`Debug info para ${type}:`, data.debug);
+                }
+                reject(new Error(data.message));
+            }
+        })
+        .catch(error => {
+            console.error(`Erro ao processar requisição para ${type}:`, error);
+            reject(error);
+        });
     });
 }
 
@@ -579,7 +615,7 @@ function openDirections(lat, lng) {
 }
 
 // Atualizar estatísticas da área na barra lateral
-function updateAreaStats(latlng, radius) {
+function updateAreaStats(latlng, radius, isochroneGeoJSON) {
     const statsDiv = document.getElementById('area-stats');
     
     // Criar dados do formulário para a requisição
@@ -587,6 +623,11 @@ function updateAreaStats(latlng, radius) {
     formData.append('lat', latlng.lat);
     formData.append('lng', latlng.lng);
     formData.append('radius', radius);
+    
+    // Adicionar o GeoJSON da isócrona se disponível
+    if (isochroneGeoJSON) {
+        formData.append('isochrone', isochroneGeoJSON);
+    }
     
     // Fazer requisição AJAX para o servidor
     fetch('includes/fetch_statistics.php', {
