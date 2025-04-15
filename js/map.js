@@ -1,345 +1,390 @@
 /**
- * Explorador de Cidade em 15 Minutos - Funcionalidade do Mapa
- * Gere a inicialização do mapa, geração de isócronas e exibição de POIs
+ * Explorador de Cidade em 15 Minutos - Map Functionality
+ * Handles map initialization, isochrone generation, and POI display
+ * 
+ * @version 2.0
  */
 
-// Variáveis globais
+// Global variables
 let map;
 let currentMarker;
 let isochroneLayer;
 let poiLayers = {};
 let selectedPoi = null;
-let selectedTransportMode = 'cycling'; // Bicicleta como modo padrão
-let selectedMaxDistance = 15; // em minutos
+let selectedTransportMode = 'cycling'; // Default mode: cycling
+let selectedMaxDistance = 15; // Default time: 15 minutes
+let currentIsochroneData = null; // Store current isochrone data for POI requests
 
-// Mapeamento dos modos de transporte para os perfis da API Open Route Service
+// Map transport modes to OpenRouteService API profiles
 const orsProfiles = {
     walking: 'foot-walking',
     cycling: 'cycling-regular',
     driving: 'driving-car'
 };
 
-// Velocidades dos modos de transporte em km/h (usado como fallback)
+// Transport mode speeds (km/h) for fallback calculation if ORS API fails
 const transportSpeeds = {
-    walking: 5,  // A pé
-    cycling: 15, // Bicicleta
-    driving: 60  // Carro
+    walking: 5,  // Walking: 5 km/h
+    cycling: 15, // Cycling: 15 km/h
+    driving: 60  // Driving: 60 km/h
 };
 
-// Tipos de POI e seus ícones
+// POI types definition with display details
 const poiTypes = {
-    // Saúde
+    // === Health ===
     hospitals: { 
         name: 'Hospitais', 
         icon: 'hospital', 
         class: 'poi-hospital',
-        table: 'amenity',
-        condition: "amenity = 'hospital'"
+        category: 'health'
     },
     health_centers: { 
         name: 'Centros de Saúde', 
         icon: 'first-aid-kit', 
         class: 'poi-health',
-        table: 'amenity',
-        condition: "amenity = 'clinic' OR amenity = 'doctors'"
+        category: 'health'
     },
     pharmacies: { 
         name: 'Farmácias', 
         icon: 'prescription-bottle-alt', 
         class: 'poi-pharmacy',
-        table: 'amenity',
-        condition: "amenity = 'pharmacy'"
+        category: 'health'
     },
     dentists: { 
         name: 'Clínicas Dentárias', 
         icon: 'tooth', 
         class: 'poi-dentist',
-        table: 'amenity',
-        condition: "amenity = 'dentist'"
+        category: 'health'
     },
     
-    // Educação
+    // === Education ===
     schools: { 
         name: 'Escolas Primárias e Secundárias', 
         icon: 'school', 
         class: 'poi-school',
-        table: 'amenity',
-        condition: "amenity = 'school'"
+        category: 'education'
     },
     universities: { 
         name: 'Universidades e Institutos Superiores', 
         icon: 'graduation-cap', 
         class: 'poi-university',
-        table: 'amenity',
-        condition: "amenity IN ('university', 'college')"
+        category: 'education'
     },
     kindergartens: { 
         name: 'Jardins de Infância e Creches', 
         icon: 'baby', 
         class: 'poi-kindergarten',
-        table: 'amenity',
-        condition: "amenity = 'kindergarten'"
+        category: 'education'
     },
     libraries: { 
         name: 'Bibliotecas', 
         icon: 'book', 
         class: 'poi-library',
-        table: 'amenity',
-        condition: "amenity = 'library'"
+        category: 'education'
     },
     
-    // Comércio e serviços
+    // === Commercial & Services ===
     supermarkets: { 
         name: 'Supermercados', 
         icon: 'shopping-basket', 
         class: 'poi-supermarket',
-        table: 'shop',
-        condition: "shop IN ('supermarket', 'grocery', 'convenience')"
+        category: 'commercial'
     },
     malls: { 
         name: 'Centros Comerciais', 
         icon: 'shopping-bag', 
         class: 'poi-mall',
-        table: 'shop',
-        condition: "shop = 'mall' OR amenity = 'marketplace'"
+        category: 'commercial'
     },
     restaurants: { 
         name: 'Restaurantes e Cafés', 
         icon: 'utensils', 
         class: 'poi-restaurant',
-        table: 'amenity',
-        condition: "amenity IN ('restaurant', 'cafe', 'bar', 'pub', 'fast_food')"
+        category: 'commercial'
     },
     atms: { 
         name: 'Caixas de Multibanco', 
         icon: 'money-bill-wave', 
         class: 'poi-atm',
-        table: 'amenity',
-        condition: "amenity = 'atm' OR amenity = 'bank'"
+        category: 'commercial'
     },
     
-    // Segurança e emergência
+    // === Safety & Emergency ===
     police: { 
         name: 'Esquadras da Polícia', 
         icon: 'shield-alt', 
         class: 'poi-police',
-        table: 'amenity',
-        condition: "amenity = 'police'"
+        category: 'safety'
     },
     fire_stations: { 
         name: 'Quartéis de Bombeiros', 
         icon: 'fire-extinguisher', 
         class: 'poi-fire-station',
-        table: 'amenity',
-        condition: "amenity = 'fire_station'"
+        category: 'safety'
     },
     civil_protection: { 
         name: 'Proteção Civil', 
         icon: 'hard-hat', 
         class: 'poi-civil-protection',
-        table: 'amenity',
-        condition: "amenity = 'ranger_station' OR office = 'government' AND name ILIKE '%proteção civil%'"
+        category: 'safety'
     },
     
-    // Administração pública
+    // === Public Administration ===
     parish_councils: { 
         name: 'Juntas de Freguesia', 
         icon: 'city', 
         class: 'poi-parish',
-        table: 'office',
-        condition: "office = 'government' AND name ILIKE '%junta de freguesia%'"
+        category: 'administration'
     },
     city_halls: { 
         name: 'Câmaras Municipais', 
         icon: 'landmark', 
         class: 'poi-city-hall',
-        table: 'office',
-        condition: "office = 'government' AND (name ILIKE '%câmara municipal%' OR name ILIKE '%camara municipal%')"
+        category: 'administration'
+    },
+    post_offices: { 
+        name: 'Correios', 
+        icon: 'envelope', 
+        class: 'poi-post-office',
+        category: 'administration'
     },
     
-    // Cultura e lazer
+    // === Culture & Leisure ===
     museums: { 
         name: 'Museus', 
         icon: 'museum', 
         class: 'poi-museum',
-        table: 'tourism',
-        condition: "tourism = 'museum' OR amenity = 'museum'"
+        category: 'culture'
     },
     theaters: { 
         name: 'Teatros', 
         icon: 'theater-masks', 
         class: 'poi-theater',
-        table: 'amenity',
-        condition: "amenity = 'theatre'"
+        category: 'culture'
     },
     sports: { 
         name: 'Ginásios e Centros Desportivos', 
         icon: 'dumbbell', 
         class: 'poi-sport',
-        table: 'leisure',
-        condition: "leisure IN ('sports_centre', 'stadium', 'pitch', 'swimming_pool', 'fitness_centre', 'fitness_station')"
+        category: 'culture'
     },
     parks: { 
         name: 'Parques', 
         icon: 'tree', 
         class: 'poi-park',
-        table: 'leisure',
-        condition: "leisure IN ('park', 'garden', 'playground')"
+        category: 'culture'
     }
 };
 
-// Inicializar o mapa quando o DOM estiver carregado
+// Initialize the map when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', function() {
     initMap();
     initControls();
 });
 
-// Inicializar o mapa Leaflet
+// Initialize the Leaflet map
 function initMap() {
-    // Coordenadas centrais de Portugal
+    // Center coordinates for Portugal
     const portugalCenter = [39.5, -8.0];
     
-    // Criar instância do mapa
+    // Create a new map centered on Portugal
     map = L.map('map').setView(portugalCenter, 7);
     
-    // Adicionar camada base do OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    // Add OpenStreetMap tile layer
+    L.tileLayer(MAP_TILES_URL, {
+        attribution: MAP_TILES_ATTRIBUTION,
         maxZoom: 19
     }).addTo(map);
     
-    // Inicializar grupos de camadas de POI vazios
+    // Initialize empty POI layer groups
     Object.keys(poiTypes).forEach(type => {
         poiLayers[type] = L.layerGroup().addTo(map);
     });
     
-    // Adicionar evento de clique ao mapa
+    // Add click event handler to the map
     map.on('click', function(e) {
         handleMapClick(e.latlng);
     });
     
-    // Adicionar legenda ao mapa
+    // Add the POI legend
     addLegend();
 }
 
-// Tratar clique no mapa para gerar isócrona
+// Handle map click by placing a marker
 function handleMapClick(latlng) {
-    // Limpar marcador existente, se houver
+    // Clear existing marker if present
     if (currentMarker) {
         map.removeLayer(currentMarker);
     }
     
-    // Adicionar um marcador na localização clicada
+    // Add a new marker at clicked location
     currentMarker = L.marker(latlng).addTo(map);
     
-    // Não gerar isócrona automaticamente - aguardar clique no botão Calcular
+    // Don't automatically generate isochrone - wait for Calculate button
 }
 
-// Gerar polígono de isócrona usando Open Route Service
+// Generate isochrone polygon using OpenRouteService API
 function generateIsochrone(latlng) {
-    // Limpar isócrona existente, se houver
+    // Clear existing isochrone if present
     if (isochroneLayer) {
         map.removeLayer(isochroneLayer);
+        currentIsochroneData = null;
     }
     
-    // Mostrar indicador de carregamento
+    // Show loading indicator
     showLoading();
     
-    // Obter o perfil ORS correspondente ao modo de transporte selecionado
+    // Get ORS profile based on selected transport mode
     const profile = orsProfiles[selectedTransportMode];
     
-    // Preparar parâmetros para a API do Open Route Service
+    // Prepare parameters for OpenRouteService API request
     const params = {
         locations: [[latlng.lng, latlng.lat]],
-        range: [selectedMaxDistance * 60], // Converter minutos para segundos
+        range: [selectedMaxDistance * 60], // Convert minutes to seconds
         attributes: ['area'],
         area_units: 'km',
         range_type: 'time'
     };
     
-    // URL da API para isócronas
-    const url = `${ORS_API_URL}/v2/isochrones/${profile}`;
+    // Use our PHP proxy instead of direct ORS API call
+    const formData = new FormData();
+    formData.append('endpoint', `/v2/isochrones/${profile}`);
+    formData.append('data', JSON.stringify(params));
     
-    // Realizar a chamada à API
-    fetch(url, {
+    console.log(`Generating isochrone for ${profile} mode, ${selectedMaxDistance} minutes`);
+    
+    // Make request to our proxy
+    fetch('includes/proxy_ors.php', {
         method: 'POST',
-        headers: {
-            'Accept': 'application/json, application/geo+json, application/gpx+xml',
-            'Content-Type': 'application/json',
-            'Authorization': ORS_API_KEY
-        },
-        body: JSON.stringify(params)
+        body: formData
     })
     .then(response => {
         if (!response.ok) {
-            // Se houver erro, lançar para ser tratado pelo catch
+            // Try to get the error response as JSON
             return response.json().then(errData => {
-                throw new Error(`Erro na API: ${errData.error || response.statusText}`);
+                throw new Error(`API Error: ${errData.message || response.statusText}`);
             });
         }
         return response.json();
     })
     .then(data => {
-        // Processar a resposta e mostrar isócrona no mapa
+        // First check if the response indicates an API error
+        if (data.success === false) {
+            // This is an error response from our PHP proxy
+            const errorMessage = data.message || 'Unknown API error';
+            const statusCode = data.status || '';
+            throw new Error(`API Error (${statusCode}): ${errorMessage}`);
+        }
+        
+        // Log the full response for debugging
+        console.log('Received API response:', data);
+        
+        // Validate the GeoJSON structure more thoroughly
+        if (!data || typeof data !== 'object') {
+            throw new Error('Empty or invalid response from API');
+        }
+        
+        if (!data.type || data.type !== 'FeatureCollection') {
+            throw new Error(`Invalid GeoJSON type: ${data.type || 'undefined'}`);
+        }
+        
+        if (!data.features || !Array.isArray(data.features) || data.features.length === 0) {
+            throw new Error('Missing or empty features array in GeoJSON');
+        }
+        
+        const feature = data.features[0];
+        if (!feature.geometry || !feature.geometry.coordinates) {
+            throw new Error('Missing geometry or coordinates in GeoJSON feature');
+        }
+        
+        if (!feature.geometry.type || feature.geometry.type !== 'Polygon') {
+            throw new Error(`Invalid geometry type: ${feature.geometry.type || 'undefined'}`);
+        }
+        
+        console.log('Validated GeoJSON response successfully');
+        
+        // Process response and display isochrone
+        currentIsochroneData = data;
         displayIsochrone(data, latlng);
         
-        // Buscar POIs dentro da área
+        // Now fetch POIs within the isochrone area
         fetchPOIsWithinIsochrone(latlng, data);
     })
     .catch(error => {
-        console.error('Erro ao gerar isócrona:', error);
+        console.error('Error generating isochrone:', error);
+        console.error('Error details:', error.message);
         
-        // Em caso de erro, usar o fallback com Turf.js
+        // Use fallback circle buffer if API fails
         useCircleBufferFallback(latlng);
         
-        // Esconder indicador de carregamento
+        // Hide loading indicator
         hideLoading();
         
-        // Mostrar erro ao usuário
-        alert('Não foi possível gerar a isócrona precisa. Usando método alternativo.');
+        // Notify user with more details
+        alert('Falha ao gerar isócrona precisa: ' + error.message + '\nUsando método alternativo baseado em distância.');
     });
 }
 
-// Exibir isócrona no mapa
+// Display the isochrone on the map
 function displayIsochrone(data, latlng) {
-    // Criar camada GeoJSON a partir da resposta da API
-    isochroneLayer = L.geoJSON(data, {
-        style: function() {
-            return {
-                fillColor: getIsochroneColor(),
-                weight: 2,
-                opacity: 1,
-                color: getIsochroneColor(),
-                dashArray: getIsochroneDashArray(),
-                fillOpacity: 0.3
-            };
+    try {
+        console.log('Displaying isochrone with data:', data);
+        
+        // Create GeoJSON layer from API response
+        isochroneLayer = L.geoJSON(data, {
+            style: function() {
+                return {
+                    fillColor: getIsochroneColor(),
+                    weight: 2,
+                    opacity: 0.8,
+                    color: getIsochroneColor(),
+                    dashArray: getIsochroneDashArray(),
+                    fillOpacity: 0.3
+                };
+            }
+        }).addTo(map);
+        
+        // Fit map view to isochrone bounds
+        map.fitBounds(isochroneLayer.getBounds());
+        
+        // Calculate radius for statistics
+        let radiusInMeters;
+        
+        // Try to get area from isochrone properties
+        if (data.features && 
+            data.features[0] && 
+            data.features[0].properties && 
+            data.features[0].properties.area) {
+            // Convert km² to m² to get an equivalent radius
+            const areaInKm2 = data.features[0].properties.area;
+            radiusInMeters = Math.sqrt(areaInKm2 * 1000000 / Math.PI);
+        } else {
+            // Fallback: use speed-based estimate
+            const speedKmPerHour = transportSpeeds[selectedTransportMode];
+            const distanceInKm = (speedKmPerHour * selectedMaxDistance) / 60;
+            radiusInMeters = distanceInKm * 1000;
         }
-    }).addTo(map);
-    
-    // Ajustar o mapa à isócrona
-    map.fitBounds(isochroneLayer.getBounds());
-    
-    // Extrair área da isócrona se disponível
-    let radiusInMeters;
-    if (data.features && data.features[0] && data.features[0].properties && data.features[0].properties.area) {
-        // Converter km² para m² para manter consistência com o resto do código
-        const areaInKm2 = data.features[0].properties.area;
-        radiusInMeters = Math.sqrt(areaInKm2 * 1000000 / Math.PI);
-    } else {
-        // Fallback: usar estimativa baseada na velocidade
-        const speedKmPerHour = transportSpeeds[selectedTransportMode];
-        const distanceInKm = (speedKmPerHour * selectedMaxDistance) / 60;
-        radiusInMeters = distanceInKm * 1000;
+        
+        // Update statistics panel
+        updateAreaStats(latlng, radiusInMeters, JSON.stringify(data));
+        
+        // Show statistics panel
+        showStatisticsPanel();
+        
+        // Hide loading indicator
+        hideLoading();
+    } catch (error) {
+        console.error('Error displaying isochrone:', error);
+        
+        // Use fallback circle buffer if display fails
+        useCircleBufferFallback(latlng);
+        
+        // Hide loading indicator
+        hideLoading();
+        
+        // Notify user
+        alert('Erro ao exibir a isócrona. Usando método alternativo com base na distância.');
     }
-    
-    // Atualizar painel de estatísticas
-    updateAreaStats(latlng, radiusInMeters, JSON.stringify(data));
-    
-    // Mostrar painel de estatísticas
-    showStatisticsPanel();
-    
-    // Esconder indicador de carregamento
-    hideLoading();
 }
 
 // Buscar POIs dentro da isócrona

@@ -1,10 +1,12 @@
 <?php
 /**
- * Fetch POIs endpoint - Gets points of interest around a specific location
- * Ensures that POIs are strictly contained within the isochrone or buffer area
+ * Fetch Points of Interest (POIs) Endpoint
+ * Gets OSM points of interest that are strictly contained within the isochrone polygon
+ * 
+ * @version 2.0
  */
 
-// Prevent any output before JSON
+// Prevent any output before JSON response
 error_reporting(0);
 ini_set('display_errors', 0);
 
@@ -14,11 +16,20 @@ require_once '../config/db_config.php';
 // Set headers for JSON response
 header('Content-Type: application/json');
 
-// Check if all required parameters are provided
-if (!isset($_POST['type']) || !isset($_POST['lat']) || !isset($_POST['lng']) || !isset($_POST['radius'])) {
+// Check request method
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         'success' => false,
-        'message' => 'Missing required parameters'
+        'message' => 'Only POST method is allowed'
+    ]);
+    exit;
+}
+
+// Check if all required parameters are provided
+if (empty($_POST['type']) || !isset($_POST['lat']) || !isset($_POST['lng'])) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Missing required parameters: type, lat, lng'
     ]);
     exit;
 }
@@ -27,14 +38,27 @@ if (!isset($_POST['type']) || !isset($_POST['lat']) || !isset($_POST['lng']) || 
 $type = $_POST['type'];
 $lat = floatval($_POST['lat']);
 $lng = floatval($_POST['lng']);
-$radius = floatval($_POST['radius']); // Radius in meters
+
+// Get isochrone JSON (required for precise POI filtering)
 $isochroneJson = isset($_POST['isochrone']) ? $_POST['isochrone'] : null;
 
+// If no isochrone is provided but radius is, get radius for fallback buffer
+$radius = isset($_POST['radius']) ? floatval($_POST['radius']) : 0;
+
 // Validate parameters
-if (!is_numeric($lat) || !is_numeric($lng) || !is_numeric($radius) || $radius <= 0) {
+if (!is_numeric($lat) || !is_numeric($lng) || $lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
     echo json_encode([
         'success' => false,
-        'message' => 'Invalid parameters'
+        'message' => 'Invalid latitude or longitude'
+    ]);
+    exit;
+}
+
+// If no isochrone and no radius, cannot proceed
+if (empty($isochroneJson) && $radius <= 0) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Either isochrone GeoJSON or radius is required'
     ]);
     exit;
 }
@@ -42,164 +66,154 @@ if (!is_numeric($lat) || !is_numeric($lng) || !is_numeric($radius) || $radius <=
 // Get database connection
 $conn = getDbConnection();
 
-// POI type definitions - must match with the ones in map.js
+// Define POI types with their PostgreSQL query conditions
 $poiTypes = [
-    // Saúde
+    // === Health ===
     'hospitals' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'hospital'"
+        'condition' => "amenity = 'hospital'",
+        'icon' => 'hospital',
+        'category' => 'health'
     ],
     'health_centers' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'clinic' OR amenity = 'doctors'"
+        'condition' => "amenity IN ('clinic', 'doctors')",
+        'icon' => 'first-aid-kit',
+        'category' => 'health'
     ],
     'pharmacies' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'pharmacy'"
+        'condition' => "amenity = 'pharmacy'",
+        'icon' => 'prescription-bottle-alt',
+        'category' => 'health'
     ],
     'dentists' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'dentist'"
+        'condition' => "amenity = 'dentist'",
+        'icon' => 'tooth',
+        'category' => 'health'
     ],
     
-    // Educação
+    // === Education ===
     'schools' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'school'"
+        'condition' => "amenity = 'school'",
+        'icon' => 'school',
+        'category' => 'education'
     ],
     'universities' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity IN ('university', 'college')"
+        'condition' => "amenity IN ('university', 'college')",
+        'icon' => 'graduation-cap',
+        'category' => 'education'
     ],
     'kindergartens' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'kindergarten'"
+        'condition' => "amenity = 'kindergarten'",
+        'icon' => 'baby',
+        'category' => 'education'
     ],
     'libraries' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'library'"
+        'condition' => "amenity = 'library'",
+        'icon' => 'book',
+        'category' => 'education'
     ],
     
-    // Comércio e serviços
+    // === Commercial & Services ===
     'supermarkets' => [
-        'table' => 'planet_osm_point',
-        'condition' => "shop IN ('supermarket', 'grocery', 'convenience')"
+        'condition' => "shop IN ('supermarket', 'grocery', 'convenience')",
+        'icon' => 'shopping-basket',
+        'category' => 'commercial'
     ],
     'malls' => [
-        'table' => 'planet_osm_point',
-        'condition' => "shop = 'mall' OR amenity = 'marketplace'"
+        'condition' => "shop = 'mall' OR amenity = 'marketplace'",
+        'icon' => 'shopping-bag',
+        'category' => 'commercial'
     ],
     'restaurants' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity IN ('restaurant', 'fast_food', 'cafe', 'bar', 'pub')"
+        'condition' => "amenity IN ('restaurant', 'fast_food', 'cafe', 'bar', 'pub')",
+        'icon' => 'utensils',
+        'category' => 'commercial'
     ],
     'atms' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'atm' OR amenity = 'bank'"
-    ],
-    'banks' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'bank'"
+        'condition' => "amenity IN ('atm', 'bank')",
+        'icon' => 'money-bill-wave',
+        'category' => 'commercial'
     ],
     
-    // Segurança e emergência
+    // === Safety & Emergency ===
     'police' => [
-        'table' => 'planet_osm_point', 
-        'condition' => "amenity = 'police'"
+        'condition' => "amenity = 'police'",
+        'icon' => 'shield-alt',
+        'category' => 'safety'
     ],
     'fire_stations' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'fire_station'"
+        'condition' => "amenity = 'fire_station'",
+        'icon' => 'fire-extinguisher',
+        'category' => 'safety'
     ],
     'civil_protection' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'ranger_station' OR (office = 'government' AND name ILIKE '%proteção civil%')"
+        'condition' => "(amenity = 'ranger_station' OR (office = 'government' AND name ILIKE '%proteção civil%'))",
+        'icon' => 'hard-hat',
+        'category' => 'safety'
     ],
     
-    // Transporte
-    'bus_stops' => [
-        'table' => 'planet_osm_point',
-        'condition' => "highway = 'bus_stop'"
-    ],
-    'subway_stations' => [
-        'table' => 'planet_osm_point',
-        'condition' => "railway = 'station' OR railway = 'subway_entrance'"
-    ],
-    'train_stations' => [
-        'table' => 'planet_osm_point',
-        'condition' => "railway = 'station'"
-    ],
-    'bike_parkings' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'bicycle_parking'"
-    ],
-    
-    // Administração 
-    'police_stations' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'police'"
-    ],
+    // === Public Administration ===
     'parish_councils' => [
-        'table' => 'planet_osm_point',
-        'condition' => "office = 'government' AND name ILIKE '%junta de freguesia%'"
-    ],
-    'parishes' => [
-        'table' => 'planet_osm_point',
-        'condition' => "office = 'government' AND name ILIKE '%junta de freguesia%'"
+        'condition' => "office = 'government' AND name ILIKE '%junta de freguesia%'",
+        'icon' => 'city',
+        'category' => 'administration'
     ],
     'city_halls' => [
-        'table' => 'planet_osm_point',
-        'condition' => "office = 'government' AND (name ILIKE '%câmara municipal%' OR name ILIKE '%camara municipal%')"
+        'condition' => "office = 'government' AND (name ILIKE '%câmara municipal%' OR name ILIKE '%camara municipal%')",
+        'icon' => 'landmark',
+        'category' => 'administration'
     ],
     'post_offices' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'post_office'"
+        'condition' => "amenity = 'post_office'",
+        'icon' => 'envelope',
+        'category' => 'administration'
     ],
     
-    // Cultura e lazer
+    // === Culture & Leisure ===
     'museums' => [
-        'table' => 'planet_osm_point',
-        'condition' => "tourism = 'museum' OR amenity = 'museum'"
+        'condition' => "tourism = 'museum' OR amenity = 'museum'",
+        'icon' => 'museum',
+        'category' => 'culture'
     ],
     'theaters' => [
-        'table' => 'planet_osm_point',
-        'condition' => "amenity = 'theatre'"
+        'condition' => "amenity = 'theatre'",
+        'icon' => 'theater-masks',
+        'category' => 'culture'
     ],
     'sports' => [
-        'table' => 'planet_osm_point',
-        'condition' => "leisure IN ('sports_centre', 'stadium', 'pitch', 'swimming_pool', 'fitness_centre', 'fitness_station')"
+        'condition' => "leisure IN ('sports_centre', 'stadium', 'pitch', 'swimming_pool', 'fitness_centre', 'fitness_station')",
+        'icon' => 'dumbbell',
+        'category' => 'culture'
     ],
     'parks' => [
-        'table' => 'planet_osm_point',
-        'condition' => "leisure IN ('park', 'garden', 'playground')"
+        'condition' => "leisure IN ('park', 'garden', 'playground')",
+        'icon' => 'tree',
+        'category' => 'culture'
     ]
 ];
 
-// Check if the requested type exists
+// Check if the requested POI type exists
 if (!array_key_exists($type, $poiTypes)) {
     echo json_encode([
         'success' => false,
-        'message' => 'Invalid POI type'
+        'message' => 'Invalid POI type: ' . $type
     ]);
     exit;
 }
 
-// Get the POI definition
-$poiDef = $poiTypes[$type];
-
-// Variables to store geometry references
-$geometry = null;
-$spatialCondition = "";
+// Debug information for monitoring query execution
 $debug_info = [];
 
-// If we have an isochrone polygon, use it for precise containment
+// Prepare spatial condition based on isochrone or radius
+$spatialCondition = "";
+
+// If we have isochrone data, use that (preferred method)
 if ($isochroneJson) {
     try {
-        // Decode the GeoJSON
+        // Parse the GeoJSON
         $isochrone = json_decode($isochroneJson, true);
         $debug_info['isochrone_parsed'] = true;
         
-        // Extract the first feature's geometry (the isochrone polygon)
+        // Extract the geometry from the first feature
         if (isset($isochrone['features']) && 
             isset($isochrone['features'][0]) && 
             isset($isochrone['features'][0]['geometry'])) {
@@ -207,8 +221,8 @@ if ($isochroneJson) {
             $geometry = json_encode($isochrone['features'][0]['geometry']);
             $debug_info['geometry_extracted'] = true;
             
-            // Create a PostgreSQL geometry from the GeoJSON polygon
-            // Use ST_Contains to filter POIs that are strictly inside the polygon
+            // Create a PostgreSQL spatial condition that uses ST_Contains to only
+            // include POIs that are strictly inside the isochrone polygon
             $spatialCondition = "ST_Contains(
                 ST_Transform(
                     ST_SetSRID(
@@ -221,34 +235,50 @@ if ($isochroneJson) {
             )";
             $debug_info['using_isochrone'] = true;
         } else {
-            // Fallback if the GeoJSON structure is invalid
-            $debug_info['invalid_geometry'] = true;
+            throw new Exception("Invalid isochrone GeoJSON structure");
+        }
+    } catch (Exception $e) {
+        $debug_info['isochrone_error'] = $e->getMessage();
+        
+        // If there's an error with the isochrone, fall back to radius buffer
+        if ($radius > 0) {
             $spatialCondition = "ST_DWithin(
                 way, 
                 ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857), 
                 $radius
             )";
+            $debug_info['using_fallback_buffer'] = true;
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error processing isochrone data and no fallback radius provided',
+                'debug' => $debug_info
+            ]);
+            exit;
         }
-    } catch (Exception $e) {
-        // If there's any error processing the GeoJSON, fall back to radius
-        $debug_info['exception'] = $e->getMessage();
-        $spatialCondition = "ST_DWithin(
-            way, 
-            ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857), 
-            $radius
-        )";
     }
-} else {
-    // If no isochrone is provided, use a simple buffer around the point
-    $debug_info['using_buffer'] = true;
+} else if ($radius > 0) {
+    // If no isochrone is provided but we have radius, use it as a fallback
     $spatialCondition = "ST_DWithin(
         way, 
         ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857), 
         $radius
     )";
+    $debug_info['using_buffer'] = true;
+} else {
+    // This shouldn't happen due to earlier validation, but just in case
+    echo json_encode([
+        'success' => false,
+        'message' => 'No spatial filtering method available'
+    ]);
+    exit;
 }
 
+// Get the query condition for this POI type
+$poiCondition = $poiTypes[$type]['condition'];
+
 // Build and execute the spatial query
+// Modified query to remove the problematic addr: columns
 $query = "
     SELECT 
         osm_id,
@@ -258,8 +288,8 @@ $query = "
         leisure,
         tourism,
         office,
-        \"addr:street\" AS street,
-        \"addr:housenumber\" AS housenumber,
+        highway,
+        railway,
         ST_X(ST_Transform(way, 4326)) AS longitude,
         ST_Y(ST_Transform(way, 4326)) AS latitude,
         CASE 
@@ -268,14 +298,16 @@ $query = "
             WHEN leisure IS NOT NULL THEN leisure
             WHEN tourism IS NOT NULL THEN tourism
             WHEN office IS NOT NULL THEN office
+            WHEN highway IS NOT NULL THEN highway
+            WHEN railway IS NOT NULL THEN railway
             ELSE 'unknown'
-        END AS type
+        END AS type_value
     FROM 
-        " . $poiDef['table'] . " 
+        planet_osm_point 
     WHERE 
-        " . $poiDef['condition'] . " 
-        AND " . $spatialCondition . "
-    LIMIT 500";
+        ($poiCondition)
+        AND $spatialCondition
+    LIMIT 1000";
 
 // Execute the query
 $result = pg_query($conn, $query);
@@ -284,8 +316,7 @@ if (!$result) {
     echo json_encode([
         'success' => false,
         'message' => 'Database query error: ' . pg_last_error($conn),
-        'debug' => $debug_info,
-        'query' => $query
+        'debug' => $debug_info
     ]);
     exit;
 }
@@ -293,32 +324,27 @@ if (!$result) {
 // Process results
 $pois = [];
 while ($row = pg_fetch_assoc($result)) {
-    // Create a properties array for additional POI data
+    // Create a properties object for additional POI data
     $properties = [];
+    
+    // Include all non-spatial fields in properties
     foreach ($row as $key => $value) {
-        if (!in_array($key, ['osm_id', 'latitude', 'longitude', 'name', 'type']) && !is_null($value)) {
+        if (!in_array($key, ['osm_id', 'latitude', 'longitude', 'name', 'type_value']) 
+            && !is_null($value) && $value !== '') {
             $properties[$key] = $value;
         }
     }
     
-    // Create address from street and housenumber if available
-    $address = '';
-    if (!empty($row['street'])) {
-        $address = $row['street'];
-        if (!empty($row['housenumber'])) {
-            $address .= ' ' . $row['housenumber'];
-        }
-    }
-    
-    // Add POI to results
+    // Add POI to results array (without address since we don't have the fields)
     $pois[] = [
         'osm_id' => $row['osm_id'],
-        'name' => $row['name'] ? $row['name'] : ucfirst($row['type']),
-        'type' => ucfirst($row['type']),
+        'name' => $row['name'] ? $row['name'] : ucfirst($row['type_value']),
+        'type' => ucfirst($row['type_value']),
         'latitude' => (float)$row['latitude'],
         'longitude' => (float)$row['longitude'],
-        'address' => $address,
-        'properties' => $properties
+        'address' => '', // Empty address as we don't have the columns
+        'properties' => $properties,
+        'category' => $poiTypes[$type]['category']
     ];
 }
 
