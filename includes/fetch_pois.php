@@ -2,8 +2,9 @@
 /**
  * Fetch Points of Interest (POIs) Endpoint
  * Gets OSM points of interest that are strictly contained within the isochrone polygon
+ * Now queries both point and polygon OSM data
  * 
- * @version 2.0
+ * @version 2.1
  */
 
 // Prevent any output before JSON response
@@ -97,13 +98,13 @@ $poiTypes = [
         'category' => 'education'
     ],
     'universities' => [
-        'condition' => "amenity IN ('university', 'college')",
+        'condition' => "amenity = 'university'",
         'icon' => 'graduation-cap',
         'category' => 'education'
     ],
     'kindergartens' => [
         'condition' => "amenity = 'kindergarten'",
-        'icon' => 'baby',
+        'icon' => 'child',
         'category' => 'education'
     ],
     'libraries' => [
@@ -112,53 +113,53 @@ $poiTypes = [
         'category' => 'education'
     ],
     
-    // === Commercial & Services ===
-    'supermarkets' => [
-        'condition' => "shop IN ('supermarket', 'grocery', 'convenience')",
-        'icon' => 'shopping-basket',
-        'category' => 'commercial'
+    // === Transportation ===
+    'bus_stops' => [
+        'condition' => "highway = 'bus_stop' OR public_transport = 'stop_position' OR public_transport = 'platform'",
+        'icon' => 'bus',
+        'category' => 'transportation'
     ],
-    'malls' => [
-        'condition' => "shop = 'mall' OR amenity = 'marketplace'",
-        'icon' => 'shopping-bag',
-        'category' => 'commercial'
+    'train_stations' => [
+        'condition' => "railway = 'station' OR railway = 'halt' OR railway = 'tram_stop'",
+        'icon' => 'train',
+        'category' => 'transportation'
     ],
-    'restaurants' => [
-        'condition' => "amenity IN ('restaurant', 'fast_food', 'cafe', 'bar', 'pub')",
-        'icon' => 'utensils',
-        'category' => 'commercial'
+    'subway_stations' => [
+        'condition' => "railway = 'subway_entrance' OR railway = 'subway' OR station = 'subway'",
+        'icon' => 'subway',
+        'category' => 'transportation'
     ],
-    'atms' => [
-        'condition' => "amenity IN ('atm', 'bank')",
-        'icon' => 'money-bill-wave',
-        'category' => 'commercial'
+    'parking' => [
+        'condition' => "amenity = 'parking'",
+        'icon' => 'parking',
+        'category' => 'transportation'
     ],
     
-    // === Safety & Emergency ===
-    'police' => [
+    // === Safety ===
+    'police_stations' => [
         'condition' => "amenity = 'police'",
         'icon' => 'shield-alt',
         'category' => 'safety'
     ],
     'fire_stations' => [
         'condition' => "amenity = 'fire_station'",
-        'icon' => 'fire-extinguisher',
+        'icon' => 'fire',
         'category' => 'safety'
     ],
     'civil_protection' => [
-        'condition' => "(amenity = 'ranger_station' OR (office = 'government' AND name ILIKE '%proteção civil%'))",
+        'condition' => "office = 'government' OR emergency = 'ambulance' OR emergency = 'disaster_response'",
         'icon' => 'hard-hat',
         'category' => 'safety'
     ],
     
     // === Public Administration ===
     'parish_councils' => [
-        'condition' => "office = 'government' AND name ILIKE '%junta de freguesia%'",
+        'condition' => "office = 'government' AND admin_level = '9'",
         'icon' => 'city',
         'category' => 'administration'
     ],
     'city_halls' => [
-        'condition' => "office = 'government' AND (name ILIKE '%câmara municipal%' OR name ILIKE '%camara municipal%')",
+        'condition' => "office = 'government' AND admin_level = '8'",
         'icon' => 'landmark',
         'category' => 'administration'
     ],
@@ -170,7 +171,7 @@ $poiTypes = [
     
     // === Culture & Leisure ===
     'museums' => [
-        'condition' => "tourism = 'museum' OR amenity = 'museum'",
+        'condition' => "tourism = 'museum' OR amenity = 'arts_centre'",
         'icon' => 'museum',
         'category' => 'culture'
     ],
@@ -277,9 +278,8 @@ if ($isochroneJson) {
 // Get the query condition for this POI type
 $poiCondition = $poiTypes[$type]['condition'];
 
-// Build and execute the spatial query
-// Modified query to remove the problematic addr: columns
-$query = "
+// Build and execute the spatial query for POINTS
+$pointQuery = "
     SELECT 
         osm_id,
         name,
@@ -301,16 +301,57 @@ $query = "
             WHEN highway IS NOT NULL THEN highway
             WHEN railway IS NOT NULL THEN railway
             ELSE 'unknown'
-        END AS type_value
+        END AS type_value,
+        'point' AS geometry_type
     FROM 
         planet_osm_point 
     WHERE 
         ($poiCondition)
         AND $spatialCondition
-    LIMIT 1000";
+";
 
-// Execute the query
-$result = pg_query($conn, $query);
+// Additional query for POLYGONS - convert to points using centroid
+$polygonQuery = "
+    SELECT 
+        osm_id,
+        name,
+        amenity,
+        shop,
+        leisure,
+        tourism,
+        office,
+        highway,
+        railway,
+        ST_X(ST_Transform(ST_Centroid(way), 4326)) AS longitude,
+        ST_Y(ST_Transform(ST_Centroid(way), 4326)) AS latitude,
+        CASE 
+            WHEN amenity IS NOT NULL THEN amenity
+            WHEN shop IS NOT NULL THEN shop
+            WHEN leisure IS NOT NULL THEN leisure
+            WHEN tourism IS NOT NULL THEN tourism
+            WHEN office IS NOT NULL THEN office
+            WHEN highway IS NOT NULL THEN highway
+            WHEN railway IS NOT NULL THEN railway
+            ELSE 'unknown'
+        END AS type_value,
+        'polygon' AS geometry_type
+    FROM 
+        planet_osm_polygon 
+    WHERE 
+        ($poiCondition)
+        AND $spatialCondition
+";
+
+// Combine the queries with UNION
+$combinedQuery = "
+    ($pointQuery)
+    UNION
+    ($polygonQuery)
+    LIMIT 1000
+";
+
+// Execute the combined query
+$result = pg_query($conn, $combinedQuery);
 
 if (!$result) {
     echo json_encode([
@@ -329,13 +370,16 @@ while ($row = pg_fetch_assoc($result)) {
     
     // Include all non-spatial fields in properties
     foreach ($row as $key => $value) {
-        if (!in_array($key, ['osm_id', 'latitude', 'longitude', 'name', 'type_value']) 
+        if (!in_array($key, ['osm_id', 'latitude', 'longitude', 'name', 'type_value', 'geometry_type']) 
             && !is_null($value) && $value !== '') {
             $properties[$key] = $value;
         }
     }
     
-    // Add POI to results array (without address since we don't have the fields)
+    // Add geometry_type to properties
+    $properties['geometry_type'] = $row['geometry_type'];
+    
+    // Add POI to results array
     $pois[] = [
         'osm_id' => $row['osm_id'],
         'name' => $row['name'] ? $row['name'] : ucfirst($row['type_value']),

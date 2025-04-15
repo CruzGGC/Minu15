@@ -1,9 +1,10 @@
 <?php
 /**
  * Fetch Area Statistics Endpoint
- * Calculates statistics within an isochrone or buffer area
+ * Calculates statistics for an area defined by an isochrone polygon or radius
+ * Now includes both point and polygon POIs for accurate counting
  * 
- * @version 2.0
+ * @version 2.1
  */
 
 // Prevent any output before JSON response
@@ -38,7 +39,7 @@ if (!isset($_POST['lat']) || !isset($_POST['lng'])) {
 $lat = floatval($_POST['lat']);
 $lng = floatval($_POST['lng']);
 
-// Get isochrone JSON (preferred method for accurate statistics)
+// Get isochrone JSON (preferred for precise area calculation)
 $isochroneJson = isset($_POST['isochrone']) ? $_POST['isochrone'] : null;
 
 // If no isochrone is provided but radius is, use radius for fallback calculation
@@ -177,28 +178,28 @@ $poiCategories = [
     
     // === Education ===
     'schools' => "amenity = 'school'",
-    'universities' => "amenity IN ('university', 'college')",
+    'universities' => "amenity = 'university'",
     'kindergartens' => "amenity = 'kindergarten'",
     'libraries' => "amenity = 'library'",
     
-    // === Commercial & Services ===
-    'supermarkets' => "shop IN ('supermarket', 'grocery', 'convenience')",
-    'malls' => "shop = 'mall' OR amenity = 'marketplace'",
-    'restaurants' => "amenity IN ('restaurant', 'fast_food', 'cafe', 'bar', 'pub')",
-    'atms' => "amenity IN ('atm', 'bank')",
+    // === Transportation ===
+    'bus_stops' => "highway = 'bus_stop' OR public_transport = 'stop_position' OR public_transport = 'platform'",
+    'train_stations' => "railway = 'station' OR railway = 'halt' OR railway = 'tram_stop'",
+    'subway_stations' => "railway = 'subway_entrance' OR railway = 'subway' OR station = 'subway'",
+    'parking' => "amenity = 'parking'",
     
-    // === Safety & Emergency ===
-    'police' => "amenity = 'police'",
+    // === Safety ===
+    'police_stations' => "amenity = 'police'",
     'fire_stations' => "amenity = 'fire_station'",
-    'civil_protection' => "(amenity = 'ranger_station' OR (office = 'government' AND name ILIKE '%proteção civil%'))",
+    'civil_protection' => "office = 'government' OR emergency = 'ambulance' OR emergency = 'disaster_response'",
     
     // === Public Administration ===
-    'parish_councils' => "office = 'government' AND name ILIKE '%junta de freguesia%'",
-    'city_halls' => "office = 'government' AND (name ILIKE '%câmara municipal%' OR name ILIKE '%camara municipal%')",
+    'parish_councils' => "office = 'government' AND admin_level = '9'",
+    'city_halls' => "office = 'government' AND admin_level = '8'",
     'post_offices' => "amenity = 'post_office'",
     
     // === Culture & Leisure ===
-    'museums' => "tourism = 'museum' OR amenity = 'museum'",
+    'museums' => "tourism = 'museum' OR amenity = 'arts_centre'",
     'theaters' => "amenity = 'theatre'",
     'sports' => "leisure IN ('sports_centre', 'stadium', 'pitch', 'swimming_pool', 'fitness_centre', 'fitness_station')",
     'parks' => "leisure IN ('park', 'garden', 'playground')"
@@ -225,53 +226,50 @@ $statistics = [
     'area_km2' => (float) $areaKm2
 ];
 
-// Count each POI category within the defined area
+// Count each POI category within the defined area - combine points and polygons
 foreach ($poiCategories as $category => $condition) {
+    // Query that counts both points and polygons
     $countQuery = "
         SELECT 
-            COUNT(*) as count 
-        FROM 
-            planet_osm_point 
-        WHERE 
-            ($condition) 
-            AND $spatialCondition
+            (
+                SELECT COUNT(*) FROM planet_osm_point 
+                WHERE ($condition) AND $spatialCondition
+            ) +
+            (
+                SELECT COUNT(*) FROM planet_osm_polygon 
+                WHERE ($condition) AND $spatialCondition
+            ) as count
     ";
     
     $countResult = pg_query($conn, $countQuery);
     
     if (!$countResult) {
-        $debug_info["error_counting_$category"] = pg_last_error($conn);
         $statistics[$category] = 0;
-        continue;
+        $debug_info['query_error_' . $category] = pg_last_error($conn);
+    } else {
+        $countRow = pg_fetch_assoc($countResult);
+        $statistics[$category] = (int) $countRow['count'];
     }
-    
-    $countData = pg_fetch_assoc($countResult);
-    $statistics[$category] = (int) $countData['count'];
 }
 
-// Calculate additional statistics
-
-// Population estimate based on residential buildings
-$populationQuery = "
+// Count buildings for population estimation
+$buildingQuery = "
     SELECT 
-        COUNT(*) as building_count 
+        COUNT(*) as count 
     FROM 
         planet_osm_polygon 
     WHERE 
-        building IN ('residential', 'apartments', 'house', 'detached') 
+        building IS NOT NULL 
+        AND building != 'no' 
         AND $spatialCondition
 ";
 
-$populationResult = pg_query($conn, $populationQuery);
+$buildingResult = pg_query($conn, $buildingQuery);
+$buildingCount = 0;
 
-if (!$populationResult) {
-    $statistics['population_estimate'] = 'Not available';
-    $debug_info['population_error'] = pg_last_error($conn);
-} else {
-    $populationData = pg_fetch_assoc($populationResult);
-    $buildingCount = (int) $populationData['building_count'];
-    
-    // Use an average of 2.5 people per residential building as an estimate
+if ($buildingResult && $buildingRow = pg_fetch_assoc($buildingResult)) {
+    $buildingCount = (int) $buildingRow['count'];
+    // Rough estimate of population: ~2.5 people per building
     $statistics['population_estimate'] = round($buildingCount * 2.5);
     $debug_info['building_count'] = $buildingCount;
 }
