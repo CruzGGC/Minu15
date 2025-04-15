@@ -14,6 +14,8 @@ let selectedPoi = null;
 let selectedTransportMode = 'cycling'; // Default mode: cycling
 let selectedMaxDistance = 15; // Default time: 15 minutes
 let currentIsochroneData = null; // Store current isochrone data for POI requests
+let currentTileLayer = null; // Store current tile layer
+let selectedTileProvider = DEFAULT_TILE_PROVIDER; // Default tile provider from config
 
 // Map transport modes to OpenRouteService API profiles
 const orsProfiles = {
@@ -190,11 +192,8 @@ function initMap() {
     // Create a new map centered on Portugal
     map = L.map('map').setView(portugalCenter, 7);
     
-    // Add OpenStreetMap tile layer
-    L.tileLayer(MAP_TILES_URL, {
-        attribution: MAP_TILES_ATTRIBUTION,
-        maxZoom: 19
-    }).addTo(map);
+    // Add the selected tile layer
+    updateMapTiles(selectedTileProvider);
     
     // Initialize empty POI layer groups
     Object.keys(poiTypes).forEach(type => {
@@ -208,6 +207,41 @@ function initMap() {
     
     // Add the POI legend
     addLegend();
+}
+
+// Update map tiles based on selected provider
+function updateMapTiles(provider) {
+    // If there's an existing tile layer, remove it
+    if (currentTileLayer) {
+        map.removeLayer(currentTileLayer);
+    }
+    
+    // Get the provider configuration
+    const tileConfig = MAP_TILE_PROVIDERS[provider] || MAP_TILE_PROVIDERS[DEFAULT_TILE_PROVIDER];
+    
+    // Create and add the new tile layer
+    currentTileLayer = L.tileLayer(tileConfig.url, {
+        attribution: tileConfig.attribution,
+        maxZoom: tileConfig.maxZoom
+    }).addTo(map);
+    
+    // Update the selectedTileProvider variable
+    selectedTileProvider = provider;
+    
+    // Update the map style selector UI if it exists
+    updateMapStyleSelector();
+}
+
+// Update the map style selector buttons to show the active style
+function updateMapStyleSelector() {
+    document.querySelectorAll('.map-style-option').forEach(button => {
+        const provider = button.getAttribute('data-provider');
+        if (provider === selectedTileProvider) {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
+        }
+    });
 }
 
 // Handle map click by placing a marker

@@ -10,6 +10,9 @@ function initControls() {
     // Initialize collapsible panels
     initCollapsiblePanels();
     
+    // Initialize map style selector
+    initMapStyleSelector();
+    
     // Initialize transport mode selector
     initTransportModeSelector();
     
@@ -27,6 +30,21 @@ function initControls() {
     
     // Initialize panel close buttons
     initPanelCloseButtons();
+}
+
+// Initialize map style selector
+function initMapStyleSelector() {
+    const mapStyleOptions = document.querySelectorAll('.map-style-option');
+    
+    mapStyleOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Get the provider from the data-provider attribute
+            const provider = this.getAttribute('data-provider');
+            
+            // Update the map tiles
+            updateMapTiles(provider);
+        });
+    });
 }
 
 // Initialize collapsible panels
@@ -69,6 +87,16 @@ function initCollapsiblePanels() {
         const arrow = document.querySelector('#poi-header .dropdown-arrow');
         if (arrow) {
             arrow.classList.add('up');
+        }
+    }
+    
+    // Start with map style panel collapsed
+    const mapStyleContent = document.getElementById('map-style-content');
+    if (mapStyleContent) {
+        // Initially collapsed, so no need to add 'expanded' class
+        const arrow = document.querySelector('#map-style-header .dropdown-arrow');
+        if (arrow) {
+            // Keep arrow pointing down (collapsed state)
         }
     }
     

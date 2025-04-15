@@ -177,6 +177,55 @@ body {
     margin-top: 15px;
 }
 
+/* Map Style Selector */
+.map-style-selector {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
+.map-style-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    width: 30%;
+    margin-bottom: 10px;
+}
+
+.map-style-option:hover {
+    background-color: rgba(67, 97, 238, 0.1);
+}
+
+.map-style-icon {
+    width: 40px;
+    height: 40px;
+    background-color: #f0f0f0;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 1.2rem;
+    transition: var(--transition);
+}
+
+.map-style-option.active .map-style-icon {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 8px rgba(67, 97, 238, 0.3);
+}
+
+.map-style-option span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+}
+
 .transport-option {
     display: flex;
     flex-direction: column;

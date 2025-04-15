@@ -20,8 +20,9 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- API Configuration -->
+    <!-- Configuration Files -->
     <script src="config/api_config.js"></script>
+    <script src="config/map_config.js"></script>
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
@@ -157,6 +158,53 @@
         </div>
         
         <button class="calculate-button">Calcular</button>
+        
+        <div class="panel-section">
+            <div class="panel-header" id="map-style-header">
+                <span>Estilo do Mapa</span>
+                <span class="dropdown-arrow">▼</span>
+            </div>
+            <div class="panel-content" id="map-style-content">
+                <div class="map-style-selector">
+                    <div class="map-style-option" data-provider="osm">
+                        <div class="map-style-icon"><i class="fas fa-map"></i></div>
+                        <span>OSM</span>
+                    </div>
+                    <div class="map-style-option active" data-provider="positron">
+                        <div class="map-style-icon"><i class="fas fa-sun"></i></div>
+                        <span>Carto Light</span>
+                    </div>
+                    <div class="map-style-option" data-provider="dark_matter">
+                        <div class="map-style-icon"><i class="fas fa-moon"></i></div>
+                        <span>Carto Dark</span>
+                    </div>
+                    <div class="map-style-option" data-provider="topo">
+                        <div class="map-style-icon"><i class="fas fa-mountain"></i></div>
+                        <span>Topo</span>
+                    </div>
+                    <div class="map-style-option" data-provider="satellite">
+                        <div class="map-style-icon"><i class="fas fa-satellite"></i></div>
+                        <span>Satélite</span>
+                    </div>
+                    <div class="map-style-option" data-provider="esri_gray">
+                        <div class="map-style-icon"><i class="fas fa-pencil-alt"></i></div>
+                        <span>ESRI Cinza</span>
+                    </div>
+                    <div class="map-style-option" data-provider="osm_hot">
+                        <div class="map-style-icon"><i class="fas fa-hands-helping"></i></div>
+                        <span>OSM HOT</span>
+                    </div>
+                    <div class="map-style-option" data-provider="voyager">
+                        <div class="map-style-icon"><i class="fas fa-compass"></i></div>
+                        <span>Voyager</span>
+                    </div>
+                    <div class="map-style-option" data-provider="esri_streets">
+                        <div class="map-style-icon"><i class="fas fa-road"></i></div>
+                        <span>ESRI Ruas</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="statistics-panel">
