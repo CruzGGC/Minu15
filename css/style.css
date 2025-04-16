@@ -520,7 +520,7 @@ body {
     margin-right: 8px;
 }
 
-.direction-button:hover {
+direction-button:hover {
     background-color: var(--secondary-color);
 }
 
@@ -742,4 +742,48 @@ body {
 
 .leaflet-popup-tip-container {
     left: 50%;
+}
+
+/* Logo Header Styles */
+.logo-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.app-logo {
+    height: 140px; /* Significantly increased from 80px to 140px */
+    max-width: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0px 3px 6px rgba(0, 0, 0, 0.15));
+    transition: var(--transition);
+    padding: 5px;
+}
+
+/* POI Icon Styles */
+.poi-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    border: 2px solid white;
+    width: 36px !important;
+    height: 36px !important;
+    transition: all 0.2s ease;
+}
+
+.poi-icon i {
+    font-size: 18px;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.poi-icon:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
 }

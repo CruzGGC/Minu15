@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Explorador de Cidade em 15 Minutos</title>
+    <title>Minu15 - Cidade em 15 Minutos</title>
     
     <!-- Leaflet CSS and JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -31,7 +31,9 @@
     <div id="map"></div>
     
     <div class="overlay-panel">
-        <h2>Explorador de Cidade em 15 Minutos</h2>
+        <div class="logo-header">
+            <img src="images/Minu15.png" alt="Minu15 Logo" class="app-logo">
+        </div>
         
         <div class="panel-section">
             <div class="panel-header" id="poi-header">
@@ -331,7 +333,7 @@
     
     <!-- Footer attribution -->
     <div class="footer-attribution">
-        <p>&copy; <?php echo date('Y'); ?> Explorador de Cidade em 15 Minutos | Dados de <a href="https://www.geofabrik.de/" target="_blank">Geofabrik</a></p>
+        <p>&copy; <?php echo date('Y'); ?> Minu15 | Dados de <a href="https://www.geofabrik.de/" target="_blank">Geofabrik</a></p>
     </div>
     
     <!-- Custom JS -->

@@ -186,11 +186,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Initialize the Leaflet map
 function initMap() {
-    // Center coordinates for Portugal
-    const portugalCenter = [39.5, -8.0];
+    // Center coordinates for Aveiro, Portugal
+    const aveiroCenter = [40.6405, -8.6538];
     
-    // Create a new map centered on Portugal
-    map = L.map('map').setView(portugalCenter, 7);
+    // Create a new map centered on Aveiro
+    map = L.map('map').setView(aveiroCenter, 13);
     
     // Add the selected tile layer
     updateMapTiles(selectedTileProvider);
@@ -611,8 +611,8 @@ function addPOIsToMap(type, pois) {
         const icon = L.divIcon({
             html: `<i class="fas fa-${poiInfo.icon} ${poiInfo.class}"></i>`,
             className: 'poi-icon',
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
+            iconSize: [36, 36],
+            iconAnchor: [18, 18]
         });
         
         // Criar marcador com ícone personalizado
