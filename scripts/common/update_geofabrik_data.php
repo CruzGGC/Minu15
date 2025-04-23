@@ -9,8 +9,8 @@
  */
 
 // Configuration
-$downloadDir = dirname(__DIR__) . '/data/geofabrik/';
-$logFile = dirname(__DIR__) . '/logs/geofabrik_update.log';
+$downloadDir = dirname(dirname(__DIR__)) . '/data/geofabrik/';
+$logFile = dirname(dirname(__DIR__)) . '/logs/geofabrik_update.log';
 $geofabrikUrl = 'https://download.geofabrik.de/europe/portugal-latest.osm.pbf';
 $osm2pgsqlPath = 'C:/Programs/Programs/osm2pgsql-bin/osm2pgsql.exe'; // Updated path to osm2pgsql
 
@@ -22,7 +22,7 @@ if (isset($argv[1]) && $argv[1] === 'download_only') {
 }
 
 // Include database configuration
-require_once dirname(__DIR__) . '/config/db_config.php';
+require_once dirname(dirname(__DIR__)) . '/config/db_config.php';
 
 // Create directories if they don't exist
 if (!file_exists($downloadDir)) {
@@ -77,7 +77,8 @@ if ($success) {
         logMessage("Starting database import using osm2pgsql");
         
         // Create osm2pgsql command
-        $cmd = "\"$osm2pgsqlPath\" -c -d " . DB_NAME . " -U " . DB_USER . " -W -H " . DB_HOST . " -P " . DB_PORT . " -S default.style \"$outputFile\"";
+        $styleFile = dirname(__FILE__) . "/default.style";
+        $cmd = "\"$osm2pgsqlPath\" -c -d " . DB_NAME . " -U " . DB_USER . " -W -H " . DB_HOST . " -P " . DB_PORT . " -S \"$styleFile\" \"$outputFile\"";
         
         // Execute the command
         $descriptorspec = array(

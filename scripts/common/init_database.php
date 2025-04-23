@@ -5,7 +5,7 @@
  */
 
 // Include database configuration
-require_once dirname(__DIR__) . '/config/db_config.php';
+require_once dirname(__DIR__, 2) . '/config/db_config.php';
 
 // Log function
 function log_message($message) {
@@ -56,10 +56,24 @@ try {
     // Create necessary PostgreSQL extensions if they don't exist
     log_message("Setting up PostgreSQL extensions...");
     
-    // PostGIS extension (for spatial functions)
-    $result = pg_query($conn, "CREATE EXTENSION IF NOT EXISTS postgis");
-    if (!$result) {
-        throw new Exception("Failed to create PostGIS extension: " . pg_last_error($conn));
+    // First check if PostGIS is available
+    $check_postgis_query = "SELECT 1 FROM pg_available_extensions WHERE name = 'postgis'";
+    $check_result = pg_query($conn, $check_postgis_query);
+    
+    if (!$check_result || pg_num_rows($check_result) == 0) {
+        log_message("WARNING: PostGIS extension is not available on this PostgreSQL installation.");
+        log_message("Please install PostGIS using one of the following commands:");
+        log_message("For Ubuntu/Debian: sudo apt-get install postgresql-17-postgis-3");
+        log_message("For CentOS/RHEL: sudo dnf install postgis30_16");
+        log_message("For macOS (Homebrew): brew install postgis");
+        log_message("After installation, restart PostgreSQL and run this script again.");
+    } else {
+        // PostGIS extension (for spatial functions)
+        $result = pg_query($conn, "CREATE EXTENSION IF NOT EXISTS postgis");
+        if (!$result) {
+            throw new Exception("Failed to create PostGIS extension: " . pg_last_error($conn));
+        }
+        log_message("PostGIS extension set up successfully.");
     }
     
     // hstore extension (for key-value pairs in OSM data)
@@ -68,7 +82,7 @@ try {
         throw new Exception("Failed to create hstore extension: " . pg_last_error($conn));
     }
     
-    log_message("PostgreSQL extensions set up successfully.");
+    log_message("PostgreSQL extensions setup completed.");
     
     // Check if OSM tables exist (created by osm2pgsql)
     $check_table_query = "SELECT EXISTS (
