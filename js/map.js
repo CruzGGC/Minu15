@@ -11,7 +11,7 @@ let currentMarker;
 let isochroneLayer;
 let poiLayers = {};
 let selectedPoi = null;
-let selectedTransportMode = 'cycling'; // Default mode: cycling
+let selectedTransportMode = 'walking'; // Default mode: walking
 let selectedMaxDistance = 15; // Default time: 15 minutes
 let currentIsochroneData = null; // Store current isochrone data for POI requests
 let currentTileLayer = null; // Store current tile layer

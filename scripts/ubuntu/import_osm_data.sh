@@ -17,8 +17,8 @@ OSM_FILE="$(dirname "$0")/../../data/geofabrik/portugal-latest.osm.pbf"
 STYLE_FILE="$(dirname "$0")/../common/default.style"
 
 # Database connection details
-DB_NAME="projetosig"
-DB_USER="postgres"
+DB_NAME="minu15"
+DB_USER="admin"
 DB_HOST="localhost"
 DB_PORT="5432"
 

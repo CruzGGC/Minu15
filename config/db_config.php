@@ -1,8 +1,8 @@
 <?php
 // Database connection configuration
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'projetosig');
-define('DB_USER', 'postgres'); // Change this to your PostgreSQL username
+define('DB_NAME', 'minu15');
+define('DB_USER', 'admin'); // Change this to your PostgreSQL username
 define('DB_PASS', '1234'); // Change this to your PostgreSQL password
 define('DB_PORT', '5432');     // Default PostgreSQL port
 

@@ -129,13 +129,13 @@
                 <span>Modo de Transporte</span>
             </div>
             <div class="transport-mode">
-                <div class="transport-option" data-mode="walking">
-                    <div class="transport-icon"><i class="fas fa-walking"></i></div>
-                    <span>A Pé</span>
-                </div>
-                <div class="transport-option active" data-mode="cycling">
+                <div class="transport-option" data-mode="cycling">
                     <div class="transport-icon"><i class="fas fa-bicycle"></i></div>
                     <span>Bicicleta</span>
+                </div>
+                <div class="transport-option active" data-mode="walking">
+                    <div class="transport-icon"><i class="fas fa-walking"></i></div>
+                    <span>A Pé</span>
                 </div>
                 <div class="transport-option" data-mode="driving">
                     <div class="transport-icon"><i class="fas fa-car"></i></div>
@@ -226,105 +226,6 @@
         </div>
         <div class="poi-details-content" id="poi-info">
             <p>Clique num ponto de interesse para ver detalhes</p>
-        </div>
-    </div>
-
-    <div class="poi-legend">
-        <div class="poi-legend-title"><strong>Legenda</strong></div>
-        <!-- Saúde -->
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-hospital"></div>
-            <span>Hospitais</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-health"></div>
-            <span>Centros de Saúde</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-pharmacy"></div>
-            <span>Farmácias</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-dentist"></div>
-            <span>Clínicas Dentárias</span>
-        </div>
-        
-        <!-- Educação -->
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-school"></div>
-            <span>Escolas</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-university"></div>
-            <span>Universidades</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-kindergarten"></div>
-            <span>Jardins de Infância</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-library"></div>
-            <span>Bibliotecas</span>
-        </div>
-        
-        <!-- Comércio e Serviços -->
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-supermarket"></div>
-            <span>Supermercados</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-mall"></div>
-            <span>Centros Comerciais</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-restaurant"></div>
-            <span>Restaurantes</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-atm"></div>
-            <span>Caixas Multibanco</span>
-        </div>
-        
-        <!-- Segurança e Emergência -->
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-police"></div>
-            <span>Esquadras da Polícia</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-fire-station"></div>
-            <span>Bombeiros</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-civil-protection"></div>
-            <span>Proteção Civil</span>
-        </div>
-        
-        <!-- Administração Pública -->
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-parish"></div>
-            <span>Juntas de Freguesia</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-city-hall"></div>
-            <span>Câmaras Municipais</span>
-        </div>
-        
-        <!-- Cultura e Lazer -->
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-museum"></div>
-            <span>Museus</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-theater"></div>
-            <span>Teatros</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-sport"></div>
-            <span>Ginásios</span>
-        </div>
-        <div class="poi-legend-item">
-            <div class="poi-legend-color poi-park"></div>
-            <span>Parques</span>
         </div>
     </div>
 
