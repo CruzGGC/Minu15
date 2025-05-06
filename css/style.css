@@ -170,6 +170,39 @@ body {
     color: var(--primary-color);
 }
 
+/* POI Checkbox Icons */
+.category-content label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.category-content input[type="checkbox"] {
+    margin-right: 10px; /* Increased space between checkbox and icon */
+}
+
+.category-content label i {
+    margin-right: 8px;
+    font-size: 16px;
+    transition: transform 0.2s ease;
+}
+
+.category-content input[type="checkbox"]:checked + label i {
+    transform: scale(1.1);
+}
+
+/* Make checkboxes a bit larger and better spaced */
+.category-content > div {
+    padding: 5px 0;
+    display: flex;
+    align-items: center;
+}
+
+/* Fix fa-first-aid-kit which isn't in FontAwesome 6 */
+.fa-first-aid-kit:before {
+    content: "\f479"; /* Using fa-first-aid code */
+}
+
 /* Transport Mode Selector */
 .transport-mode {
     display: flex;
@@ -469,7 +502,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: var(--primary-color);
+    color: var (--primary-color);
     position: sticky; /* Make the title sticky */
     top: 0; /* Stick to the top */
     background-color: rgba(255, 255, 255, 0.97); /* Match panel background */
@@ -497,7 +530,7 @@ body {
 .poi-title {
     font-weight: 600;
     margin-bottom: 5px;
-    color: var(--secondary-color);
+    color: var (--secondary-color);
 }
 
 .direction-button {
@@ -557,67 +590,67 @@ direction-button:hover {
 
 /* POI Icon Colors */
 .poi-hospital { 
-    background-color: var(--danger-color); 
+    color: var(--danger-color); 
 }
 .poi-health { 
-    background-color: #27ae60; 
+    color: #27ae60; 
 }
 .poi-pharmacy { 
-    background-color: #20bf6b; 
+    color: #20bf6b; 
 }
 .poi-dentist { 
-    background-color: #26de81; 
+    color: #26de81; 
 }
 .poi-school { 
-    background-color: var(--warning-color); 
+    color: var(--warning-color); 
 }
 .poi-university { 
-    background-color: #f39c12; 
+    color: #f39c12; 
 }
 .poi-kindergarten { 
-    background-color: #fdcb6e; 
+    color: #fdcb6e; 
 }
 .poi-library { 
-    background-color: #f1c40f; 
+    color: #f1c40f; 
 }
 .poi-supermarket { 
-    background-color: #4cc9f0; 
+    color: #4cc9f0; 
 }
 .poi-mall { 
-    background-color: #48dbfb; 
+    color: #48dbfb; 
 }
 .poi-restaurant { 
-    background-color: #0abde3; 
+    color: #0abde3; 
 }
 .poi-atm { 
-    background-color: #2e86de; 
+    color: #2e86de; 
 }
 .poi-police { 
-    background-color: #0652DD; 
+    color: #0652DD; 
 }
 .poi-fire-station { 
-    background-color: #EA2027; 
+    color: #EA2027; 
 }
 .poi-civil-protection { 
-    background-color: #FFC312; 
+    color: #FFC312; 
 }
 .poi-parish { 
-    background-color: #5758BB; 
+    color: #5758BB; 
 }
 .poi-city-hall { 
-    background-color: #6F1E51; 
+    color: #6F1E51; 
 }
 .poi-museum { 
-    background-color: #9b59b6; 
+    color: #9b59b6; 
 }
 .poi-theater { 
-    background-color: #8e44ad; 
+    color: #8e44ad; 
 }
 .poi-sport { 
-    background-color: #3498db; 
+    color: #3498db; 
 }
 .poi-park { 
-    background-color: var(--success-color); 
+    color: var(--success-color); 
 }
 
 /* Modal Overlay */
@@ -769,21 +802,17 @@ direction-button:hover {
     justify-content: center;
     align-items: center;
     font-size: 16px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    border-radius: 50%;
-    border: 2px solid white;
     width: 36px !important;
     height: 36px !important;
     transition: all 0.2s ease;
+    background: none !important;
 }
 
 .poi-icon i {
-    font-size: 18px;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    font-size: 22px;
+    transition: transform 0.2s ease;
 }
 
-.poi-icon:hover {
-    transform: scale(1.1);
-    box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+.poi-icon:hover i {
+    transform: scale(1.2);
 }

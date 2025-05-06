@@ -746,7 +746,7 @@ function updateAreaStats(latlng, radius, isochroneGeoJSON) {
                         const count = data.stats[type] || 0;
                         categoryHtml += `
                             <div class="stat-item">
-                                <span class="stat-label">${poiTypes[type].name}:</span>
+                                <span class="stat-label"><i class="fas fa-${poiTypes[type].icon} ${poiTypes[type].class}"></i> ${poiTypes[type].name}:</span>
                                 <span class="stat-value">${count}</span>
                             </div>
                         `;
@@ -766,11 +766,11 @@ function updateAreaStats(latlng, radius, isochroneGeoJSON) {
                 <div class="stat-category">
                     <div class="stat-category-title">Informações Gerais</div>
                     <div class="stat-item">
-                        <span class="stat-label">Área Total:</span>
+                        <span class="stat-label"><i class="fas fa-ruler-combined"></i> Área Total:</span>
                         <span class="stat-value">${data.stats.area_km2.toFixed(2)} km²</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">População (est.):</span>
+                        <span class="stat-label"><i class="fas fa-users"></i> População (est.):</span>
                         <span class="stat-value">${data.stats.population_estimate || 'N/D'}</span>
                     </div>
             `;
@@ -779,7 +779,7 @@ function updateAreaStats(latlng, radius, isochroneGeoJSON) {
             if (data.stats.parish && data.stats.parish !== 'Unknown') {
                 html += `
                     <div class="stat-item">
-                        <span class="stat-label">Freguesia:</span>
+                        <span class="stat-label"><i class="fas fa-map-marker-alt"></i> Freguesia:</span>
                         <span class="stat-value">${data.stats.parish}</span>
                     </div>
                 `;

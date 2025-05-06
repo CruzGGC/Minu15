@@ -48,10 +48,10 @@
                         <span class="dropdown-arrow">▼</span>
                     </div>
                     <div class="category-content">
-                        <div><input type="checkbox" id="poi-hospitals" checked> <label for="poi-hospitals">Hospitais</label></div>
-                        <div><input type="checkbox" id="poi-health_centers" checked> <label for="poi-health_centers">Centros de Saúde</label></div>
-                        <div><input type="checkbox" id="poi-pharmacies" checked> <label for="poi-pharmacies">Farmácias</label></div>
-                        <div><input type="checkbox" id="poi-dentists" checked> <label for="poi-dentists">Clínicas Dentárias</label></div>
+                        <div><input type="checkbox" id="poi-hospitals" checked> <label for="poi-hospitals"><i class="fas fa-hospital poi-hospital"></i> Hospitais</label></div>
+                        <div><input type="checkbox" id="poi-health_centers" checked> <label for="poi-health_centers"><i class="fas fa-first-aid-kit poi-health"></i> Centros de Saúde</label></div>
+                        <div><input type="checkbox" id="poi-pharmacies" checked> <label for="poi-pharmacies"><i class="fas fa-prescription-bottle-alt poi-pharmacy"></i> Farmácias</label></div>
+                        <div><input type="checkbox" id="poi-dentists" checked> <label for="poi-dentists"><i class="fas fa-tooth poi-dentist"></i> Clínicas Dentárias</label></div>
                     </div>
                 </div>
                 
@@ -62,10 +62,10 @@
                         <span class="dropdown-arrow">▼</span>
                     </div>
                     <div class="category-content">
-                        <div><input type="checkbox" id="poi-schools" checked> <label for="poi-schools">Escolas Primárias e Secundárias</label></div>
-                        <div><input type="checkbox" id="poi-universities" checked> <label for="poi-universities">Universidades e Institutos</label></div>
-                        <div><input type="checkbox" id="poi-kindergartens" checked> <label for="poi-kindergartens">Jardins de Infância e Creches</label></div>
-                        <div><input type="checkbox" id="poi-libraries" checked> <label for="poi-libraries">Bibliotecas</label></div>
+                        <div><input type="checkbox" id="poi-schools" checked> <label for="poi-schools"><i class="fas fa-school poi-school"></i> Escolas Primárias e Secundárias</label></div>
+                        <div><input type="checkbox" id="poi-universities" checked> <label for="poi-universities"><i class="fas fa-graduation-cap poi-university"></i> Universidades e Institutos</label></div>
+                        <div><input type="checkbox" id="poi-kindergartens" checked> <label for="poi-kindergartens"><i class="fas fa-baby poi-kindergarten"></i> Jardins de Infância e Creches</label></div>
+                        <div><input type="checkbox" id="poi-libraries" checked> <label for="poi-libraries"><i class="fas fa-book poi-library"></i> Bibliotecas</label></div>
                     </div>
                 </div>
                 
@@ -76,10 +76,10 @@
                         <span class="dropdown-arrow">▼</span>
                     </div>
                     <div class="category-content">
-                        <div><input type="checkbox" id="poi-supermarkets" checked> <label for="poi-supermarkets">Supermercados</label></div>
-                        <div><input type="checkbox" id="poi-malls" checked> <label for="poi-malls">Centros Comerciais</label></div>
-                        <div><input type="checkbox" id="poi-restaurants" checked> <label for="poi-restaurants">Restaurantes e Cafés</label></div>
-                        <div><input type="checkbox" id="poi-atms" checked> <label for="poi-atms">Caixas de Multibanco</label></div>
+                        <div><input type="checkbox" id="poi-supermarkets" checked> <label for="poi-supermarkets"><i class="fas fa-shopping-basket poi-supermarket"></i> Supermercados</label></div>
+                        <div><input type="checkbox" id="poi-malls" checked> <label for="poi-malls"><i class="fas fa-shopping-bag poi-mall"></i> Centros Comerciais</label></div>
+                        <div><input type="checkbox" id="poi-restaurants" checked> <label for="poi-restaurants"><i class="fas fa-utensils poi-restaurant"></i> Restaurantes e Cafés</label></div>
+                        <div><input type="checkbox" id="poi-atms" checked> <label for="poi-atms"><i class="fas fa-money-bill-wave poi-atm"></i> Caixas de Multibanco</label></div>
                     </div>
                 </div>
                 
@@ -90,9 +90,9 @@
                         <span class="dropdown-arrow">▼</span>
                     </div>
                     <div class="category-content">
-                        <div><input type="checkbox" id="poi-police" checked> <label for="poi-police">Esquadras da Polícia</label></div>
-                        <div><input type="checkbox" id="poi-fire_stations" checked> <label for="poi-fire_stations">Quartéis de Bombeiros</label></div>
-                        <div><input type="checkbox" id="poi-civil_protection" checked> <label for="poi-civil_protection">Proteção Civil</label></div>
+                        <div><input type="checkbox" id="poi-police" checked> <label for="poi-police"><i class="fas fa-shield-alt poi-police"></i> Esquadras da Polícia</label></div>
+                        <div><input type="checkbox" id="poi-fire_stations" checked> <label for="poi-fire_stations"><i class="fas fa-fire-extinguisher poi-fire-station"></i> Quartéis de Bombeiros</label></div>
+                        <div><input type="checkbox" id="poi-civil_protection" checked> <label for="poi-civil_protection"><i class="fas fa-hard-hat poi-civil-protection"></i> Proteção Civil</label></div>
                     </div>
                 </div>
                 
@@ -103,8 +103,8 @@
                         <span class="dropdown-arrow">▼</span>
                     </div>
                     <div class="category-content">
-                        <div><input type="checkbox" id="poi-parish_councils" checked> <label for="poi-parish_councils">Juntas de Freguesia</label></div>
-                        <div><input type="checkbox" id="poi-city_halls" checked> <label for="poi-city_halls">Câmaras Municipais</label></div>
+                        <div><input type="checkbox" id="poi-parish_councils" checked> <label for="poi-parish_councils"><i class="fas fa-city poi-parish"></i> Juntas de Freguesia</label></div>
+                        <div><input type="checkbox" id="poi-city_halls" checked> <label for="poi-city_halls"><i class="fas fa-landmark poi-city-hall"></i> Câmaras Municipais</label></div>
                     </div>
                 </div>
                 
@@ -115,10 +115,10 @@
                         <span class="dropdown-arrow">▼</span>
                     </div>
                     <div class="category-content">
-                        <div><input type="checkbox" id="poi-museums" checked> <label for="poi-museums">Museus</label></div>
-                        <div><input type="checkbox" id="poi-theaters" checked> <label for="poi-theaters">Teatros</label></div>
-                        <div><input type="checkbox" id="poi-sports" checked> <label for="poi-sports">Ginásios e Centros Desportivos</label></div>
-                        <div><input type="checkbox" id="poi-parks" checked> <label for="poi-parks">Parques</label></div>
+                        <div><input type="checkbox" id="poi-museums" checked> <label for="poi-museums"><i class="fas fa-museum poi-museum"></i> Museus</label></div>
+                        <div><input type="checkbox" id="poi-theaters" checked> <label for="poi-theaters"><i class="fas fa-theater-masks poi-theater"></i> Teatros</label></div>
+                        <div><input type="checkbox" id="poi-sports" checked> <label for="poi-sports"><i class="fas fa-dumbbell poi-sport"></i> Ginásios e Centros Desportivos</label></div>
+                        <div><input type="checkbox" id="poi-parks" checked> <label for="poi-parks"><i class="fas fa-tree poi-park"></i> Parques</label></div>
                     </div>
                 </div>
             </div>
