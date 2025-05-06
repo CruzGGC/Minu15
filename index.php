@@ -160,7 +160,7 @@
     <section id="screenshots" class="section">
         <div class="container">
             <div class="section-title">
-                <h2 class="fade-in">Capturas de Tela</h2>
+                <h2 class="fade-in">Imagens do Projeto</h2>
             </div>
             <div class="carousel-container fade-in">
                 <div class="carousel">
@@ -261,7 +261,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; <?php echo date('Y'); ?> Minu15 | Guilherme Cruz | Pedro Sousa | Alexandra Dias | Rodrigo Dinis | Cidade em 15 Minutos | Dados de <a href="https://www.geofabrik.de/" target="_blank">Geofabrik</a></p>
+                <p>&copy; <?php echo date('Y'); ?> Minu15 | Guilherme Cruz | Pedro Sousa | Alexandra Dias | Rodrigo Ferreira</a></p>
             </div>
         </div>
     </footer>
