@@ -18,7 +18,7 @@ STYLE_FILE="$(dirname "$0")/../common/default.style"
 
 # Database connection details
 DB_NAME="minu15"
-DB_USER="admin"
+DB_USER="postgres"
 DB_HOST="localhost"
 DB_PORT="5432"
 

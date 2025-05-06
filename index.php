@@ -261,7 +261,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; <?php echo date('Y'); ?> Minu15 | Cidade em 15 Minutos | Dados de <a href="https://www.geofabrik.de/" target="_blank">Geofabrik</a></p>
+                <p>&copy; <?php echo date('Y'); ?> Minu15 | Guilherme Cruz | Pedro Sousa | Alexandra Dias | Rodrigo Dinis | Cidade em 15 Minutos | Dados de <a href="https://www.geofabrik.de/" target="_blank">Geofabrik</a></p>
             </div>
         </div>
     </footer>
