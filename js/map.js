@@ -189,8 +189,10 @@ function initMap() {
     // Center coordinates for Aveiro, Portugal
     const aveiroCenter = [40.6405, -8.6538];
     
-    // Create a new map centered on Aveiro
-    map = L.map('map').setView(aveiroCenter, 13);
+    // Create a new map centered on Aveiro with zoom controls disabled
+    map = L.map('map', {
+        zoomControl: false  // Disable zoom controls
+    }).setView(aveiroCenter, 13);
     
     // Add the selected tile layer
     updateMapTiles(selectedTileProvider);

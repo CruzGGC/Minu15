@@ -30,6 +30,8 @@ body {
     background-color: var(--body-color);
     height: 100vh;
     overflow: hidden;
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+    touch-action: manipulation; /* Optimize for touch */
 }
 
 /* Containers */
@@ -665,28 +667,30 @@ direction-button:hover {
     display: none;
 }
 
-/* Footer Attribution */
-.footer-attribution {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 8px 15px;
-    border-radius: var(--border-radius);
+/* Footer in overlay */
+.footer-in-overlay {
+    text-align: center;
     font-size: 0.85rem;
-    z-index: 997;
-    box-shadow: var(--box-shadow);
+    color: var(--text-color);
+    opacity: 0.9;
+    margin-top: 20px;
+    padding-top: 15px;
+    /* Removed border-top to eliminate double line */
 }
 
-.footer-attribution a {
+.footer-in-overlay a {
     color: var(--primary-color);
     text-decoration: none;
     font-weight: 500;
 }
 
-.footer-attribution a:hover {
+.footer-in-overlay a:hover {
     text-decoration: underline;
+}
+
+/* Remove the old footer-attribution */
+.footer-attribution {
+    display: none;
 }
 
 /* Loading Spinner */
@@ -740,41 +744,193 @@ direction-button:hover {
     stroke-dasharray: 10, 5;
 }
 
+/* Mobile Toggle Button */
+.mobile-menu-toggle {
+    display: none;
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    box-shadow: var(--box-shadow);
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
-    .overlay-panel {
-        width: calc(100% - 40px);
-        max-height: 60vh;
+    /* Show mobile menu toggle button */
+    .mobile-menu-toggle {
+        display: flex;
     }
     
-    .statistics-panel, .poi-details-panel {
+    /* Make overlay panel fullscreen and hidden by default */
+    .overlay-panel {
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    /* Show overlay panel when active */
+    .overlay-panel.mobile-active {
+        transform: translateX(0);
+    }
+    
+    /* Optimize overlay panel for mobile */
+    .logo-header {
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+    }
+    
+    .app-logo {
+        height: 100px;
+    }
+    
+    /* Make panels position better on mobile */
+    .statistics-panel, 
+    .poi-details-panel {
         width: calc(100% - 40px);
         right: 20px;
         left: 20px;
+        bottom: 80px;
+        top: auto;
+        max-height: 50vh;
     }
     
     .poi-legend {
         bottom: 100px;
+        left: 10px;
+        padding: 10px;
+        max-width: 150px;
+        font-size: 0.9rem;
     }
     
-    .footer-attribution {
-        width: 100%;
-        text-align: center;
+    /* Improve touch targets */
+    .panel-header,
+    .category-header {
+        padding: 12px 0;
+        font-size: 1.1rem;
+    }
+    
+    .category-content > div {
+        padding: 10px 0;
+    }
+    
+    input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+    
+    /* Larger transport mode options */
+    .transport-mode {
+        padding: 10px 0;
+    }
+    
+    .transport-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+    
+    /* Larger slider for better touch */
+    .distance-slider {
+        height: 10px;
+        margin: 25px 0 15px;
+    }
+    
+    .distance-slider::-webkit-slider-thumb {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .distance-slider::-moz-range-thumb {
+        width: 28px;
+        height: 28px;
+    }
+    
+    /* Larger buttons */
+    .search-button {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .calculate-button {
+        padding: 15px;
+        font-size: 1.1rem;
+        margin-top: 20px;
+    }
+    
+    /* Close button for mobile sidebar */
+    .mobile-panel-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 1.5rem;
+        color: var(--dark-color);
+        cursor: pointer;
+        z-index: 1001;
+    }
+    
+    /* Footer adjustments on mobile */
+    .footer-in-overlay {
+        margin-top: 25px;
+        padding-top: 20px;
+        padding-bottom: 20px;
     }
 }
 
-/* Custom Leaflet Styles */
-.leaflet-popup-content {
-    max-width: 250px;
-    font-family: 'Poppins', sans-serif;
+@media (max-width: 480px) {
+    .transport-mode {
+        flex-wrap: wrap;
+    }
+    
+    .transport-option {
+        width: 33%;
+    }
+    
+    .transport-icon {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .map-style-option {
+        width: 46%;
+    }
+    
+    .statistics-panel, 
+    .poi-details-panel {
+        bottom: 60px;
+    }
+    
+    /* Smaller logo on very small screens */
+    .app-logo {
+        height: 80px;
+    }
 }
 
-.leaflet-popup-content-wrapper {
-    border-radius: var(--border-radius);
+/* Leaflet Map Touch Improvements */
+.leaflet-touch .leaflet-control-zoom a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+    font-size: 1.5rem;
 }
 
-.leaflet-popup-tip-container {
-    left: 50%;
+.leaflet-touch .leaflet-bar a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
 }
 
 /* Logo Header Styles */
@@ -815,4 +971,18 @@ direction-button:hover {
 
 .poi-icon:hover i {
     transform: scale(1.2);
+}
+
+/* Custom Leaflet Styles */
+.leaflet-popup-content {
+    max-width: 250px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: var(--border-radius);
+}
+
+.leaflet-popup-tip-container {
+    left: 50%;
 }

@@ -30,7 +30,17 @@
 <body>
     <div id="map"></div>
     
-    <div class="overlay-panel">
+    <!-- Mobile menu toggle button -->
+    <div class="mobile-menu-toggle" id="mobile-menu-toggle">
+        <i class="fas fa-bars"></i>
+    </div>
+    
+    <div class="overlay-panel" id="overlay-panel">
+        <!-- Close button for mobile -->
+        <div class="mobile-panel-close" id="mobile-panel-close">
+            <i class="fas fa-times"></i>
+        </div>
+        
         <div class="logo-header">
             <img src="images/Minu15.png" alt="Minu15 Logo" class="app-logo">
         </div>
@@ -207,6 +217,11 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Added footer attribution to the overlay panel -->
+        <div class="panel-section footer-in-overlay">
+            <p>&copy; <?php echo date('Y'); ?> Minu15 | Dados de <a href="https://www.geofabrik.de/" target="_blank">Geofabrik</a></p>
+        </div>
     </div>
 
     <div class="statistics-panel">
@@ -231,11 +246,6 @@
 
     <!-- Modal overlay for popups -->
     <div class="modal-overlay" id="modal-overlay"></div>
-    
-    <!-- Footer attribution -->
-    <div class="footer-attribution">
-        <p>&copy; <?php echo date('Y'); ?> Minu15 | Dados de <a href="https://www.geofabrik.de/" target="_blank">Geofabrik</a></p>
-    </div>
     
     <!-- Custom JS -->
     <script src="js/map.js"></script>

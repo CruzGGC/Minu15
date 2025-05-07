@@ -7,6 +7,9 @@
 
 // Initialize controls when DOM is loaded
 function initControls() {
+    // Initialize mobile menu functionality
+    initMobileMenu();
+    
     // Initialize collapsible panels
     initCollapsiblePanels();
     
@@ -30,6 +33,40 @@ function initControls() {
     
     // Initialize panel close buttons
     initPanelCloseButtons();
+}
+
+// Initialize mobile menu functionality
+function initMobileMenu() {
+    const menuToggle = document.getElementById('mobile-menu-toggle');
+    const closeButton = document.getElementById('mobile-panel-close');
+    const panel = document.getElementById('overlay-panel');
+    
+    if (menuToggle && closeButton && panel) {
+        // Show menu when toggle is clicked
+        menuToggle.addEventListener('click', function() {
+            panel.classList.add('mobile-active');
+        });
+        
+        // Hide menu when close button is clicked
+        closeButton.addEventListener('click', function() {
+            panel.classList.remove('mobile-active');
+        });
+        
+        // Hide menu when clicking on map (mobile only)
+        document.getElementById('map').addEventListener('click', function() {
+            // Check if we're on mobile view by checking window width
+            if (window.innerWidth <= 768) {
+                panel.classList.remove('mobile-active');
+            }
+        });
+        
+        // Hide menu when clicking calculate button (mobile only)
+        document.querySelector('.calculate-button').addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                panel.classList.remove('mobile-active');
+            }
+        });
+    }
 }
 
 // Initialize map style selector
@@ -292,6 +329,11 @@ function performSearch(searchTerm) {
                 
                 // Guide the user to click Calculate
                 alert('Localização encontrada! Clique em "Calcular" para gerar a isócrona.');
+                
+                // On mobile, close the panel after search
+                if (window.innerWidth <= 768) {
+                    document.getElementById('overlay-panel').classList.remove('mobile-active');
+                }
             } else {
                 alert('Localização não encontrada. Por favor, tente outro termo de pesquisa.');
             }
@@ -351,3 +393,11 @@ function resetUI() {
     // Reset current isochrone data
     currentIsochroneData = null;
 }
+
+// Handle window resize events
+window.addEventListener('resize', function() {
+    // If we transition from mobile to desktop view, ensure panel is visible
+    if (window.innerWidth > 768) {
+        document.getElementById('overlay-panel').classList.remove('mobile-active');
+    }
+});
