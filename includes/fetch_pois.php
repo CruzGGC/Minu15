@@ -113,6 +113,28 @@ $poiTypes = [
         'category' => 'education'
     ],
     
+    // === Commercial & Services ===
+    'supermarkets' => [
+        'condition' => "shop = 'supermarket' OR shop = 'convenience' OR shop = 'grocery'",
+        'icon' => 'shopping-basket',
+        'category' => 'commercial'
+    ],
+    'malls' => [
+        'condition' => "shop = 'mall' OR amenity = 'marketplace'",
+        'icon' => 'shopping-bag',
+        'category' => 'commercial'
+    ],
+    'restaurants' => [
+        'condition' => "amenity IN ('restaurant', 'cafe', 'bar', 'fast_food')",
+        'icon' => 'utensils',
+        'category' => 'commercial'
+    ],
+    'atms' => [
+        'condition' => "amenity = 'atm' OR amenity = 'bank'",
+        'icon' => 'money-bill-wave',
+        'category' => 'commercial'
+    ],
+    
     // === Transportation ===
     'bus_stops' => [
         'condition' => "highway = 'bus_stop' OR public_transport = 'stop_position' OR public_transport = 'platform'",
@@ -136,6 +158,11 @@ $poiTypes = [
     ],
     
     // === Safety ===
+    'police' => [
+        'condition' => "amenity = 'police'",
+        'icon' => 'shield-alt',
+        'category' => 'safety'
+    ],
     'police_stations' => [
         'condition' => "amenity = 'police'",
         'icon' => 'shield-alt',
@@ -147,7 +174,7 @@ $poiTypes = [
         'category' => 'safety'
     ],
     'civil_protection' => [
-        'condition' => "office = 'government' OR emergency = 'ambulance' OR emergency = 'disaster_response'",
+        'condition' => "office = 'government' OR amenity = 'rescue_station' OR amenity = 'ambulance_station' OR amenity = 'emergency_service'",
         'icon' => 'hard-hat',
         'category' => 'safety'
     ],

@@ -10,7 +10,6 @@ let map;
 let currentMarker;
 let isochroneLayer;
 let poiLayers = {};
-let selectedPoi = null;
 let selectedTransportMode = 'walking'; // Default mode: walking
 let selectedMaxDistance = 15; // Default time: 15 minutes
 let currentIsochroneData = null; // Store current isochrone data for POI requests
@@ -256,7 +255,8 @@ function handleMapClick(latlng) {
     // Add a new marker at clicked location
     currentMarker = L.marker(latlng).addTo(map);
     
-    // Don't automatically generate isochrone - wait for Calculate button
+    // Automatically generate isochrone without waiting for Calculate button
+    generateIsochrone(latlng);
 }
 
 // Generate isochrone polygon using OpenRouteService API
@@ -622,71 +622,27 @@ function addPOIsToMap(type, pois) {
             icon: icon
         });
         
-        // Adicionar popup com informações básicas
-        marker.bindPopup(`<strong>${poi.name || poiInfo.name}</strong><br>Clique para mais detalhes`);
+        // Criar conteúdo do popup com toda a informação disponível
+        let popupContent = `
+            <div class="popup-content">
+                <h4>${poi.name || poiInfo.name}</h4>
+                <p><strong>Tipo:</strong> ${poi.type}</p>
+                <button class="popup-directions-btn" onclick="openDirections(${poi.latitude}, ${poi.longitude})">
+                    <i class="fas fa-directions"></i> Obter Direções
+                </button>
+            </div>
+        `;
         
-        // Adicionar evento de clique para mostrar detalhes
-        marker.on('click', function() {
-            selectedPoi = poi;
-            showPoiDetails(poi);
-            
-            // Mostrar painel de detalhes do POI
-            showPoiDetailsPanel();
+        // Adicionar popup ao marcador
+        marker.bindPopup(popupContent, { 
+            maxWidth: 300, 
+            minWidth: 240,
+            className: 'poi-popup' 
         });
         
         // Adicionar ao grupo de camadas
         marker.addTo(poiLayers[type]);
     });
-}
-
-// Mostrar detalhes do POI na barra lateral
-function showPoiDetails(poi) {
-    const poiInfoDiv = document.getElementById('poi-info');
-    
-    // Criar HTML para os detalhes do POI
-    let html = `
-        <div class="poi-detail">
-            <div class="poi-title">${poi.name || 'Sem nome'}</div>
-            <div>${poi.type}</div>
-        </div>
-    `;
-    
-    // Adicionar endereço se disponível
-    if (poi.address) {
-        html += `
-            <div class="poi-detail">
-                <div class="poi-title">Endereço</div>
-                <div>${poi.address}</div>
-            </div>
-        `;
-    }
-    
-    // Adicionar propriedades adicionais se disponíveis
-    if (poi.properties) {
-        Object.keys(poi.properties).forEach(key => {
-            const value = poi.properties[key];
-            if (value && key !== 'name' && key !== 'type') {
-                html += `
-                    <div class="poi-detail">
-                        <div class="poi-title">${key.replace('_', ' ')}</div>
-                        <div>${value}</div>
-                    </div>
-                `;
-            }
-        });
-    }
-    
-    // Adicionar botão de direções
-    html += `
-        <div class="poi-detail">
-            <button class="direction-button" onclick="openDirections(${poi.latitude}, ${poi.longitude})">
-                <i class="fas fa-directions"></i> Obter Direções
-            </button>
-        </div>
-    `;
-    
-    // Definir o HTML para a div
-    poiInfoDiv.innerHTML = html;
 }
 
 // Abrir direções no Google Maps
@@ -842,10 +798,10 @@ function showStatisticsPanel() {
     }
 }
 
-// Mostrar painel de detalhes do POI
-function showPoiDetailsPanel() {
-    const poiDetailsPanel = document.querySelector('.poi-details-panel');
-    if (poiDetailsPanel) {
-        poiDetailsPanel.classList.add('visible');
+// Ocultar painel de estatísticas (adicionada para completude)
+function hideStatisticsPanel() {
+    const statsPanel = document.querySelector('.statistics-panel');
+    if (statsPanel) {
+        statsPanel.classList.remove('visible');
     }
 }

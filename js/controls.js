@@ -281,6 +281,63 @@ function initSearchBox() {
     const searchButton = document.querySelector('.search-button');
     
     if (searchBox && searchButton) {
+        // Add jQuery UI autocomplete to search box
+        $(searchBox).autocomplete({
+            minLength: 3,
+            delay: 500,
+            source: function(request, response) {
+                // Show loading indicator
+                showLoading();
+                
+                // Make request to our Nominatim proxy
+                fetch(`includes/proxy_nominatim.php?term=${encodeURIComponent(request.term)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        hideLoading();
+                        response(data);
+                    })
+                    .catch(error => {
+                        hideLoading();
+                        console.error('Error in autocomplete search:', error);
+                        response([]);
+                    });
+            },
+            select: function(event, ui) {
+                // When an item is selected, perform the search with the selected location
+                if (ui.item) {
+                    // Set the search box value
+                    searchBox.value = ui.item.label;
+                    
+                    // Create LatLng object
+                    const latlng = L.latLng(ui.item.lat, ui.item.lon);
+                    
+                    // Set map view to found location
+                    map.setView(latlng, 15);
+                    
+                    // Create marker at found location
+                    if (currentMarker) {
+                        map.removeLayer(currentMarker);
+                    }
+                    currentMarker = L.marker(latlng).addTo(map);
+                    
+                    // Automatically generate isochrone
+                    generateIsochrone(latlng);
+                    
+                    // On mobile, close the panel after search
+                    if (window.innerWidth <= 768) {
+                        document.getElementById('overlay-panel').classList.remove('mobile-active');
+                    }
+                    
+                    return false; // Prevent default action
+                }
+            }
+        }).autocomplete("instance")._renderItem = function(ul, item) {
+            // Customize the appearance of each item in the autocomplete dropdown
+            return $("<li>")
+                .append("<div class='autocomplete-item'><i class='fas fa-map-marker-alt'></i> " + item.label + "</div>")
+                .appendTo(ul);
+        };
+        
         // Search when button is clicked
         searchButton.addEventListener('click', function() {
             performSearch(searchBox.value);
@@ -354,14 +411,6 @@ function initPanelCloseButtons() {
             hideStatisticsPanel();
         });
     }
-    
-    // POI details panel close button
-    const closePoiDetailsButton = document.querySelector('.close-poi-details');
-    if (closePoiDetailsButton) {
-        closePoiDetailsButton.addEventListener('click', function() {
-            hidePoiDetailsPanel();
-        });
-    }
 }
 
 // Reset the UI to its initial state
@@ -369,12 +418,8 @@ function resetUI() {
     // Clear statistics panel
     document.getElementById('area-stats').innerHTML = '<p>Clique no mapa para ver estatísticas</p>';
     
-    // Clear POI info panel
-    document.getElementById('poi-info').innerHTML = '<p>Clique num ponto de interesse para ver detalhes</p>';
-    
     // Hide panels
     hideStatisticsPanel();
-    hidePoiDetailsPanel();
     
     // Reset all layers
     if (isochroneLayer) {
@@ -401,3 +446,11 @@ window.addEventListener('resize', function() {
         document.getElementById('overlay-panel').classList.remove('mobile-active');
     }
 });
+
+// Hide statistics panel
+function hideStatisticsPanel() {
+    const statsPanel = document.querySelector('.statistics-panel');
+    if (statsPanel) {
+        statsPanel.classList.remove('visible');
+    }
+}

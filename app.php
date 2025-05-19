@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minu15 - Cidade em 15 Minutos</title>
     
+    <!-- jQuery UI for autocomplete -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    
     <!-- Leaflet CSS and JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -231,16 +236,6 @@
         </div>
         <div class="stats-content" id="area-stats">
             <p>Clique no mapa para ver estatísticas</p>
-        </div>
-    </div>
-
-    <div class="poi-details-panel">
-        <div class="poi-details-title">
-            <span>Detalhes do POI</span>
-            <span class="close-poi-details"><i class="fas fa-times"></i></span>
-        </div>
-        <div class="poi-details-content" id="poi-info">
-            <p>Clique num ponto de interesse para ver detalhes</p>
         </div>
     </div>
 
