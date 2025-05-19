@@ -174,6 +174,32 @@ const poiTypes = {
         icon: 'tree', 
         class: 'poi-park',
         category: 'culture'
+    },
+    
+    // === Transportation ===
+    bus_stops: { 
+        name: 'Paragens de Autocarro', 
+        icon: 'bus', 
+        class: 'poi-bus',
+        category: 'transportation'
+    },
+    train_stations: { 
+        name: 'Estações de Comboio', 
+        icon: 'train', 
+        class: 'poi-train',
+        category: 'transportation'
+    },
+    subway_stations: { 
+        name: 'Estações de Metro', 
+        icon: 'subway', 
+        class: 'poi-subway',
+        category: 'transportation'
+    },
+    parking: { 
+        name: 'Estacionamentos', 
+        icon: 'parking', 
+        class: 'poi-parking',
+        category: 'transportation'
     }
 };
 
@@ -674,16 +700,36 @@ function updateAreaStats(latlng, radius, isochroneGeoJSON) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Calcular o Accessibility Score
+            const accessibilityScore = calculateAccessibilityScore(data.stats);
+            
             // Exibir estatísticas
             let html = '<div class="stats-list">';
+            
+            // Adicionar o Accessibility Score no topo
+            html += `
+                <div class="stat-category accessibility-score">
+                    <div class="stat-category-title">Accessibility Score</div>
+                    <div class="score-display">
+                        <div class="score-value">${accessibilityScore.score}</div>
+                        <div class="score-label">${getScoreLabel(accessibilityScore.score)}</div>
+                    </div>
+                    <div class="score-description">
+                        Baseado na disponibilidade de ${accessibilityScore.poiCount} serviços essenciais 
+                        em ${selectedMaxDistance} minutos ${getTransportModeText()}.
+                        ${getTimeAdjustmentText(selectedMaxDistance)}
+                    </div>
+                </div>
+            `;
             
             // Agrupar estatísticas por categoria
             const categories = {
                 'Saúde': ['hospitals', 'health_centers', 'pharmacies', 'dentists'],
                 'Educação': ['schools', 'universities', 'kindergartens', 'libraries'],
                 'Comércio e Serviços': ['supermarkets', 'malls', 'restaurants', 'atms'],
+                'Transporte': ['bus_stops', 'train_stations', 'subway_stations', 'parking'],
                 'Segurança e Emergência': ['police', 'fire_stations', 'civil_protection'],
-                'Administração Pública': ['parish_councils', 'city_halls'],
+                'Administração Pública': ['parish_councils', 'city_halls', 'post_offices'],
                 'Cultura e Lazer': ['museums', 'theaters', 'sports', 'parks']
             };
             
@@ -753,6 +799,185 @@ function updateAreaStats(latlng, radius, isochroneGeoJSON) {
         console.error('Erro:', error);
         statsDiv.innerHTML = '<p>Erro ao carregar estatísticas</p>';
     });
+}
+
+// Calcular o Accessibility Score baseado nos POIs disponíveis
+function calculateAccessibilityScore(stats) {
+    // Definir pesos para diferentes categorias de POIs
+    const weights = {
+        // Saúde (maior peso - essencial)
+        hospitals: 10,
+        health_centers: 8,
+        pharmacies: 7,
+        dentists: 5,
+        
+        // Educação
+        schools: 9,
+        universities: 6,
+        kindergartens: 7,
+        libraries: 5,
+        
+        // Comércio e Serviços (essencial para vida diária)
+        supermarkets: 10,
+        malls: 6,
+        restaurants: 7,
+        atms: 6,
+        
+        // Transporte
+        bus_stops: 8,
+        train_stations: 7,
+        subway_stations: 7,
+        parking: 5,
+        
+        // Segurança e Emergência
+        police: 8,
+        fire_stations: 7,
+        civil_protection: 5,
+        
+        // Administração Pública
+        parish_councils: 4,
+        city_halls: 4,
+        post_offices: 5,
+        
+        // Cultura e Lazer
+        museums: 3,
+        theaters: 3,
+        sports: 6,
+        parks: 8
+    };
+    
+    // Contadores para o cálculo
+    let totalScore = 0;
+    let maxPossibleScore = 0;
+    let poiCount = 0;
+    let categoriesWithPOIs = 0;
+    
+    // Categorias principais para verificar diversidade
+    const mainCategories = {
+        health: ['hospitals', 'health_centers', 'pharmacies', 'dentists'],
+        education: ['schools', 'universities', 'kindergartens', 'libraries'],
+        commerce: ['supermarkets', 'malls', 'restaurants', 'atms'],
+        transport: ['bus_stops', 'train_stations', 'subway_stations', 'parking'],
+        safety: ['police', 'fire_stations', 'civil_protection'],
+        admin: ['parish_councils', 'city_halls', 'post_offices'],
+        leisure: ['museums', 'theaters', 'sports', 'parks']
+    };
+    
+    // Verificar quais categorias têm pelo menos um POI
+    const categoriesPresent = {};
+    
+    // Calcular pontuação para cada tipo de POI
+    for (const [type, weight] of Object.entries(weights)) {
+        // Verificar se o tipo está selecionado (checkbox marcado)
+        const checkbox = document.getElementById(`poi-${type}`);
+        if (checkbox && checkbox.checked) {
+            // Adicionar ao score máximo possível
+            maxPossibleScore += weight * 3; // Considerando que 3+ POIs é ideal
+            
+            // Obter contagem de POIs
+            const count = stats[type] || 0;
+            
+            if (count > 0) {
+                // Encontrar a categoria principal deste POI
+                for (const [category, types] of Object.entries(mainCategories)) {
+                    if (types.includes(type)) {
+                        categoriesPresent[category] = true;
+                        break;
+                    }
+                }
+                
+                // Calcular pontuação com base na quantidade (até 3 POIs por tipo)
+                const countScore = Math.min(count, 3);
+                totalScore += weight * countScore;
+                poiCount += count;
+            }
+        }
+    }
+    
+    // Contar categorias presentes para bônus de diversidade
+    categoriesWithPOIs = Object.keys(categoriesPresent).length;
+    
+    // Bônus por diversidade de categorias (até 20%)
+    const diversityBonus = (categoriesWithPOIs / 7) * 20;
+    
+    // Calcular score final (0-100)
+    let finalScore = Math.round((totalScore / maxPossibleScore) * 80 + diversityBonus);
+    
+    // Ajustar o score com base no tempo selecionado
+    // Para tempos menores que 15 minutos, o score é aumentado (é mais impressionante ter muitos POIs em menos tempo)
+    // Para tempos maiores que 15 minutos, o score é reduzido (é menos impressionante ter os mesmos POIs em mais tempo)
+    const timeAdjustmentFactor = calculateTimeAdjustmentFactor(selectedMaxDistance);
+    finalScore = Math.round(finalScore * timeAdjustmentFactor);
+    
+    // Garantir que o score esteja entre 0 e 100
+    finalScore = Math.max(0, Math.min(100, finalScore));
+    
+    return {
+        score: finalScore,
+        poiCount: poiCount,
+        categories: categoriesWithPOIs
+    };
+}
+
+// Calcular o fator de ajuste baseado no tempo selecionado
+function calculateTimeAdjustmentFactor(minutes) {
+    // Tempo de referência é 15 minutos (o padrão para o conceito de cidade de 15 minutos)
+    const referenceTime = 15;
+    
+    // Se o tempo for igual a 15 minutos, não há ajuste (fator = 1)
+    if (minutes === referenceTime) return 1.0;
+    
+    // Para tempos menores que 15 minutos, aumentar o score (mais impressionante)
+    // Para tempos maiores que 15 minutos, diminuir o score (menos impressionante)
+    // Fórmula: referenceTime / minutes, com limites para evitar valores extremos
+    
+    if (minutes < referenceTime) {
+        // Limite superior de ajuste: 1.5x (para 5 minutos ou menos)
+        const factor = Math.min(referenceTime / minutes, 1.5);
+        return factor;
+    } else {
+        // Limite inferior de ajuste: 0.6x (para 30 minutos ou mais)
+        const factor = Math.max(referenceTime / minutes, 0.6);
+        return factor;
+    }
+}
+
+// Obter label descritivo para o score
+function getScoreLabel(score) {
+    if (score >= 90) return "Excelente";
+    if (score >= 75) return "Muito Bom";
+    if (score >= 60) return "Bom";
+    if (score >= 45) return "Razoável";
+    if (score >= 30) return "Limitado";
+    if (score >= 15) return "Fraco";
+    return "Muito Fraco";
+}
+
+// Obter texto do modo de transporte
+function getTransportModeText() {
+    switch (selectedTransportMode) {
+        case 'walking':
+            return 'a pé';
+        case 'cycling':
+            return 'de bicicleta';
+        case 'driving':
+            return 'de carro';
+        default:
+            return '';
+    }
+}
+
+// Obter texto explicativo sobre o ajuste de tempo
+function getTimeAdjustmentText(minutes) {
+    const referenceTime = 15;
+    
+    if (minutes === referenceTime) {
+        return '';
+    } else if (minutes < referenceTime) {
+        return `<span class="time-bonus">(Score aumentado por ser menos de 15 minutos)</span>`;
+    } else {
+        return `<span class="time-penalty">(Score reduzido por ser mais de 15 minutos)</span>`;
+    }
 }
 
 // Adicionar legenda ao mapa

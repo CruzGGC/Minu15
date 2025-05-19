@@ -17,15 +17,15 @@
 4.  **Sistema de Pesquisa com Autocompletar:** Completo!
     *   Implementar um sistema de pesquisa com funcionalidade de autocompletar na barra de pesquisa já existente. 
 
-5.  **Accessibility Score:**
+5.  **Accessibility Score:** Colocar no topo das estatisticas Completo!
     *   Desenvolver um "accessibility score" para qualquer ponto selecionado.
-    *   O score deve ser um cálculo ponderado baseado no número e variedade de POIs essenciais (supermercados, centros de saúde, escolas, etc.) alcançáveis em 15 minutos.
+    *   O score deve ser um cálculo ponderado baseado no número e variedade de POIs essenciais (supermercados, centros de saúde, escolas, etc.) alcançáveis no tempo selecionado pelo utilizador.
     *   Exibir o score no painel de estatísticas. 
 
-6.  **Ideal Location Finder:**
+6.  **Ideal Location Finder:** Criar uma nova pagina que seja igual a app.php
     *   Permitir que os utilizadores especifiquem um conjunto de POIs de que necessitam regularmente (ex: escola, supermercado, parque).
     *   Destacar áreas no mapa que melhor satisfazem esses critérios dentro de um raio de 15 minutos.
 
-7.  **Day in the Life Simulation:**
+7.  **Day in the Life Simulation:** Criar uma nova pagina que seja igual a app.php
     *   Permitir que os utilizadores selecionem um ponto de partida e encadeiem uma série de atividades (ex: casa -> escola -> supermercado -> parque -> casa).
     *   Visualizar se esta rotina é realizável dentro de prazos razoáveis utilizando o conceito de cidade de 15 minutos. 
