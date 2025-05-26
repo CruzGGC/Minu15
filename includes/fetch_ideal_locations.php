@@ -153,8 +153,43 @@ function performGridAnalysis($conn, $centerLocation, $requiredPOIs, $bounds, $gr
 }
 
 function getPOIData($conn, $poiType, $bounds) {
-    // Map POI types to OSM tags
+    // Map POI types to OSM tags (synchronized with fetch_pois.php)
     $osmTagMapping = [
+        // === Health ===
+        'hospitals' => "amenity = 'hospital'",
+        'health_centers' => "amenity IN ('clinic', 'doctors')",
+        'pharmacies' => "amenity = 'pharmacy'",
+        'dentists' => "amenity = 'dentist'",
+        
+        // === Education ===
+        'schools' => "amenity = 'school'",
+        'universities' => "amenity = 'university'",
+        'kindergartens' => "amenity = 'kindergarten'",
+        'libraries' => "amenity = 'library'",
+        
+        // === Commercial & Services ===
+        'supermarkets' => "shop = 'supermarket' OR shop = 'convenience' OR shop = 'grocery'",
+        'malls' => "shop = 'mall' OR amenity = 'marketplace'",
+        'restaurants' => "amenity IN ('restaurant', 'cafe', 'bar', 'fast_food')",
+        'atms' => "amenity = 'atm' OR amenity = 'bank'",
+        
+        // === Safety ===
+        'police_stations' => "amenity = 'police'",
+        'fire_stations' => "amenity = 'fire_station'",
+        'civil_protection' => "office = 'government' OR amenity = 'rescue_station' OR amenity = 'ambulance_station' OR amenity = 'emergency_service'",
+        
+        // === Public Administration ===
+        'parish_councils' => "office = 'government' AND admin_level = '9'",
+        'city_halls' => "office = 'government' AND admin_level = '8'",
+        'post_offices' => "amenity = 'post_office'",
+        
+        // === Culture & Leisure ===
+        'museums' => "tourism = 'museum' OR amenity = 'arts_centre'",
+        'theaters' => "amenity = 'theatre'",
+        'sports' => "leisure IN ('sports_centre', 'stadium', 'pitch', 'swimming_pool', 'fitness_centre', 'fitness_station')",
+        'parks' => "leisure IN ('park', 'garden', 'playground')",
+        
+        // === Legacy support for old POI types ===
         'hospital' => "amenity = 'hospital'",
         'clinic' => "amenity IN ('clinic', 'doctors')",
         'pharmacy' => "amenity = 'pharmacy'",

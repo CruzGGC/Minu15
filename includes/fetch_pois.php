@@ -135,28 +135,6 @@ $poiTypes = [
         'category' => 'commercial'
     ],
     
-    // === Transportation ===
-    'bus_stops' => [
-        'condition' => "highway = 'bus_stop' OR public_transport = 'stop_position' OR public_transport = 'platform'",
-        'icon' => 'bus',
-        'category' => 'transportation'
-    ],
-    'train_stations' => [
-        'condition' => "railway = 'station' OR railway = 'halt' OR railway = 'tram_stop'",
-        'icon' => 'train',
-        'category' => 'transportation'
-    ],
-    'subway_stations' => [
-        'condition' => "railway = 'subway_entrance' OR railway = 'subway' OR station = 'subway'",
-        'icon' => 'subway',
-        'category' => 'transportation'
-    ],
-    'parking' => [
-        'condition' => "amenity = 'parking'",
-        'icon' => 'parking',
-        'category' => 'transportation'
-    ],
-    
     // === Safety ===
     'police' => [
         'condition' => "amenity = 'police'",
@@ -188,11 +166,6 @@ $poiTypes = [
     'city_halls' => [
         'condition' => "office = 'government' AND admin_level = '8'",
         'icon' => 'landmark',
-        'category' => 'administration'
-    ],
-    'post_offices' => [
-        'condition' => "amenity = 'post_office'",
-        'icon' => 'envelope',
         'category' => 'administration'
     ],
     

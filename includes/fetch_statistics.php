@@ -182,12 +182,6 @@ $poiCategories = [
     'kindergartens' => "amenity = 'kindergarten'",
     'libraries' => "amenity = 'library'",
     
-    // === Transportation ===
-    'bus_stops' => "highway = 'bus_stop' OR public_transport = 'stop_position' OR public_transport = 'platform'",
-    'train_stations' => "railway = 'station' OR railway = 'halt' OR railway = 'tram_stop'",
-    'subway_stations' => "railway = 'subway_entrance' OR railway = 'subway' OR station = 'subway'",
-    'parking' => "amenity = 'parking'",
-    
     // === Safety ===
     'police_stations' => "amenity = 'police'",
     'fire_stations' => "amenity = 'fire_station'",

@@ -130,7 +130,7 @@
                         <span class="dropdown-arrow">▼</span>
                     </div>
                     <div class="category-content">
-                        <div><input type="checkbox" id="poi-police" checked> <label for="poi-police"><i class="fas fa-shield-alt poi-police"></i> Esquadras da Polícia</label></div>
+                        <div><input type="checkbox" id="poi-police_stations" checked> <label for="poi-police_stations"><i class="fas fa-shield-alt poi-police"></i> Esquadras de Polícia</label></div>
                         <div><input type="checkbox" id="poi-fire_stations" checked> <label for="poi-fire_stations"><i class="fas fa-fire-extinguisher poi-fire-station"></i> Quartéis de Bombeiros</label></div>
                         <div><input type="checkbox" id="poi-civil_protection" checked> <label for="poi-civil_protection"><i class="fas fa-hard-hat poi-civil-protection"></i> Proteção Civil</label></div>
                     </div>

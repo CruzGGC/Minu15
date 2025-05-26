@@ -602,6 +602,41 @@ class IdealLocationFinder {
 
     getPOIDisplayName(type) {
         const displayNames = {
+            // === Health ===
+            'hospitals': 'Hospitais',
+            'health_centers': 'Centros de Saúde',
+            'pharmacies': 'Farmácias',
+            'dentists': 'Clínicas Dentárias',
+            
+            // === Education ===
+            'schools': 'Escolas Primárias e Secundárias',
+            'universities': 'Universidades e Institutos',
+            'kindergartens': 'Jardins de Infância e Creches',
+            'libraries': 'Bibliotecas',
+            
+            // === Commercial & Services ===
+            'supermarkets': 'Supermercados',
+            'malls': 'Centros Comerciais',
+            'restaurants': 'Restaurantes e Cafés',
+            'atms': 'Caixas de Multibanco',
+            
+            // === Safety ===
+            'police_stations': 'Esquadras de Polícia',
+            'fire_stations': 'Bombeiros',
+            'civil_protection': 'Proteção Civil',
+            
+            // === Public Administration ===
+            'parish_councils': 'Juntas de Freguesia',
+            'city_halls': 'Câmaras Municipais',
+            'post_offices': 'Correios',
+            
+            // === Culture & Leisure ===
+            'museums': 'Museus',
+            'theaters': 'Teatros',
+            'sports': 'Ginásios e Centros Desportivos',
+            'parks': 'Parques',
+            
+            // === Legacy support for old POI types ===
             'hospital': 'Hospital',
             'clinic': 'Clínica',
             'pharmacy': 'Farmácia',

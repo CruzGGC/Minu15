@@ -107,8 +107,8 @@
                     <div class="category-content">
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-hospital" name="poi" value="hospital">
-                                <label for="poi-hospital"><i class="fas fa-hospital"></i> Hospital</label>
+                                <input type="checkbox" id="poi-hospitals" name="poi" value="hospitals">
+                                <label for="poi-hospitals"><i class="fas fa-hospital"></i> Hospitais</label>
                             </div>
                             <select class="importance-select" disabled>
                                 <option value="1">Baixa</option>
@@ -119,8 +119,8 @@
                         </div>
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-clinic" name="poi" value="clinic">
-                                <label for="poi-clinic"><i class="fas fa-first-aid-kit"></i> Clínica</label>
+                                <input type="checkbox" id="poi-health_centers" name="poi" value="health_centers">
+                                <label for="poi-health_centers"><i class="fas fa-first-aid-kit"></i> Centros de Saúde</label>
                             </div>
                             <select class="importance-select" disabled>
                                 <option value="1">Baixa</option>
@@ -131,8 +131,20 @@
                         </div>
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-pharmacy" name="poi" value="pharmacy">
-                                <label for="poi-pharmacy"><i class="fas fa-prescription-bottle-alt"></i> Farmácia</label>
+                                <input type="checkbox" id="poi-pharmacies" name="poi" value="pharmacies">
+                                <label for="poi-pharmacies"><i class="fas fa-prescription-bottle-alt"></i> Farmácias</label>
+                            </div>
+                            <select class="importance-select" disabled>
+                                <option value="1">Baixa</option>
+                                <option value="2" selected>Média</option>
+                                <option value="3">Alta</option>
+                                <option value="4">Muito Alta</option>
+                            </select>
+                        </div>
+                        <div class="poi-item-finder">
+                            <div class="poi-checkbox">
+                                <input type="checkbox" id="poi-dentists" name="poi" value="dentists">
+                                <label for="poi-dentists"><i class="fas fa-tooth"></i> Clínicas Dentárias</label>
                             </div>
                             <select class="importance-select" disabled>
                                 <option value="1">Baixa</option>
@@ -153,8 +165,8 @@
                     <div class="category-content">
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-school" name="poi" value="school">
-                                <label for="poi-school"><i class="fas fa-school"></i> Escola</label>
+                                <input type="checkbox" id="poi-schools" name="poi" value="schools">
+                                <label for="poi-schools"><i class="fas fa-school"></i> Escolas Primárias e Secundárias</label>
                             </div>
                             <select class="importance-select" disabled>
                                 <option value="1">Baixa</option>
@@ -165,8 +177,8 @@
                         </div>
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-university" name="poi" value="university">
-                                <label for="poi-university"><i class="fas fa-university"></i> Universidade</label>
+                                <input type="checkbox" id="poi-universities" name="poi" value="universities">
+                                <label for="poi-universities"><i class="fas fa-university"></i> Universidades e Institutos</label>
                             </div>
                             <select class="importance-select" disabled>
                                 <option value="1">Baixa</option>
@@ -177,30 +189,8 @@
                         </div>
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-kindergarten" name="poi" value="kindergarten">
-                                <label for="poi-kindergarten"><i class="fas fa-baby"></i> Creche</label>
-                            </div>
-                            <select class="importance-select" disabled>
-                                <option value="1">Baixa</option>
-                                <option value="2">Média</option>
-                                <option value="3" selected>Alta</option>
-                                <option value="4">Muito Alta</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Commercial Category -->
-                <div class="poi-category">
-                    <div class="category-header">
-                        <span><i class="fas fa-shopping-cart"></i> Comércio</span>
-                        <span class="dropdown-arrow">▼</span>
-                    </div>
-                    <div class="category-content">
-                        <div class="poi-item-finder">
-                            <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-supermarket" name="poi" value="supermarket">
-                                <label for="poi-supermarket"><i class="fas fa-shopping-basket"></i> Supermercado</label>
+                                <input type="checkbox" id="poi-kindergartens" name="poi" value="kindergartens">
+                                <label for="poi-kindergartens"><i class="fas fa-baby"></i> Jardins de Infância e Creches</label>
                             </div>
                             <select class="importance-select" disabled>
                                 <option value="1">Baixa</option>
@@ -211,32 +201,8 @@
                         </div>
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-restaurant" name="poi" value="restaurant">
-                                <label for="poi-restaurant"><i class="fas fa-utensils"></i> Restaurante</label>
-                            </div>
-                            <select class="importance-select" disabled>
-                                <option value="1" selected>Baixa</option>
-                                <option value="2">Média</option>
-                                <option value="3">Alta</option>
-                                <option value="4">Muito Alta</option>
-                            </select>
-                        </div>
-                        <div class="poi-item-finder">
-                            <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-bank" name="poi" value="bank">
-                                <label for="poi-bank"><i class="fas fa-university"></i> Banco</label>
-                            </div>
-                            <select class="importance-select" disabled>
-                                <option value="1">Baixa</option>
-                                <option value="2" selected>Média</option>
-                                <option value="3">Alta</option>
-                                <option value="4">Muito Alta</option>
-                            </select>
-                        </div>
-                        <div class="poi-item-finder">
-                            <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-shopping_mall" name="poi" value="shopping_mall">
-                                <label for="poi-shopping_mall"><i class="fas fa-shopping-bag"></i> Shopping</label>
+                                <input type="checkbox" id="poi-libraries" name="poi" value="libraries">
+                                <label for="poi-libraries"><i class="fas fa-book"></i> Bibliotecas</label>
                             </div>
                             <select class="importance-select" disabled>
                                 <option value="1" selected>Baixa</option>
@@ -248,17 +214,17 @@
                     </div>
                 </div>
 
-                <!-- Transport & Services Category -->
+                <!-- Commercial & Services Category -->
                 <div class="poi-category">
                     <div class="category-header">
-                        <span><i class="fas fa-cogs"></i> Transporte & Serviços</span>
+                        <span><i class="fas fa-shopping-cart"></i> Comércio e Serviços</span>
                         <span class="dropdown-arrow">▼</span>
                     </div>
                     <div class="category-content">
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-bus_stop" name="poi" value="bus_stop">
-                                <label for="poi-bus_stop"><i class="fas fa-bus"></i> Parada de Ônibus</label>
+                                <input type="checkbox" id="poi-supermarkets" name="poi" value="supermarkets">
+                                <label for="poi-supermarkets"><i class="fas fa-shopping-basket"></i> Supermercados</label>
                             </div>
                             <select class="importance-select" disabled>
                                 <option value="1">Baixa</option>
@@ -269,20 +235,8 @@
                         </div>
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-subway_station" name="poi" value="subway_station">
-                                <label for="poi-subway_station"><i class="fas fa-subway"></i> Estação Metro</label>
-                            </div>
-                            <select class="importance-select" disabled>
-                                <option value="1">Baixa</option>
-                                <option value="2">Média</option>
-                                <option value="3">Alta</option>
-                                <option value="4" selected>Muito Alta</option>
-                            </select>
-                        </div>
-                        <div class="poi-item-finder">
-                            <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-post_office" name="poi" value="post_office">
-                                <label for="poi-post_office"><i class="fas fa-mail-bulk"></i> Correios</label>
+                                <input type="checkbox" id="poi-malls" name="poi" value="malls">
+                                <label for="poi-malls"><i class="fas fa-shopping-bag"></i> Centros Comerciais</label>
                             </div>
                             <select class="importance-select" disabled>
                                 <option value="1" selected>Baixa</option>
@@ -293,12 +247,163 @@
                         </div>
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-fuel" name="poi" value="fuel">
-                                <label for="poi-fuel"><i class="fas fa-gas-pump"></i> Posto Combustível</label>
+                                <input type="checkbox" id="poi-restaurants" name="poi" value="restaurants">
+                                <label for="poi-restaurants"><i class="fas fa-utensils"></i> Restaurantes e Cafés</label>
+                            </div>
+                            <select class="importance-select" disabled>
+                                <option value="1" selected>Baixa</option>
+                                <option value="2">Média</option>
+                                <option value="3">Alta</option>
+                                <option value="4">Muito Alta</option>
+                            </select>
+                        </div>
+                        <div class="poi-item-finder">
+                            <div class="poi-checkbox">
+                                <input type="checkbox" id="poi-atms" name="poi" value="atms">
+                                <label for="poi-atms"><i class="fas fa-money-bill-wave"></i> Caixas de Multibanco</label>
                             </div>
                             <select class="importance-select" disabled>
                                 <option value="1">Baixa</option>
                                 <option value="2" selected>Média</option>
+                                <option value="3">Alta</option>
+                                <option value="4">Muito Alta</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Safety & Emergency Category -->
+                <div class="poi-category">
+                    <div class="category-header">
+                        <span><i class="fas fa-shield-alt"></i> Segurança e Emergência</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="category-content">
+                        <div class="poi-item-finder">
+                            <div class="poi-checkbox">
+                                <input type="checkbox" id="poi-police_stations" name="poi" value="police_stations">
+                                <label for="poi-police_stations"><i class="fas fa-shield-alt"></i> Esquadras de Polícia</label>
+                            </div>
+                            <select class="importance-select" disabled>
+                                <option value="1">Baixa</option>
+                                <option value="2" selected>Média</option>
+                                <option value="3">Alta</option>
+                                <option value="4">Muito Alta</option>
+                            </select>
+                        </div>
+                        <div class="poi-item-finder">
+                            <div class="poi-checkbox">
+                                <input type="checkbox" id="poi-fire_stations" name="poi" value="fire_stations">
+                                <label for="poi-fire_stations"><i class="fas fa-fire"></i> Bombeiros</label>
+                            </div>
+                            <select class="importance-select" disabled>
+                                <option value="1">Baixa</option>
+                                <option value="2" selected>Média</option>
+                                <option value="3">Alta</option>
+                                <option value="4">Muito Alta</option>
+                            </select>
+                        </div>
+                        <div class="poi-item-finder">
+                            <div class="poi-checkbox">
+                                <input type="checkbox" id="poi-civil_protection" name="poi" value="civil_protection">
+                                <label for="poi-civil_protection"><i class="fas fa-hard-hat"></i> Proteção Civil</label>
+                            </div>
+                            <select class="importance-select" disabled>
+                                <option value="1" selected>Baixa</option>
+                                <option value="2">Média</option>
+                                <option value="3">Alta</option>
+                                <option value="4">Muito Alta</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Public Administration Category -->
+                <div class="poi-category">
+                    <div class="category-header">
+                        <span><i class="fas fa-landmark"></i> Administração Pública</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="category-content">
+                        <div class="poi-item-finder">
+                            <div class="poi-checkbox">
+                                <input type="checkbox" id="poi-parish_councils" name="poi" value="parish_councils">
+                                <label for="poi-parish_councils"><i class="fas fa-city"></i> Juntas de Freguesia</label>
+                            </div>
+                            <select class="importance-select" disabled>
+                                <option value="1" selected>Baixa</option>
+                                <option value="2">Média</option>
+                                <option value="3">Alta</option>
+                                <option value="4">Muito Alta</option>
+                            </select>
+                        </div>
+                        <div class="poi-item-finder">
+                            <div class="poi-checkbox">
+                                <input type="checkbox" id="poi-city_halls" name="poi" value="city_halls">
+                                <label for="poi-city_halls"><i class="fas fa-landmark"></i> Câmaras Municipais</label>
+                            </div>
+                            <select class="importance-select" disabled>
+                                <option value="1" selected>Baixa</option>
+                                <option value="2">Média</option>
+                                <option value="3">Alta</option>
+                                <option value="4">Muito Alta</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Culture & Leisure Category -->
+                <div class="poi-category">
+                    <div class="category-header">
+                        <span><i class="fas fa-theater-masks"></i> Cultura e Lazer</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="category-content">
+                        <div class="poi-item-finder">
+                            <div class="poi-checkbox">
+                                <input type="checkbox" id="poi-museums" name="poi" value="museums">
+                                <label for="poi-museums"><i class="fas fa-museum"></i> Museus</label>
+                            </div>
+                            <select class="importance-select" disabled>
+                                <option value="1" selected>Baixa</option>
+                                <option value="2">Média</option>
+                                <option value="3">Alta</option>
+                                <option value="4">Muito Alta</option>
+                            </select>
+                        </div>
+                        <div class="poi-item-finder">
+                            <div class="poi-checkbox">
+                                <input type="checkbox" id="poi-theaters" name="poi" value="theaters">
+                                <label for="poi-theaters"><i class="fas fa-theater-masks"></i> Teatros</label>
+                            </div>
+                            <select class="importance-select" disabled>
+                                <option value="1" selected>Baixa</option>
+                                <option value="2">Média</option>
+                                <option value="3">Alta</option>
+                                <option value="4">Muito Alta</option>
+                            </select>
+                        </div>
+                        <div class="poi-item-finder">
+                            <div class="poi-checkbox">
+                                <input type="checkbox" id="poi-sports" name="poi" value="sports">
+                                <label for="poi-sports"><i class="fas fa-dumbbell"></i> Ginásios e Centros Desportivos</label>
+                            </div>
+                            <select class="importance-select" disabled>
+                                <option value="1" selected>Baixa</option>
+                                <option value="2">Média</option>
+                                <option value="3">Alta</option>
+                                <option value="4">Muito Alta</option>
+                            </select>
+                        </div>
+                        <div class="poi-item-finder">
+                            <div class="poi-checkbox">
+                                <input type="checkbox" id="poi-parks" name="poi" value="parks">
+                                <label for="poi-parks"><i class="fas fa-tree"></i> Parques</label>
+                            </div>
+                            <select class="importance-select" disabled>
+                                <option value="1" selected>Baixa</option>
+                                <option value="2">Média</option>
                                 <option value="3">Alta</option>
                                 <option value="4">Muito Alta</option>
                             </select>
