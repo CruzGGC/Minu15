@@ -7,6 +7,8 @@ class IdealLocationFinder {
         this.topLocationMarkers = [];
         this.isAnalyzing = false;
         this.currentLocation = null;
+        this.currentTileLayer = null;
+        this.selectedTileProvider = DEFAULT_TILE_PROVIDER;
         
         this.init();
     }
@@ -19,13 +21,14 @@ class IdealLocationFinder {
     }
 
     initMap() {
-        // Initialize map centered on Lisbon
-        this.map = L.map('map').setView([38.7223, -9.1393], 11);
+        // Initialize map centered on Aveiro, Portugal
+        const aveiroCenter = [40.6405, -8.6538];
+        this.map = L.map('map').setView(aveiroCenter, 13);
         
-        // Add tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(this.map);
+        // Add tile layer using map configuration
+        this.currentTileLayer = null;
+        this.selectedTileProvider = DEFAULT_TILE_PROVIDER;
+        this.updateMapTiles(this.selectedTileProvider);
 
         // Map click handler
         this.map.on('click', (e) => {
@@ -34,10 +37,10 @@ class IdealLocationFinder {
     }
 
     initEventListeners() {
-        // Transport mode buttons
-        document.querySelectorAll('.transport-btn').forEach(btn => {
+        // Transport mode buttons (now using transport-option class like app.php)
+        document.querySelectorAll('.transport-option').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelector('.transport-btn.active')?.classList.remove('active');
+                document.querySelector('.transport-option.active')?.classList.remove('active');
                 btn.classList.add('active');
             });
         });
@@ -46,15 +49,32 @@ class IdealLocationFinder {
         const timeSlider = document.getElementById('max-time');
         const timeDisplay = document.getElementById('time-display');
         timeSlider.addEventListener('input', () => {
-            timeDisplay.textContent = timeSlider.value;
+            timeDisplay.textContent = timeSlider.value + ' minutos';
         });
+
+        // Heatmap intensity slider
+        const intensitySlider = document.getElementById('heatmap-intensity');
+        const intensityValue = document.getElementById('intensity-value');
+        if (intensitySlider && intensityValue) {
+            intensitySlider.addEventListener('input', () => {
+                intensityValue.textContent = intensitySlider.value;
+            });
+        }
 
         // My location button
         document.getElementById('my-location-btn').addEventListener('click', () => {
             this.getCurrentLocation();
         });
 
-        // Analyze button
+        // Map style selector
+        document.querySelectorAll('.map-style-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const provider = option.getAttribute('data-provider');
+                this.updateMapTiles(provider);
+            });
+        });
+
+        // Analyze button (now using calculate-button class like app.php)
         document.getElementById('analyze-btn').addEventListener('click', () => {
             this.startAnalysis();
         });
@@ -72,6 +92,110 @@ class IdealLocationFinder {
         document.getElementById('reset-view').addEventListener('click', () => {
             this.resetMapView();
         });
+
+        // Panel collapsible sections
+        this.initCollapsibleSections();
+
+        // Mobile menu toggle
+        const mobileToggle = document.getElementById('mobile-menu-toggle');
+        const overlayPanel = document.getElementById('overlay-panel');
+        const mobileClose = document.getElementById('mobile-panel-close');
+
+        if (mobileToggle) {
+            mobileToggle.addEventListener('click', () => {
+                overlayPanel.classList.toggle('mobile-open');
+            });
+        }
+
+        if (mobileClose) {
+            mobileClose.addEventListener('click', () => {
+                overlayPanel.classList.remove('mobile-open');
+            });
+        }
+    }
+
+    initCollapsibleSections() {
+        console.log('Initializing collapsible sections...'); // Debug log
+        
+        // POI section toggle
+        const poiHeader = document.getElementById('poi-header');
+        const poiContent = document.getElementById('poi-content');
+        
+        console.log('POI Header:', poiHeader, 'POI Content:', poiContent); // Debug log
+        
+        if (poiHeader && poiContent) {
+            poiHeader.addEventListener('click', () => {
+                console.log('POI header clicked'); // Debug log
+                poiContent.classList.toggle('expanded');
+                const arrow = poiHeader.querySelector('.dropdown-arrow');
+                if (arrow) {
+                    arrow.classList.toggle('up');
+                }
+            });
+        }
+
+        // Settings section toggle
+        const settingsHeader = document.getElementById('settings-header');
+        const settingsContent = document.getElementById('settings-content');
+        
+        console.log('Settings Header:', settingsHeader, 'Settings Content:', settingsContent); // Debug log
+        
+        if (settingsHeader && settingsContent) {
+            settingsHeader.addEventListener('click', () => {
+                console.log('Settings header clicked'); // Debug log
+                settingsContent.classList.toggle('expanded');
+                const arrow = settingsHeader.querySelector('.dropdown-arrow');
+                if (arrow) {
+                    arrow.classList.toggle('up');
+                }
+            });
+        }
+
+        // Category toggles
+        const categoryHeaders = document.querySelectorAll('.category-header');
+        console.log('Found category headers:', categoryHeaders.length); // Debug log
+        
+        categoryHeaders.forEach((header, index) => {
+            console.log(`Setting up category header ${index}:`, header); // Debug log
+            header.addEventListener('click', (e) => {
+                console.log(`Category header ${index} clicked`); // Debug log
+                // Prevent event propagation to parent panel
+                e.stopPropagation();
+                
+                const content = header.nextElementSibling;
+                if (content && content.classList.contains('category-content')) {
+                    content.classList.toggle('expanded');
+                    const arrow = header.querySelector('.dropdown-arrow');
+                    if (arrow) {
+                        arrow.classList.toggle('up');
+                    }
+                }
+            });
+        });
+
+        // Start with POI panel expanded
+        if (poiContent) {
+            console.log('Expanding POI panel by default'); // Debug log
+            poiContent.classList.add('expanded');
+            const arrow = poiHeader ? poiHeader.querySelector('.dropdown-arrow') : null;
+            if (arrow) {
+                arrow.classList.add('up');
+            }
+        }
+
+        // Map style section toggle
+        const mapStyleHeader = document.getElementById('map-style-header');
+        const mapStyleContent = document.getElementById('map-style-content');
+        
+        if (mapStyleHeader && mapStyleContent) {
+            mapStyleHeader.addEventListener('click', () => {
+                mapStyleContent.classList.toggle('expanded');
+                const arrow = mapStyleHeader.querySelector('.dropdown-arrow');
+                if (arrow) {
+                    arrow.classList.toggle('up');
+                }
+            });
+        }
     }
 
     initAutocomplete() {
@@ -109,12 +233,17 @@ class IdealLocationFinder {
         // Enable/disable importance selectors based on checkboxes
         document.querySelectorAll('input[name="poi"]').forEach(checkbox => {
             checkbox.addEventListener('change', () => {
-                const select = checkbox.closest('.poi-item').querySelector('.importance-select');
-                select.disabled = !checkbox.checked;
-                if (checkbox.checked) {
-                    select.style.opacity = '1';
-                } else {
-                    select.style.opacity = '0.5';
+                const poiItem = checkbox.closest('.poi-item-finder');
+                const select = poiItem ? poiItem.querySelector('.importance-select') : 
+                             checkbox.closest('.poi-item')?.querySelector('.importance-select');
+                
+                if (select) {
+                    select.disabled = !checkbox.checked;
+                    if (checkbox.checked) {
+                        select.style.opacity = '1';
+                    } else {
+                        select.style.opacity = '0.5';
+                    }
                 }
             });
         });
@@ -180,7 +309,7 @@ class IdealLocationFinder {
     getSelectedPOIs() {
         const selectedPOIs = [];
         document.querySelectorAll('input[name="poi"]:checked').forEach(checkbox => {
-            const poiItem = checkbox.closest('.poi-item');
+            const poiItem = checkbox.closest('.poi-item-finder') || checkbox.closest('.poi-item');
             const importance = parseInt(poiItem.querySelector('.importance-select').value);
             selectedPOIs.push({
                 type: checkbox.value,
@@ -192,7 +321,8 @@ class IdealLocationFinder {
 
     getAnalysisSettings() {
         const selectedPOIs = this.getSelectedPOIs();
-        const transportMode = document.querySelector('.transport-btn.active').dataset.mode;
+        const transportMode = document.querySelector('.transport-option.active')?.dataset.mode || 
+                           document.querySelector('.transport-btn.active')?.dataset.mode;
         const maxTime = parseInt(document.getElementById('max-time').value);
         const gridResolution = parseInt(document.getElementById('grid-resolution').value);
         const topLocations = parseInt(document.getElementById('top-locations').value);
@@ -525,6 +655,41 @@ class IdealLocationFinder {
         if (this.currentLocation) {
             this.map.setView([this.currentLocation.lat, this.currentLocation.lng], 13);
         }
+    }
+
+    // Update map tiles based on selected provider
+    updateMapTiles(provider) {
+        // If there's an existing tile layer, remove it
+        if (this.currentTileLayer) {
+            this.map.removeLayer(this.currentTileLayer);
+        }
+
+        // Get the provider configuration
+        const tileConfig = MAP_TILE_PROVIDERS[provider] || MAP_TILE_PROVIDERS[DEFAULT_TILE_PROVIDER];
+
+        // Create and add the new tile layer
+        this.currentTileLayer = L.tileLayer(tileConfig.url, {
+            attribution: tileConfig.attribution,
+            maxZoom: tileConfig.maxZoom
+        }).addTo(this.map);
+
+        // Update the selectedTileProvider variable
+        this.selectedTileProvider = provider;
+
+        // Update the map style selector UI
+        this.updateMapStyleSelector();
+    }
+
+    // Update the map style selector buttons to show the active style
+    updateMapStyleSelector() {
+        document.querySelectorAll('.map-style-option').forEach(button => {
+            const provider = button.getAttribute('data-provider');
+            if (provider === this.selectedTileProvider) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
     }
 }
 

@@ -1953,3 +1953,277 @@ body:has(.top-nav) #map {
         width: 100%;
     }
 }
+
+/* Ideal Finder Specific Styles for Overlay Panel */
+.ideal-finder-page #map {
+    height: calc(100vh - 64px); /* Subtract nav height */
+}
+
+.ideal-finder-page .overlay-panel {
+    top: 84px; /* Below nav */
+    width: 350px;
+    max-height: calc(100vh - 100px);
+}
+
+.ideal-finder-page .logo-header h3 {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+    margin: 0.5rem 0 0 0;
+    text-align: center;
+}
+
+/* POI Items with Importance Selectors for Ideal Finder */
+.poi-item-finder {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: var(--transition);
+}
+
+.poi-item-finder:hover {
+    background: #f9fafb;
+}
+
+.poi-checkbox {
+    flex: 1;
+    min-width: 0;
+}
+
+.poi-checkbox input[type="checkbox"] {
+    margin-right: 0.5rem;
+}
+
+.poi-checkbox label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.poi-checkbox label i {
+    margin-right: 0.5rem;
+    width: 16px;
+    color: var(--accent-color);
+}
+
+.poi-item-finder .importance-select {
+    margin-left: 0.75rem;
+    padding: 0.25rem 0.4rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    background: white;
+    min-width: 85px;
+    opacity: 0.5;
+    transition: var (--transition);
+}
+
+.poi-item-finder .importance-select:not(:disabled) {
+    opacity: 1;
+    border-color: var(--primary-color);
+}
+
+.poi-item-finder .importance-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
+}
+
+/* Enable importance selector when checkbox is checked */
+.poi-item-finder input[type="checkbox"]:checked ~ .importance-select,
+.poi-item-finder input[type="checkbox"]:checked + * .importance-select {
+    opacity: 1;
+    border-color: var(--primary-color);
+}
+
+/* Settings content for collapsible sections */
+#settings-content .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+#settings-content .setting-row label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    flex: 1;
+}
+
+#settings-content .setting-row select {
+    width: 120px;
+    padding: 0.4rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+#settings-content .setting-row input[type="range"] {
+    width: 120px;
+}
+
+#intensity-value {
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    min-width: 30px;
+}
+
+/* Distance slider styling for ideal finder */
+.ideal-finder-page .distance-slider {
+    width: 100%;
+    margin: 0.5rem 0;
+}
+
+.ideal-finder-page #time-display {
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+/* Calculate button styling */
+.ideal-finder-page .calculate-button {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, var(--success-color), #22c55e);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.ideal-finder-page .calculate-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);
+}
+
+.ideal-finder-page .calculate-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Mobile adjustments for ideal finder */
+@media (max-width: 768px) {
+    .ideal-finder-page .overlay-panel {
+        width: calc(100% - 40px);
+        left: 20px;
+        right: 20px;
+        top: 84px;
+    }
+    
+    .poi-item-finder {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .poi-item-finder .importance-select {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    #settings-content .setting-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    #settings-content .setting-row select,
+    #settings-content .setting-row input[type="range"] {
+        width: 100%;
+    }
+}
+
+/* Collapsible sections */
+.panel-content.collapsed {
+    display: none !important;
+}
+
+.dropdown-arrow {
+    transition: transform 0.3s ease;
+    font-size: 0.8rem;
+}
+
+.panel-header {
+    cursor: pointer;
+    user-select: none;
+}
+
+.panel-header:hover {
+    background: rgba(67, 97, 238, 0.05);
+}
+
+/* Mobile panel styles */
+@media (max-width: 768px) {
+    .mobile-menu-toggle {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        width: 50px;
+        height: 50px;
+        background: white;
+        border: none;
+        border-radius: 50%;
+        box-shadow: var(--box-shadow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1001;
+        cursor: pointer;
+        font-size: 1.2rem;
+        color: var(--primary-color);
+    }
+
+    .mobile-panel-close {
+        display: block;
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--text-color);
+        cursor: pointer;
+        padding: 5px;
+    }
+
+    .ideal-finder-page .overlay-panel {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 1002;
+    }
+
+    .ideal-finder-page .overlay-panel.mobile-open {
+        transform: translateX(0);
+    }
+
+    .ideal-finder-page .overlay-panel:not(.mobile-open) {
+        visibility: hidden;
+    }
+
+    .ideal-finder-page .overlay-panel.mobile-open {
+        visibility: visible;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-menu-toggle,
+    .mobile-panel-close {
+        display: none;
+    }
+}
