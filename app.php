@@ -31,8 +31,33 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/landing.css">
 </head>
 <body>
+    <!-- Navigation Header -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="images/Minu15.png" alt="Minu15" class="nav-logo">
+                <span class="nav-title">Explorador da Cidade</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.php" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    <span>Início</span>
+                </a>
+                <a href="app.php" class="nav-link active">
+                    <i class="fas fa-map"></i>
+                    <span>Explorador</span>
+                </a>
+                <a href="ideal_finder.php" class="nav-link">
+                    <i class="fas fa-search-location"></i>
+                    <span>Localizador Ideal</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
     <div id="map"></div>
     
     <!-- Mobile menu toggle button -->

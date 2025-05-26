@@ -31,6 +31,8 @@
                     <li><a href="#how-it-works" class="nav-link">Como Funciona</a></li>
                     <li><a href="#screenshots" class="nav-link">Capturas</a></li>
                     <li><a href="#faq" class="nav-link">FAQ</a></li>
+                    <li><a href="app.php" class="nav-link nav-cta">Explorador</a></li>
+                    <li><a href="ideal_finder.php" class="nav-link nav-cta">Localizador</a></li>
                 </ul>
             </div>
         </div>
@@ -42,7 +44,16 @@
         <div class="hero-content">
             <h1 class="zoom-in">Minu15 - Cidade em 15 Minutos</h1>
             <p class="zoom-in">Descubra tudo o que está acessível a 15 minutos de onde você está</p>
-            <a href="app.php" class="cta-button zoom-in">Explorar Agora</a>
+            <div class="cta-buttons zoom-in">
+                <a href="app.php" class="cta-button">
+                    <i class="fas fa-map"></i>
+                    Explorar Mapa
+                </a>
+                <a href="ideal_finder.php" class="cta-button cta-secondary">
+                    <i class="fas fa-search-location"></i>
+                    Localizador Ideal
+                </a>
+            </div>
         </div>
     </section>
     
