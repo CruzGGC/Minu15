@@ -1,15 +1,15 @@
 ## Tarefas de Desenvolvimento
 
 1.  **Estatísticas Interativas:**
-    *   Ao clicar num ponto aleatório nas estatísticas, identificar a freguesia correspondente. (mudar na parte Informacoes Gerais, adicionar informacao a essa parte com dados do INE)
-    *   Utilizar dados oficiais do INE Portugal para obter informações demográficas corretas da freguesia identificada.
+    *   Ao clicar num ponto aleatório nas estatísticas, identificar a freguesia correspondente. (mudar na parte Informacoes Gerais, adicionar informacao a essa parte com dados do INE no fundo das estatisticas, adicionar um botão que vai buscar as coordenadas selecionadas e vai usar a GEO API com essas coordenadas)
+    *   Utilizar dados oficiais do GEO API para obter informações demográficas corretas da freguesia identificada.
 
 2.  **Nova Página de Localização e Dados:**
-    *   Adicionar uma nova página na aplicação.
-    *   Permitir ao utilizador escolher um distrito, concelho ou freguesia de Portugal.
+    *   Adicionar uma nova página na aplicação que seja parecida a app.php.
+    *   Permitir ao utilizador escolher um distrito, concelho ou freguesia de Portugal, ou poder escolher no mapa um ponto em que GEO API vai utilizar essas coordenandas para servir os dados dessa localização.
     *   Gerar um centroide no local especificado.
-    *   Obter dados do INE para o local especificado.
-    *   Obter o número de infraestruturas para o local especificado.
+    *   Obter dados da GEO API para o local especificado.
+    *   Obter o número de infraestruturas para o local especificado através da base de dados do Geofrabik.
 
 3.  **Cálculo Automático no Mapa:** Completo!
     *   Modificar o mapa para que, ao clicar num local, o cálculo seja realizado automaticamente, sem a necessidade de clicar num botão "calcular".
