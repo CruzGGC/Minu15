@@ -34,30 +34,6 @@
     <link rel="stylesheet" href="css/landing.css">
 </head>
 <body class="ideal-finder-page">
-    <!-- Navigation Header -->
-    <nav class="top-nav">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <img src="images/Minu15.png" alt="Minu15" class="nav-logo">
-                <span class="nav-title">Localizador Ideal</span>
-            </div>
-            <div class="nav-links">
-                <a href="index.php" class="nav-link">
-                    <i class="fas fa-home"></i>
-                    <span>Início</span>
-                </a>
-                <a href="app.php" class="nav-link">
-                    <i class="fas fa-map"></i>
-                    <span>Explorador</span>
-                </a>
-                <a href="ideal_finder.php" class="nav-link active">
-                    <i class="fas fa-search-location"></i>
-                    <span>Localizador Ideal</span>
-                </a>
-            </div>
-        </div>
-    </nav>
-
     <div id="map"></div>
     
     <!-- Mobile menu toggle button -->
@@ -72,7 +48,9 @@
         </div>
         
         <div class="logo-header">
-            <img src="images/Minu15.png" alt="Minu15 Logo" class="app-logo">
+            <a href="index.php">
+                <img src="images/Minu15.png" alt="Minu15 Logo" class="app-logo">
+            </a>
             <h3>Localizador Ideal</h3>
         </div>
         
@@ -276,10 +254,22 @@
                 <!-- Safety & Emergency Category -->
                 <div class="poi-category">
                     <div class="category-header">
-                        <span><i class="fas fa-shield-alt"></i> Segurança e Emergência</span>
+                        <span><i class="fas fa-shield-alt"></i> Segurança e Serviços Públicos</span>
                         <span class="dropdown-arrow">▼</span>
                     </div>
                     <div class="category-content">
+                        <div class="poi-item-finder">
+                            <div class="poi-checkbox">
+                                <input type="checkbox" id="poi-police" name="poi" value="police">
+                                <label for="poi-police"><i class="fas fa-shield-alt"></i> Polícia</label>
+                            </div>
+                            <select class="importance-select" disabled>
+                                <option value="1">Baixa</option>
+                                <option value="2" selected>Média</option>
+                                <option value="3">Alta</option>
+                                <option value="4">Muito Alta</option>
+                            </select>
+                        </div>
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
                                 <input type="checkbox" id="poi-police_stations" name="poi" value="police_stations">
@@ -307,7 +297,7 @@
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
                                 <input type="checkbox" id="poi-civil_protection" name="poi" value="civil_protection">
-                                <label for="poi-civil_protection"><i class="fas fa-hard-hat"></i> Proteção Civil</label>
+                                <label for="poi-civil_protection"><i class="fas fa-building-columns"></i> Serviços Governamentais Públicos</label>
                             </div>
                             <select class="importance-select" disabled>
                                 <option value="1" selected>Baixa</option>
@@ -328,8 +318,8 @@
                     <div class="category-content">
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-parish_councils" name="poi" value="parish_councils">
-                                <label for="poi-parish_councils"><i class="fas fa-city"></i> Juntas de Freguesia</label>
+                                <input type="checkbox" id="poi-city_halls" name="poi" value="city_halls">
+                                <label for="poi-city_halls"><i class="fas fa-landmark"></i> Câmaras Municipais</label>
                             </div>
                             <select class="importance-select" disabled>
                                 <option value="1" selected>Baixa</option>
@@ -340,8 +330,8 @@
                         </div>
                         <div class="poi-item-finder">
                             <div class="poi-checkbox">
-                                <input type="checkbox" id="poi-city_halls" name="poi" value="city_halls">
-                                <label for="poi-city_halls"><i class="fas fa-landmark"></i> Câmaras Municipais</label>
+                                <input type="checkbox" id="poi-post_offices" name="poi" value="post_offices">
+                                <label for="poi-post_offices"><i class="fas fa-envelope"></i> Correios</label>
                             </div>
                             <select class="importance-select" disabled>
                                 <option value="1" selected>Baixa</option>

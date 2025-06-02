@@ -46,7 +46,7 @@ body {
 /* Map Container */
 #map {
     width: 100%;
-    height: calc(100vh - 64px); /* Subtract nav height when nav is present */
+    height: 100vh; /* Full height since there's no header anymore */
     z-index: 1;
 }
 
@@ -55,9 +55,9 @@ body:not(.ideal-finder-page) #map {
     height: 100vh;
 }
 
-/* For app.php with top nav, adjust height */
+/* For app.php with top nav, adjust height - no longer needed since we removed the nav */
 body:has(.top-nav) #map {
-    height: calc(100vh - 64px);
+    height: 100vh;
 }
 
 /* Overlay Panel */
@@ -459,10 +459,23 @@ body:has(.top-nav) #map {
 .close-stats {
     cursor: pointer;
     transition: var(--transition);
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #f0f0f0;
 }
 
 .close-stats:hover {
-    color: var(--danger-color);
+    background-color: #e0e0e0;
+    transform: scale(1.1);
+}
+
+.close-stats i {
+    font-size: 16px;
+    color: #555;
 }
 
 .stats-content {
@@ -988,6 +1001,10 @@ body:has(.top-nav) #map {
     border-bottom: 1px solid #eee;
 }
 
+.logo-header a {
+    display: block;
+}
+
 .app-logo {
     height: 140px; /* Significantly increased from 80px to 140px */
     max-width: 100%;
@@ -995,6 +1012,12 @@ body:has(.top-nav) #map {
     filter: drop-shadow(0px 3px 6px rgba(0, 0, 0, 0.15));
     transition: var(--transition);
     padding: 5px;
+    cursor: pointer;
+}
+
+.app-logo:hover {
+    transform: scale(1.05);
+    filter: drop-shadow(0px 5px 8px rgba(0, 0, 0, 0.2));
 }
 
 /* POI Icon Styles */

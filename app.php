@@ -34,30 +34,6 @@
     <link rel="stylesheet" href="css/landing.css">
 </head>
 <body>
-    <!-- Navigation Header -->
-    <nav class="top-nav">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <img src="images/Minu15.png" alt="Minu15" class="nav-logo">
-                <span class="nav-title">Explorador da Cidade</span>
-            </div>
-            <div class="nav-links">
-                <a href="index.php" class="nav-link">
-                    <i class="fas fa-home"></i>
-                    <span>Início</span>
-                </a>
-                <a href="app.php" class="nav-link active">
-                    <i class="fas fa-map"></i>
-                    <span>Explorador</span>
-                </a>
-                <a href="ideal_finder.php" class="nav-link">
-                    <i class="fas fa-search-location"></i>
-                    <span>Localizador Ideal</span>
-                </a>
-            </div>
-        </div>
-    </nav>
-
     <div id="map"></div>
     
     <!-- Mobile menu toggle button -->
@@ -72,7 +48,9 @@
         </div>
         
         <div class="logo-header">
-            <img src="images/Minu15.png" alt="Minu15 Logo" class="app-logo">
+            <a href="index.php">
+                <img src="images/Minu15.png" alt="Minu15 Logo" class="app-logo">
+            </a>
         </div>
         
         <div class="panel-section">
@@ -126,13 +104,14 @@
                 <!-- Segurança e emergência -->
                 <div class="poi-category">
                     <div class="category-header">
-                        <span>Segurança e Emergência</span>
+                        <span>Segurança e Serviços Públicos</span>
                         <span class="dropdown-arrow">▼</span>
                     </div>
                     <div class="category-content">
+                        <div><input type="checkbox" id="poi-police" checked> <label for="poi-police"><i class="fas fa-shield-alt poi-police"></i> Polícia</label></div>
                         <div><input type="checkbox" id="poi-police_stations" checked> <label for="poi-police_stations"><i class="fas fa-shield-alt poi-police"></i> Esquadras de Polícia</label></div>
                         <div><input type="checkbox" id="poi-fire_stations" checked> <label for="poi-fire_stations"><i class="fas fa-fire-extinguisher poi-fire-station"></i> Quartéis de Bombeiros</label></div>
-                        <div><input type="checkbox" id="poi-civil_protection" checked> <label for="poi-civil_protection"><i class="fas fa-hard-hat poi-civil-protection"></i> Proteção Civil</label></div>
+                        <div><input type="checkbox" id="poi-civil_protection" checked> <label for="poi-civil_protection"><i class="fas fa-building-columns poi-civil-protection"></i> Serviços Governamentais Públicos</label></div>
                     </div>
                 </div>
                 
@@ -143,8 +122,8 @@
                         <span class="dropdown-arrow">▼</span>
                     </div>
                     <div class="category-content">
-                        <div><input type="checkbox" id="poi-parish_councils" checked> <label for="poi-parish_councils"><i class="fas fa-city poi-parish"></i> Juntas de Freguesia</label></div>
                         <div><input type="checkbox" id="poi-city_halls" checked> <label for="poi-city_halls"><i class="fas fa-landmark poi-city-hall"></i> Câmaras Municipais</label></div>
+                        <div><input type="checkbox" id="poi-post_offices" checked> <label for="poi-post_offices"><i class="fas fa-envelope poi-post-office"></i> Correios</label></div>
                     </div>
                 </div>
                 
@@ -254,16 +233,25 @@
         </div>
     </div>
 
-    <div class="statistics-panel">
+    <!-- Statistics Panel -->
+    <div class="statistics-panel" id="statistics-panel">
         <div class="statistics-title">
             <span>Estatísticas da Área</span>
             <span class="close-stats"><i class="fas fa-times"></i></span>
         </div>
-        <div class="stats-content" id="area-stats">
+        <div class="stats-content" id="stats-content">
             <p>Clique no mapa para ver estatísticas</p>
         </div>
     </div>
 
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner-container">
+            <div class="loading-spinner"></div>
+            <p>Gerando isócrona...</p>
+        </div>
+    </div>
+    
     <!-- Modal overlay for popups -->
     <div class="modal-overlay" id="modal-overlay"></div>
     

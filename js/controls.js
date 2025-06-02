@@ -409,7 +409,10 @@ function initPanelCloseButtons() {
     if (closeStatsButton) {
         closeStatsButton.addEventListener('click', function() {
             hideStatisticsPanel();
+            console.log('Statistics panel closed');
         });
+    } else {
+        console.error('Statistics close button not found');
     }
 }
 
@@ -452,5 +455,8 @@ function hideStatisticsPanel() {
     const statsPanel = document.querySelector('.statistics-panel');
     if (statsPanel) {
         statsPanel.classList.remove('visible');
+        console.log('Statistics panel hidden');
+    } else {
+        console.error('Statistics panel not found');
     }
 }

@@ -124,8 +124,8 @@ const poiTypes = {
         category: 'safety'
     },
     civil_protection: { 
-        name: 'Proteção Civil', 
-        icon: 'hard-hat', 
+        name: 'Serviços Governamentais Públicos', 
+        icon: 'building-columns', 
         class: 'poi-civil-protection',
         category: 'safety'
     },
@@ -501,7 +501,11 @@ function fetchPOIsWithinIsochrone(latlng, isochroneData) {
         const checkbox = document.getElementById(`poi-${type}`);
         if (checkbox && checkbox.checked) {
             // Adicionar promessa da requisição ao array
-            const promise = fetchPOIsByType(type, latlng, radiusInMeters, isochroneGeoJSON);
+            const promise = fetchPOIsByType(type, latlng, radiusInMeters, isochroneGeoJSON)
+                .catch(error => {
+                    console.error(`Error fetching ${type} POIs:`, error);
+                    return { success: false, type: type, error: error.message };
+                });
             poiPromises.push(promise);
         }
     });
@@ -517,7 +521,13 @@ function fetchPOIsWithinIsochrone(latlng, isochroneData) {
         });
     
     // Atualizar estatísticas usando o polígono da isócrona
-    updateAreaStats(latlng, radiusInMeters, isochroneGeoJSON);
+    try {
+        updateAreaStats(latlng, radiusInMeters, isochroneGeoJSON);
+    } catch (error) {
+        console.error("Error updating area statistics:", error);
+        // Continue with the application flow even if statistics fail
+        displayAreaStats(null, latlng);
+    }
 }
 
 // Método de fallback usando buffer circular com Turf.js
@@ -627,18 +637,32 @@ function fetchPOIsByType(type, latlng, radius, isochroneGeoJSON) {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Adicionar POIs ao mapa
-                addPOIsToMap(type, data.pois);
-                resolve(data);
-            } else {
-                console.error(`Erro ao buscar POIs do tipo ${type}:`, data.message);
-                if (data.debug) {
-                    console.debug(`Debug info para ${type}:`, data.debug);
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.text(); // Get as text first to check if it's valid JSON
+        })
+        .then(text => {
+            // Try to parse the response as JSON
+            try {
+                const data = JSON.parse(text);
+                
+                if (data.success) {
+                    // Adicionar POIs ao mapa
+                    addPOIsToMap(type, data.pois);
+                    resolve(data);
+                } else {
+                    console.error(`Erro ao buscar POIs do tipo ${type}:`, data.message);
+                    if (data.debug) {
+                        console.debug(`Debug info para ${type}:`, data.debug);
+                    }
+                    reject(new Error(data.message));
                 }
-                reject(new Error(data.message));
+            } catch (parseError) {
+                console.error(`Error parsing JSON for ${type}:`, parseError);
+                console.debug('Raw response:', text);
+                reject(parseError);
             }
         })
         .catch(error => {
@@ -744,14 +768,23 @@ function updateAreaStats(latlng, radius, isochroneGeoJSON) {
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        return response.json();
+        return response.text(); // Get as text first to check if it's valid JSON
     })
-    .then(data => {
-        if (data.success) {
-            // Display statistics
-            displayAreaStats(data.stats, latlng);
-        } else {
-            console.error('Error fetching area statistics:', data.message);
+    .then(text => {
+        try {
+            const data = JSON.parse(text);
+            
+            if (data.success) {
+                // Display statistics
+                displayAreaStats(data.stats, latlng);
+            } else {
+                console.error('Error fetching area statistics:', data.message);
+                // Display error in stats panel but still show basic info
+                displayAreaStats(null, latlng);
+            }
+        } catch (parseError) {
+            console.error('Error parsing statistics JSON:', parseError);
+            console.debug('Raw response:', text);
             // Display error in stats panel but still show basic info
             displayAreaStats(null, latlng);
         }
@@ -837,8 +870,8 @@ function displayAreaStats(stats, latlng) {
         'Saúde': ['hospitals', 'health_centers', 'pharmacies', 'dentists'],
         'Educação': ['schools', 'universities', 'kindergartens', 'libraries'],
         'Comércio e Serviços': ['supermarkets', 'malls', 'restaurants', 'atms'],
-        'Segurança e Emergência': ['police_stations', 'fire_stations', 'civil_protection'],
-        'Administração Pública': ['parish_councils', 'city_halls', 'post_offices'],
+        'Segurança e Serviços Públicos': ['police', 'police_stations', 'fire_stations', 'civil_protection'],
+        'Administração Pública': ['city_halls', 'post_offices'],
         'Cultura e Lazer': ['museums', 'theaters', 'sports', 'parks'],
         'Transportes': ['bus_stops', 'train_stations', 'subway_stations', 'parking']
     };
