@@ -285,27 +285,39 @@ function handleMapClick(latlng) {
     generateIsochrone(latlng);
 }
 
-// Generate isochrone polygon using OpenRouteService API
+// Generate isochrone for the selected location
 function generateIsochrone(latlng) {
-    // Clear existing isochrone if present
-    if (isochroneLayer) {
-        map.removeLayer(isochroneLayer);
-        currentIsochroneData = null;
-    }
-    
     // Show loading indicator
     showLoading();
     
-    // Get ORS profile based on selected transport mode
+    // Clear existing isochrone and marker
+    if (isochroneLayer) {
+        map.removeLayer(isochroneLayer);
+    }
+    
+    // Clear existing POI layers
+    Object.keys(poiTypes).forEach(type => {
+        poiLayers[type].clearLayers();
+    });
+    
+    // Add marker at the selected location
+    if (currentMarker) {
+        map.removeLayer(currentMarker);
+    }
+    
+    currentMarker = L.marker(latlng).addTo(map);
+    
+    // Get the selected transport mode profile for OpenRouteService
     const profile = orsProfiles[selectedTransportMode];
     
     // Prepare parameters for OpenRouteService API request
     const params = {
         locations: [[latlng.lng, latlng.lat]],
         range: [selectedMaxDistance * 60], // Convert minutes to seconds
+        range_type: 'time',
         attributes: ['area'],
         area_units: 'km',
-        range_type: 'time'
+        smoothing: 0.5
     };
     
     // Use our PHP proxy instead of direct ORS API call
@@ -322,10 +334,7 @@ function generateIsochrone(latlng) {
     })
     .then(response => {
         if (!response.ok) {
-            // Try to get the error response as JSON
-            return response.json().then(errData => {
-                throw new Error(`API Error: ${errData.message || response.statusText}`);
-            });
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
         return response.json();
     })
@@ -334,19 +343,17 @@ function generateIsochrone(latlng) {
         if (data.success === false) {
             // This is an error response from our PHP proxy
             const errorMessage = data.message || 'Unknown API error';
-            const statusCode = data.status || '';
-            throw new Error(`API Error (${statusCode}): ${errorMessage}`);
+            throw new Error(`API Error: ${errorMessage}`);
         }
         
-        // Log the full response for debugging
         console.log('Received API response:', data);
         
-        // Validate the GeoJSON structure more thoroughly
-        if (!data || typeof data !== 'object') {
-            throw new Error('Empty or invalid response from API');
+        // Validate GeoJSON response
+        if (!data.type) {
+            throw new Error('Missing type property in GeoJSON');
         }
         
-        if (!data.type || data.type !== 'FeatureCollection') {
+        if (data.type !== 'FeatureCollection') {
             throw new Error(`Invalid GeoJSON type: ${data.type || 'undefined'}`);
         }
         
@@ -381,9 +388,6 @@ function generateIsochrone(latlng) {
         
         // Hide loading indicator
         hideLoading();
-        
-        // Notify user with more details
-        alert('Falha ao gerar isócrona precisa: ' + error.message + '\nUsando método alternativo baseado em distância.');
     });
 }
 
@@ -410,42 +414,53 @@ function displayIsochrone(data, latlng) {
         map.fitBounds(isochroneLayer.getBounds());
         
         // Calculate radius for statistics
-        let radiusInMeters;
+        let radius = null;
         
-        // Try to get area from isochrone properties
-        if (data.features && 
-            data.features[0] && 
-            data.features[0].properties && 
-            data.features[0].properties.area) {
-            // Convert km² to m² to get an equivalent radius
-            const areaInKm2 = data.features[0].properties.area;
-            radiusInMeters = Math.sqrt(areaInKm2 * 1000000 / Math.PI);
+        // If we have an isochrone, calculate approximate radius
+        if (data && data.features && data.features[0]) {
+            // Calculate the area of the isochrone
+            const area = turf.area(data.features[0]);
+            // Approximate radius from area (assuming circular shape): r = sqrt(area / π)
+            radius = Math.sqrt(area / Math.PI);
         } else {
-            // Fallback: use speed-based estimate
+            // Fallback to speed-based calculation
             const speedKmPerHour = transportSpeeds[selectedTransportMode];
             const distanceInKm = (speedKmPerHour * selectedMaxDistance) / 60;
-            radiusInMeters = distanceInKm * 1000;
+            radius = distanceInKm * 1000; // Convert to meters
         }
         
-        // Update statistics panel
-        updateAreaStats(latlng, radiusInMeters, JSON.stringify(data));
-        
-        // Show statistics panel
+        // Show the statistics panel
         showStatisticsPanel();
+        
+        // Update area statistics with the isochrone data
+        updateAreaStats(latlng, radius, data);
+        
+        // Fetch POIs within the isochrone area
+        fetchPOIs(latlng);
         
         // Hide loading indicator
         hideLoading();
+        
     } catch (error) {
         console.error('Error displaying isochrone:', error);
         
-        // Use fallback circle buffer if display fails
+        // Fallback to simple circle buffer if isochrone display fails
         useCircleBufferFallback(latlng);
         
         // Hide loading indicator
         hideLoading();
-        
-        // Notify user
-        alert('Erro ao exibir a isócrona. Usando método alternativo com base na distância.');
+    }
+}
+
+/**
+ * Show POIs within the given area
+ * This function is a wrapper for fetchPOIs to maintain compatibility
+ */
+function showPOIsInArea(data) {
+    // If we have a current marker, use its position to fetch POIs
+    if (currentMarker) {
+        const latlng = currentMarker.getLatLng();
+        fetchPOIs(latlng);
     }
 }
 
@@ -533,11 +548,15 @@ function useCircleBufferFallback(latlng) {
     // Ajustar o mapa à isócrona
     map.fitBounds(isochroneLayer.getBounds());
     
-    // Atualizar painel de estatísticas
-    updateAreaStats(latlng, distanceInMeters);
-    
-    // Mostrar painel de estatísticas
-    showStatisticsPanel();
+    try {
+        // Update statistics panel - wrapped in try/catch to prevent errors from breaking the map functionality
+        updateAreaStats(latlng, distanceInMeters, buffered);
+    } catch (statsError) {
+        console.error('Error updating area statistics in fallback mode:', statsError);
+        // Continue with the application flow even if statistics fail
+        displayAreaStats(null, latlng);
+        showStatisticsPanel();
+    }
     
     // Buscar POIs dentro da área
     fetchPOIs(latlng);
@@ -682,7 +701,10 @@ function openDirections(lat, lng) {
  */
 function updateAreaStats(latlng, radius, isochroneGeoJSON) {
     // Show loading indicator in stats panel
-    document.getElementById('stats-content').innerHTML = '<div class="loading-spinner"></div>';
+    const statsContent = document.getElementById('stats-content');
+    if (statsContent) {
+        statsContent.innerHTML = '<div class="loading-spinner"></div>';
+    }
     
     // Prepare data for the request
     const requestData = new FormData();
@@ -691,7 +713,11 @@ function updateAreaStats(latlng, radius, isochroneGeoJSON) {
     
     // Add isochrone GeoJSON if available
     if (isochroneGeoJSON) {
-        requestData.append('isochrone', JSON.stringify(isochroneGeoJSON));
+        // Check if isochroneGeoJSON is already a string or needs to be stringified
+        const geoJsonString = typeof isochroneGeoJSON === 'string' 
+            ? isochroneGeoJSON 
+            : JSON.stringify(isochroneGeoJSON);
+        requestData.append('isochrone', geoJsonString);
     }
     
     // Add radius as fallback
@@ -701,42 +727,39 @@ function updateAreaStats(latlng, radius, isochroneGeoJSON) {
     
     // Add selected POI types
     const selectedPOIs = [];
-    document.querySelectorAll('input[type="checkbox"][id^="poi-"]:checked').forEach(checkbox => {
-        selectedPOIs.push(checkbox.id.replace('poi-', ''));
+    Object.keys(poiTypes).forEach(type => {
+        const checkbox = document.getElementById(`poi-${type}`);
+        if (checkbox && checkbox.checked) {
+            selectedPOIs.push(type);
+        }
     });
     requestData.append('selected_pois', JSON.stringify(selectedPOIs));
     
-    // Make the API request
+    // Make API request
     fetch('includes/fetch_statistics.php', {
         method: 'POST',
         body: requestData
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            displayAreaStats(data.statistics, latlng);
-            
-            // Get freguesia demographics if available
-            if (data.freguesia) {
-                displayFreguesiaDemographics(data.freguesia);
-            }
+            // Display statistics
+            displayAreaStats(data.stats, latlng);
         } else {
-            document.getElementById('stats-content').innerHTML = `
-                <div class="error-message">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <p>Erro ao obter estatísticas: ${data.message}</p>
-                </div>
-            `;
+            console.error('Error fetching area statistics:', data.message);
+            // Display error in stats panel but still show basic info
+            displayAreaStats(null, latlng);
         }
     })
     .catch(error => {
         console.error('Error fetching area statistics:', error);
-        document.getElementById('stats-content').innerHTML = `
-            <div class="error-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>Erro ao obter estatísticas. Por favor, tente novamente.</p>
-            </div>
-        `;
+        // Handle error gracefully - still display the isochrone but with limited stats
+        displayAreaStats(null, latlng);
     });
 }
 
@@ -746,6 +769,37 @@ function updateAreaStats(latlng, radius, isochroneGeoJSON) {
 function displayAreaStats(stats, latlng) {
     // Get the stats content element
     const statsContent = document.getElementById('stats-content');
+    
+    // Check if stats is undefined or null
+    if (!stats) {
+        // Display basic information without statistics
+        statsContent.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Estatísticas não disponíveis. A API de estatísticas pode estar indisponível.</p>
+            </div>
+            <div class="stats-section general-info" data-lat="${latlng.lat}" data-lng="${latlng.lng}">
+                <h3>Informações Gerais</h3>
+                <p><strong>Tempo:</strong> ${selectedMaxDistance} minutos ${getTransportModeText()}</p>
+                <p><strong>Coordenadas:</strong> ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</p>
+                <p class="freguesia-info">Clique aqui para identificar a freguesia</p>
+            </div>
+        `;
+        
+        // Add click event to the freguesia info element
+        document.querySelector('.freguesia-info').addEventListener('click', function() {
+            identifyFreguesia(latlng);
+        });
+        
+        // Make the general-info section clickable to identify freguesia
+        document.querySelector('.general-info').addEventListener('click', function() {
+            const lat = parseFloat(this.getAttribute('data-lat'));
+            const lng = parseFloat(this.getAttribute('data-lng'));
+            identifyFreguesia({lat, lng});
+        });
+        
+        return; // Exit the function early
+    }
     
     // Calculate accessibility score
     const accessibilityScore = calculateAccessibilityScore(stats);
@@ -761,6 +815,10 @@ function displayAreaStats(stats, latlng) {
             <p class="score-explanation">
                 Esta pontuação é baseada na disponibilidade de serviços essenciais 
                 a ${selectedMaxDistance} minutos ${getTransportModeText()}.
+                ${getTimeAdjustmentText(selectedMaxDistance)}
+            </p>
+            <p class="score-details">
+                <strong>${accessibilityScore.poiCount}</strong> serviços em <strong>${accessibilityScore.categories}</strong> categorias
             </p>
         </div>
         
@@ -769,6 +827,7 @@ function displayAreaStats(stats, latlng) {
             <p><strong>Área:</strong> ${stats.area_km2.toFixed(2)} km²</p>
             <p><strong>Tempo:</strong> ${selectedMaxDistance} minutos ${getTransportModeText()}</p>
             <p><strong>Coordenadas:</strong> ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</p>
+            ${stats.population_estimate ? `<p><strong>População Estimada:</strong> ${stats.population_estimate.toLocaleString()} habitantes</p>` : ''}
             <p class="freguesia-info">Clique aqui para identificar a freguesia</p>
         </div>
     `;
@@ -778,15 +837,20 @@ function displayAreaStats(stats, latlng) {
         'Saúde': ['hospitals', 'health_centers', 'pharmacies', 'dentists'],
         'Educação': ['schools', 'universities', 'kindergartens', 'libraries'],
         'Comércio e Serviços': ['supermarkets', 'malls', 'restaurants', 'atms'],
-        'Segurança e Emergência': ['police', 'fire_stations', 'civil_protection'],
+        'Segurança e Emergência': ['police_stations', 'fire_stations', 'civil_protection'],
         'Administração Pública': ['parish_councils', 'city_halls', 'post_offices'],
         'Cultura e Lazer': ['museums', 'theaters', 'sports', 'parks'],
         'Transportes': ['bus_stops', 'train_stations', 'subway_stations', 'parking']
     };
     
+    // Add infrastructure statistics section
+    html += `<div class="stats-section infrastructure-stats"><h3>Infraestruturas</h3>`;
+    
     // Add POI statistics for each category
+    let hasInfrastructureData = false;
+    
     for (const [category, types] of Object.entries(poiCategories)) {
-        let categoryHtml = `<div class="stats-section poi-stats"><h3>${category}</h3><ul>`;
+        let categoryHtml = `<div class="category-section"><h4>${category}</h4><ul>`;
         let hasData = false;
         
         for (const type of types) {
@@ -803,6 +867,7 @@ function displayAreaStats(stats, latlng) {
                     </li>
                 `;
                 hasData = true;
+                hasInfrastructureData = true;
             }
         }
         
@@ -811,6 +876,15 @@ function displayAreaStats(stats, latlng) {
         if (hasData) {
             html += categoryHtml;
         }
+    }
+    
+    // Close infrastructure section
+    html += `</div>`;
+    
+    // If no infrastructure data was found
+    if (!hasInfrastructureData) {
+        html = html.replace('<div class="stats-section infrastructure-stats"><h3>Infraestruturas</h3></div>', 
+            '<div class="stats-section infrastructure-stats"><h3>Infraestruturas</h3><p>Não foram encontradas infraestruturas nesta área.</p></div>');
     }
     
     // Set the HTML content
@@ -1013,6 +1087,15 @@ function displayFreguesiaDemographics(freguesiaData) {
 
 // Calcular o Accessibility Score baseado nos POIs disponíveis
 function calculateAccessibilityScore(stats) {
+    // Check if stats is undefined or null
+    if (!stats) {
+        return {
+            score: 0,
+            poiCount: 0,
+            categories: 0
+        };
+    }
+    
     // Definir pesos para diferentes categorias de POIs
     const weights = {
         // Saúde (maior peso - essencial)
@@ -1040,7 +1123,7 @@ function calculateAccessibilityScore(stats) {
         parking: 5,
         
         // Segurança e Emergência
-        police: 8,
+        police_stations: 8,
         fire_stations: 7,
         civil_protection: 5,
         
@@ -1068,7 +1151,7 @@ function calculateAccessibilityScore(stats) {
         education: ['schools', 'universities', 'kindergartens', 'libraries'],
         commerce: ['supermarkets', 'malls', 'restaurants', 'atms'],
         transport: ['bus_stops', 'train_stations', 'subway_stations', 'parking'],
-        safety: ['police', 'fire_stations', 'civil_protection'],
+        safety: ['police_stations', 'fire_stations', 'civil_protection'],
         admin: ['parish_councils', 'city_halls', 'post_offices'],
         leisure: ['museums', 'theaters', 'sports', 'parks']
     };
@@ -1104,6 +1187,15 @@ function calculateAccessibilityScore(stats) {
         }
     }
     
+    // Prevent division by zero
+    if (maxPossibleScore === 0) {
+        return {
+            score: 0,
+            poiCount: 0,
+            categories: 0
+        };
+    }
+    
     // Contar categorias presentes para bônus de diversidade
     categoriesWithPOIs = Object.keys(categoriesPresent).length;
     
@@ -1122,71 +1214,78 @@ function calculateAccessibilityScore(stats) {
     // Garantir que o score esteja entre 0 e 100
     finalScore = Math.max(0, Math.min(100, finalScore));
     
+    // Add essential services check - if there are no essential services, reduce score
+    const hasEssentialServices = 
+        (stats.hospitals > 0 || stats.health_centers > 0 || stats.pharmacies > 0) && // Health
+        (stats.supermarkets > 0 || stats.restaurants > 0) && // Food
+        (stats.schools > 0 || stats.kindergartens > 0); // Education
+    
+    if (!hasEssentialServices) {
+        // If missing essential services, reduce score by 20%
+        finalScore = Math.round(finalScore * 0.8);
+    }
+    
     return {
         score: finalScore,
         poiCount: poiCount,
-        categories: categoriesWithPOIs
+        categories: categoriesWithPOIs,
+        hasEssentialServices: hasEssentialServices
     };
 }
 
-// Calcular o fator de ajuste baseado no tempo selecionado
+/**
+ * Calculate time adjustment factor for the accessibility score
+ * For times less than 15 minutes, increase the score (more impressive to have POIs in less time)
+ * For times more than 15 minutes, decrease the score (less impressive to have POIs in more time)
+ */
 function calculateTimeAdjustmentFactor(minutes) {
-    // Tempo de referência é 15 minutos (o padrão para o conceito de cidade de 15 minutos)
-    const referenceTime = 15;
-    
-    // Se o tempo for igual a 15 minutos, não há ajuste (fator = 1)
-    if (minutes === referenceTime) return 1.0;
-    
-    // Para tempos menores que 15 minutos, aumentar o score (mais impressionante)
-    // Para tempos maiores que 15 minutos, diminuir o score (menos impressionante)
-    // Fórmula: referenceTime / minutes, com limites para evitar valores extremos
-    
-    if (minutes < referenceTime) {
-        // Limite superior de ajuste: 1.5x (para 5 minutos ou menos)
-        const factor = Math.min(referenceTime / minutes, 1.5);
-        return factor;
-    } else {
-        // Limite inferior de ajuste: 0.6x (para 30 minutos ou mais)
-        const factor = Math.max(referenceTime / minutes, 0.6);
-        return factor;
+    if (minutes < 15) {
+        // Increase score by up to 30% for shorter times
+        return 1 + ((15 - minutes) / 15) * 0.3;
+    } else if (minutes > 15) {
+        // Decrease score by up to 20% for longer times
+        return 1 - ((minutes - 15) / 15) * 0.2;
     }
+    return 1; // No adjustment for 15 minutes
 }
 
-// Obter label descritivo para o score
+/**
+ * Get text explaining the time adjustment factor
+ */
+function getTimeAdjustmentText(minutes) {
+    if (minutes < 15) {
+        return `<small>(Pontuação ajustada positivamente para tempos menores que 15 minutos)</small>`;
+    } else if (minutes > 15) {
+        return `<small>(Pontuação ajustada negativamente para tempos maiores que 15 minutos)</small>`;
+    }
+    return '';
+}
+
+/**
+ * Get score label based on numeric score
+ */
 function getScoreLabel(score) {
-    if (score >= 90) return "Excelente";
-    if (score >= 75) return "Muito Bom";
-    if (score >= 60) return "Bom";
-    if (score >= 45) return "Razoável";
-    if (score >= 30) return "Limitado";
-    if (score >= 15) return "Fraco";
-    return "Muito Fraco";
+    if (score >= 90) return 'Excelente';
+    if (score >= 80) return 'Muito Bom';
+    if (score >= 70) return 'Bom';
+    if (score >= 60) return 'Satisfatório';
+    if (score >= 50) return 'Médio';
+    if (score >= 40) return 'Básico';
+    if (score >= 30) return 'Limitado';
+    if (score >= 20) return 'Fraco';
+    if (score >= 10) return 'Muito Fraco';
+    return 'Insuficiente';
 }
 
-// Obter texto do modo de transporte
+/**
+ * Get transport mode text for display
+ */
 function getTransportModeText() {
     switch (selectedTransportMode) {
-        case 'walking':
-            return 'a pé';
-        case 'cycling':
-            return 'de bicicleta';
-        case 'driving':
-            return 'de carro';
-        default:
-            return '';
-    }
-}
-
-// Obter texto explicativo sobre o ajuste de tempo
-function getTimeAdjustmentText(minutes) {
-    const referenceTime = 15;
-    
-    if (minutes === referenceTime) {
-        return '';
-    } else if (minutes < referenceTime) {
-        return `<span class="time-bonus">(Score aumentado por ser menos de 15 minutos)</span>`;
-    } else {
-        return `<span class="time-penalty">(Score reduzido por ser mais de 15 minutos)</span>`;
+        case 'walking': return 'a pé';
+        case 'cycling': return 'de bicicleta';
+        case 'driving': return 'de carro';
+        default: return 'a pé';
     }
 }
 

@@ -67,8 +67,18 @@ if (empty($isochroneJson) && $radius <= 0) {
     exit;
 }
 
-// Get database connection
-$conn = getDbConnection();
+// Try to get database connection
+try {
+    $conn = getDbConnection();
+} catch (Exception $e) {
+    // Return a fallback response if database connection fails
+    echo json_encode([
+        'success' => true,
+        'stats' => createFallbackStats($lat, $lng, $radius),
+        'message' => 'Using fallback statistics (database connection failed)'
+    ]);
+    exit;
+}
 
 // Debug information array
 $debug_info = [];
@@ -149,8 +159,9 @@ if ($isochroneJson) {
             useBufferFallback($conn, $lat, $lng, $radius, $spatialCondition, $bufferGeometry, $areaKm2, $debug_info);
         } else {
             echo json_encode([
-                'success' => false,
-                'message' => 'Error processing isochrone data and no fallback radius provided',
+                'success' => true,
+                'stats' => createFallbackStats($lat, $lng, $radius),
+                'message' => 'Using fallback statistics (isochrone processing failed)',
                 'debug' => $debug_info
             ]);
             exit;
@@ -182,6 +193,18 @@ $poiCategories = [
     'universities' => "amenity = 'university'",
     'kindergartens' => "amenity = 'kindergarten'",
     'libraries' => "amenity = 'library'",
+    
+    // === Commerce & Services ===
+    'supermarkets' => "shop IN ('supermarket', 'grocery', 'convenience')",
+    'malls' => "shop = 'mall' OR amenity = 'marketplace'",
+    'restaurants' => "amenity IN ('restaurant', 'cafe', 'fast_food')",
+    'atms' => "amenity = 'atm' OR amenity = 'bank'",
+    
+    // === Transport ===
+    'bus_stops' => "highway = 'bus_stop'",
+    'train_stations' => "railway = 'station' OR railway = 'halt'",
+    'subway_stations' => "railway = 'subway_entrance' OR railway = 'station' AND station = 'subway'",
+    'parking' => "amenity = 'parking'",
     
     // === Safety ===
     'police_stations' => "amenity = 'police'",
@@ -223,44 +246,100 @@ $statistics = [
 
 // Count each POI category within the defined area - combine points and polygons
 foreach ($poiCategories as $category => $condition) {
-    // Query that counts both points and polygons
-    $countQuery = "
-        SELECT 
-            (
-                SELECT COUNT(*) FROM planet_osm_point 
-                WHERE ($condition) AND $spatialCondition
-            ) +
-            (
-                SELECT COUNT(*) FROM planet_osm_polygon 
-                WHERE ($condition) AND $spatialCondition
-            ) as count
-    ";
-    
-    $countResult = pg_query($conn, $countQuery);
-    
-    if (!$countResult) {
+    try {
+        // Query that counts both points and polygons
+        $countQuery = "
+            SELECT 
+                (
+                    SELECT COUNT(*) FROM planet_osm_point 
+                    WHERE ($condition) AND $spatialCondition
+                ) +
+                (
+                    SELECT COUNT(*) FROM planet_osm_polygon 
+                    WHERE ($condition) AND $spatialCondition
+                ) as count
+        ";
+        
+        $countResult = pg_query($conn, $countQuery);
+        
+        if (!$countResult) {
+            $statistics[$category] = 0;
+            $debug_info['query_error_' . $category] = pg_last_error($conn);
+        } else {
+            $countRow = pg_fetch_assoc($countResult);
+            $statistics[$category] = (int) $countRow['count'];
+        }
+    } catch (Exception $e) {
         $statistics[$category] = 0;
-        $debug_info['query_error_' . $category] = pg_last_error($conn);
-    } else {
-        $countRow = pg_fetch_assoc($countResult);
-        $statistics[$category] = (int) $countRow['count'];
+        $debug_info['exception_' . $category] = $e->getMessage();
     }
 }
 
 // Count buildings for population estimation
-$buildingQuery = "
-    SELECT COUNT(*) as building_count 
-    FROM planet_osm_polygon 
-    WHERE building IS NOT NULL AND building != 'no' AND $spatialCondition
-";
+try {
+    $buildingQuery = "
+        SELECT 
+            COUNT(*) as count 
+        FROM 
+            planet_osm_polygon 
+        WHERE 
+            building IS NOT NULL 
+            AND building != 'no' 
+            AND $spatialCondition
+    ";
 
-$buildingResult = pg_query($conn, $buildingQuery);
-if ($buildingResult && $buildingRow = pg_fetch_assoc($buildingResult)) {
-    $buildingCount = (int) $buildingRow['building_count'];
-    $statistics['building_count'] = $buildingCount;
-    
-    // Estimate population based on buildings (rough estimate: ~2.5 people per building)
-    $statistics['population_estimate'] = round($buildingCount * 2.5);
+    $buildingResult = pg_query($conn, $buildingQuery);
+    $buildingCount = 0;
+
+    if ($buildingResult && $buildingRow = pg_fetch_assoc($buildingResult)) {
+        $buildingCount = (int) $buildingRow['count'];
+        // Rough estimate of population: ~2.5 people per building
+        $statistics['population_estimate'] = round($buildingCount * 2.5);
+        $debug_info['building_count'] = $buildingCount;
+    }
+} catch (Exception $e) {
+    $debug_info['building_count_error'] = $e->getMessage();
+}
+
+// Get administrative area information (parish and municipality)
+try {
+    $adminQuery = "
+        SELECT 
+            name, admin_level
+        FROM 
+            planet_osm_polygon 
+        WHERE 
+            admin_level IN ('8', '9', '10') 
+            AND ST_Contains(
+                way,
+                ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857)
+            )
+        ORDER BY 
+            admin_level DESC
+    ";
+
+    $adminResult = pg_query($conn, $adminQuery);
+
+    if (!$adminResult) {
+        $statistics['parish'] = 'Unknown';
+        $statistics['municipality'] = 'Unknown';
+        $debug_info['admin_error'] = pg_last_error($conn);
+    } else {
+        $statistics['parish'] = 'Unknown';
+        $statistics['municipality'] = 'Unknown';
+        
+        while ($adminRow = pg_fetch_assoc($adminResult)) {
+            if ($adminRow['admin_level'] === '10' || $adminRow['admin_level'] === '9') {
+                $statistics['parish'] = $adminRow['name'];
+            } else if ($adminRow['admin_level'] === '8') {
+                $statistics['municipality'] = $adminRow['name'];
+            }
+        }
+    }
+} catch (Exception $e) {
+    $statistics['parish'] = 'Unknown';
+    $statistics['municipality'] = 'Unknown';
+    $debug_info['admin_error'] = $e->getMessage();
 }
 
 // Get freguesia information from GeoAPI.pt
@@ -292,63 +371,45 @@ pg_close($conn);
  * Fallback to a simple buffer if isochrone is not available
  */
 function useBufferFallback($conn, $lat, $lng, $radius, &$spatialCondition, &$bufferGeometry, &$areaKm2, &$debug_info) {
-    // Convert time to meters based on average walking speed (5 km/h)
-    // 5 km/h = 83.33 m/min
-    // So for 15 minutes, radius would be 15 * 83.33 = 1250 meters
-    $radiusMeters = $radius * 83.33;
-    $debug_info['radius_meters'] = $radiusMeters;
-    
-    // Create a point from lat/lng
-    $point = "ST_SetSRID(ST_MakePoint($lng, $lat), 4326)";
-    
-    // Create a buffer around the point in meters
-    // We need to transform to a projected coordinate system (EPSG:3857) for accurate distance
-    $buffer = "ST_Transform(
-        ST_Buffer(
-            ST_Transform(
-                $point,
-                3857
-            ),
-            $radiusMeters
-        ),
-        4326
-    )";
-    
-    // Calculate the area of the buffer in square kilometers
-    $areaQuery = "
-        SELECT 
-            ST_Area(
-                ST_Transform(
+    try {
+        // Create a buffer polygon around the point
+        $bufferQuery = "
+            SELECT 
+                ST_AsGeoJSON(
                     ST_Buffer(
-                        ST_Transform(
-                            $point,
-                            3857
-                        ),
-                        $radiusMeters
-                    ),
-                    3857
-                )
-            ) / 1000000 as area_km2
-    ";
-    
-    $areaResult = pg_query($conn, $areaQuery);
-    if ($areaResult && $areaRow = pg_fetch_assoc($areaResult)) {
-        $areaKm2 = floatval($areaRow['area_km2']);
-        $debug_info['area_calculated'] = $areaKm2;
-    }
-    
-    // Create spatial condition for POI counting
-    $spatialCondition = "ST_DWithin(
-        ST_Transform($point, 3857),
-        way,
-        $radiusMeters
-    )";
-    
-    // Get the buffer geometry as GeoJSON for visualization
-    $bufferQuery = "SELECT ST_AsGeoJSON($buffer) as geojson";
-    $bufferResult = pg_query($conn, $bufferQuery);
-    if ($bufferResult && $bufferRow = pg_fetch_assoc($bufferResult)) {
-        $bufferGeometry = $bufferRow['geojson'];
+                        ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857), 
+                        $radius
+                    )
+                ) as buffer_geom,
+                ST_Area(
+                    ST_Buffer(
+                        ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857), 
+                        $radius
+                    )
+                ) / 1000000 as area_km2
+        ";
+
+        // Execute buffer query
+        $bufferResult = pg_query($conn, $bufferQuery);
+
+        if (!$bufferResult) {
+            throw new Exception('Buffer generation failed: ' . pg_last_error($conn));
+        }
+
+        $bufferData = pg_fetch_assoc($bufferResult);
+        $bufferGeometry = $bufferData['buffer_geom'];
+        $areaKm2 = $bufferData['area_km2'];
+        
+        // Define spatial condition using buffer
+        $spatialCondition = "ST_DWithin(
+            way, 
+            ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857), 
+            $radius
+        )";
+        
+        $debug_info['buffer_area'] = $areaKm2;
+    } catch (Exception $e) {
+        throw $e;
     }
 }
 
@@ -460,5 +521,19 @@ function fetchDemographicData($freguesiaCode, $municipioName) {
     }
     
     return $data;
+}
+
+// Create fallback statistics when database queries fail
+function createFallbackStats($lat, $lng, $radius) {
+    // Calculate approximate area based on radius
+    $areaKm2 = $radius > 0 ? pi() * pow($radius / 1000, 2) : 1.0;
+    
+    return [
+        'area_km2' => $areaKm2,
+        'parish' => 'Unknown',
+        'municipality' => 'Unknown',
+        'population_estimate' => 0,
+        'is_fallback' => true
+    ];
 }
 ?>

@@ -84,6 +84,16 @@ function initializeMap() {
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
         
+        console.log(`Map clicked at coordinates: ${lat}, ${lng}`);
+        
+        // Validate coordinates (ensure they're within Portugal's rough bounding box)
+        const inPortugal = lat >= 36.8 && lat <= 42.2 && lng >= -9.6 && lng <= -6.1;
+        
+        if (!inPortugal) {
+            console.warn('Coordinates outside Portugal\'s bounding box');
+            // We'll still try to fetch data, but warn the user
+        }
+        
         // Clear previous selection
         clearLocationSelection();
         
@@ -94,8 +104,12 @@ function initializeMap() {
         document.querySelector('.calculate-button').textContent = 'A carregar...';
         document.querySelector('.calculate-button').disabled = true;
         
+        // Format coordinates to 6 decimal places for precision
+        const formattedLat = parseFloat(lat.toFixed(6));
+        const formattedLng = parseFloat(lng.toFixed(6));
+        
         // Fetch location data for the clicked coordinates
-        fetchLocationByCoordinates(lat, lng);
+        fetchLocationByCoordinates(formattedLat, formattedLng);
     });
 }
 
@@ -222,11 +236,33 @@ function loadFreguesias(concelho) {
  * Fetch location data by coordinates
  */
 function fetchLocationByCoordinates(lat, lng) {
-    fetch(`../includes/fetch_location_data.php?lat=${lat}&lng=${lng}`)
-        .then(response => response.json())
+    console.log(`Fetching location data for coordinates: ${lat}, ${lng}`);
+    
+    // Show loading state
+    document.querySelector('.calculate-button').textContent = 'A carregar...';
+    document.querySelector('.calculate-button').disabled = true;
+    
+    fetch(`../includes/fetch_location_data.php?lat=${lat}&lng=${lng}&debug=true`)
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
         .then(data => {
+            console.log('API Response:', data);
+            
             if (data.success) {
                 currentLocation = data.data;
+                console.log('Current Location Data:', currentLocation);
+                
+                // Check if we have the expected data structure
+                if (!currentLocation || !currentLocation.nome) {
+                    console.error('Invalid location data structure:', currentLocation);
+                    alert('Dados de localização inválidos. Por favor tente novamente.');
+                    document.querySelector('.calculate-button').textContent = 'Carregar Dados';
+                    document.querySelector('.calculate-button').disabled = false;
+                    return;
+                }
+                
                 displayLocationData(currentLocation);
                 
                 // Show the location data panel
@@ -236,13 +272,48 @@ function fetchLocationByCoordinates(lat, lng) {
                 document.querySelector('.calculate-button').textContent = 'Carregar Dados';
                 document.querySelector('.calculate-button').disabled = false;
                 
+                // Check for geometry data
+                console.log('Checking for geometry data...');
+                console.log('geojson property exists:', !!currentLocation.geojson);
+                console.log('geometry property exists:', !!currentLocation.geometry);
+                
                 // Draw the location boundary if geometry is available
                 if (currentLocation.geojson) {
+                    console.log('Using geojson property for boundary');
+                    console.log('GeoJSON type:', currentLocation.geojson.type);
                     drawLocationBoundary(currentLocation.geojson);
                 } else if (currentLocation.geometry) {
+                    console.log('Using geometry property for boundary');
+                    console.log('Geometry type:', currentLocation.geometry.type);
                     drawLocationBoundary(currentLocation.geometry);
+                } else {
+                    console.log('No geometry data available for drawing boundary');
                 }
             } else {
+                console.error('API returned success: false', data.message);
+                
+                // Display debug information in console
+                if (data.debug) {
+                    console.log('Debug information:', data.debug);
+                    
+                    // Check specific error points
+                    if (data.debug.coordinates_error) {
+                        console.error('Coordinates error:', data.debug.coordinates_error);
+                    }
+                    if (data.debug.coordinates_response) {
+                        console.log('Coordinates response:', data.debug.coordinates_response);
+                    }
+                    if (data.debug.geometry_error) {
+                        console.error('Geometry error:', data.debug.geometry_error);
+                    }
+                    if (data.debug.coordinates_endpoint) {
+                        console.log('Endpoint used:', data.debug.coordinates_endpoint);
+                    }
+                    if (data.debug.coordinates_http_code) {
+                        console.log('HTTP code:', data.debug.coordinates_http_code);
+                    }
+                }
+                
                 alert('Não foi possível obter dados para esta localização.');
                 document.querySelector('.calculate-button').textContent = 'Carregar Dados';
                 document.querySelector('.calculate-button').disabled = false;
@@ -518,24 +589,104 @@ function displayLocationData(location) {
  * Draw the location boundary on the map
  */
 function drawLocationBoundary(geojson) {
+    console.log('Drawing boundary with data:', geojson);
+    
     // Remove existing polygon if it exists
     if (locationPolygon) {
+        console.log('Removing existing polygon');
         map.removeLayer(locationPolygon);
     }
     
-    // Create the polygon from GeoJSON
-    locationPolygon = L.geoJSON(geojson, {
-        style: {
-            color: '#2980b9',
-            weight: 3,
-            opacity: 0.8,
-            fillColor: '#3498db',
-            fillOpacity: 0.2
+    try {
+        // Handle different GeoJSON formats
+        let validGeoJSON = geojson;
+        
+        // If it's a Feature with geometry property
+        if (geojson.type === 'Feature' && geojson.geometry) {
+            console.log('Processing Feature type GeoJSON');
+            validGeoJSON = geojson;
+        } 
+        // If it's just the geometry object itself
+        else if (geojson.type === 'Polygon' || geojson.type === 'MultiPolygon') {
+            console.log('Processing direct geometry GeoJSON');
+            validGeoJSON = {
+                type: 'Feature',
+                geometry: geojson,
+                properties: {}
+            };
         }
-    }).addTo(map);
-    
-    // Zoom to the polygon bounds
-    map.fitBounds(locationPolygon.getBounds());
+        // If it's a FeatureCollection
+        else if (geojson.type === 'FeatureCollection' && geojson.features) {
+            console.log('Processing FeatureCollection with', geojson.features.length, 'features');
+            validGeoJSON = geojson;
+        }
+        // If it's an unexpected format
+        else {
+            console.warn('Unexpected GeoJSON format:', geojson.type);
+            console.log('Full GeoJSON data:', geojson);
+        }
+        
+        // Create the polygon from GeoJSON
+        locationPolygon = L.geoJSON(validGeoJSON, {
+            style: {
+                color: '#2980b9',
+                weight: 3,
+                opacity: 0.8,
+                fillColor: '#3498db',
+                fillOpacity: 0.2
+            }
+        }).addTo(map);
+        
+        console.log('Polygon created successfully');
+        
+        // Zoom to the polygon bounds
+        map.fitBounds(locationPolygon.getBounds());
+        console.log('Map zoomed to polygon bounds');
+    } catch (error) {
+        console.error('Error creating boundary polygon:', error);
+        console.error('GeoJSON data that caused the error:', JSON.stringify(geojson));
+        
+        // Try to recover by extracting geometry if possible
+        try {
+            if (geojson && typeof geojson === 'object') {
+                let geometryData = null;
+                
+                // Try different possible paths to geometry
+                if (geojson.geometry && geojson.geometry.coordinates) {
+                    console.log('Attempting recovery using .geometry');
+                    geometryData = geojson.geometry;
+                } else if (geojson.coordinates) {
+                    console.log('Attempting recovery using direct coordinates');
+                    geometryData = {
+                        type: Array.isArray(geojson.coordinates[0][0]) ? 'MultiPolygon' : 'Polygon',
+                        coordinates: geojson.coordinates
+                    };
+                }
+                
+                if (geometryData) {
+                    console.log('Recovery geometry:', geometryData);
+                    locationPolygon = L.geoJSON({
+                        type: 'Feature',
+                        geometry: geometryData,
+                        properties: {}
+                    }, {
+                        style: {
+                            color: '#e74c3c',
+                            weight: 3,
+                            opacity: 0.8,
+                            fillColor: '#e74c3c',
+                            fillOpacity: 0.2
+                        }
+                    }).addTo(map);
+                    
+                    map.fitBounds(locationPolygon.getBounds());
+                    console.log('Recovery successful');
+                }
+            }
+        } catch (recoveryError) {
+            console.error('Recovery attempt failed:', recoveryError);
+        }
+    }
 }
 
 /**

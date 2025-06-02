@@ -2335,3 +2335,93 @@ body:has(.top-nav) #map {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* Infrastructure Statistics Section */
+.infrastructure-stats {
+    margin-top: 15px;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 15px;
+}
+
+.infrastructure-stats h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.infrastructure-stats .category-section {
+    margin-bottom: 15px;
+}
+
+.infrastructure-stats h4 {
+    color: #555;
+    font-size: 1rem;
+    margin-bottom: 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px dashed #eee;
+}
+
+.infrastructure-stats ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-gap: 8px;
+}
+
+.infrastructure-stats li {
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+
+.infrastructure-stats li i {
+    margin-right: 8px;
+    width: 16px;
+    text-align: center;
+}
+
+.infrastructure-stats .poi-name {
+    flex-grow: 1;
+    font-size: 0.85rem;
+}
+
+.infrastructure-stats .poi-count {
+    font-weight: bold;
+    background-color: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+}
+
+/* Score details styling */
+.score-details {
+    text-align: center;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    color: #666;
+}
+
+/* Essential services indicator */
+.essential-services {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 8px;
+    font-size: 0.85rem;
+}
+
+.essential-services.available {
+    color: #2ecc71;
+}
+
+.essential-services.missing {
+    color: #e74c3c;
+}
+
+.essential-services i {
+    margin-right: 5px;
+}
