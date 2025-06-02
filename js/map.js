@@ -677,246 +677,338 @@ function openDirections(lat, lng) {
     window.open(url, '_blank');
 }
 
-// Atualizar estatísticas da área na barra lateral
+/**
+ * Update area statistics with data from the API
+ */
 function updateAreaStats(latlng, radius, isochroneGeoJSON) {
-    const statsDiv = document.getElementById('area-stats');
+    // Show loading indicator in stats panel
+    document.getElementById('stats-content').innerHTML = '<div class="loading-spinner"></div>';
     
-    // Criar dados do formulário para a requisição
-    const formData = new FormData();
-    formData.append('lat', latlng.lat);
-    formData.append('lng', latlng.lng);
-    formData.append('radius', radius);
+    // Prepare data for the request
+    const requestData = new FormData();
+    requestData.append('lat', latlng.lat);
+    requestData.append('lng', latlng.lng);
     
-    // Adicionar o GeoJSON da isócrona se disponível
+    // Add isochrone GeoJSON if available
     if (isochroneGeoJSON) {
-        formData.append('isochrone', isochroneGeoJSON);
+        requestData.append('isochrone', JSON.stringify(isochroneGeoJSON));
     }
     
-    // Fazer requisição AJAX para o servidor
+    // Add radius as fallback
+    if (radius) {
+        requestData.append('radius', radius);
+    }
+    
+    // Add selected POI types
+    const selectedPOIs = [];
+    document.querySelectorAll('input[type="checkbox"][id^="poi-"]:checked').forEach(checkbox => {
+        selectedPOIs.push(checkbox.id.replace('poi-', ''));
+    });
+    requestData.append('selected_pois', JSON.stringify(selectedPOIs));
+    
+    // Make the API request
     fetch('includes/fetch_statistics.php', {
         method: 'POST',
-        body: formData
+        body: requestData
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Calcular o Accessibility Score
-            const accessibilityScore = calculateAccessibilityScore(data.stats);
+            displayAreaStats(data.statistics, latlng);
             
-            // Exibir estatísticas
-            let html = '<div class="stats-list">';
-            
-            // Adicionar o Accessibility Score no topo
-            html += `
-                <div class="stat-category accessibility-score">
-                    <div class="stat-category-title">Accessibility Score</div>
-                    <div class="score-display">
-                        <div class="score-value">${accessibilityScore.score}</div>
-                        <div class="score-label">${getScoreLabel(accessibilityScore.score)}</div>
-                    </div>
-                    <div class="score-description">
-                        Baseado na disponibilidade de ${accessibilityScore.poiCount} serviços essenciais 
-                        em ${selectedMaxDistance} minutos ${getTransportModeText()}.
-                        ${getTimeAdjustmentText(selectedMaxDistance)}
-                    </div>
-                </div>
-            `;
-            
-            // Agrupar estatísticas por categoria
-            const categories = {
-                'Saúde': ['hospitals', 'health_centers', 'pharmacies', 'dentists'],
-                'Educação': ['schools', 'universities', 'kindergartens', 'libraries'],
-                'Comércio e Serviços': ['supermarkets', 'malls', 'restaurants', 'atms'],
-                'Transporte': ['bus_stops', 'train_stations', 'subway_stations', 'parking'],
-                'Segurança e Emergência': ['police', 'fire_stations', 'civil_protection'],
-                'Administração Pública': ['parish_councils', 'city_halls', 'post_offices'],
-                'Cultura e Lazer': ['museums', 'theaters', 'sports', 'parks']
-            };
-            
-            // Iterar pelas categorias
-            for (const [categoryName, typeList] of Object.entries(categories)) {
-                let categoryHasCheckedItem = false;
-                let categoryHtml = `
-                    <div class="stat-category">
-                        <div class="stat-category-title">${categoryName}</div>
-                `;
-                
-                // Verificar cada tipo de POI na categoria
-                typeList.forEach(type => {
-                    const checkbox = document.getElementById(`poi-${type}`);
-                    // Somente incluir os POIs que estão selecionados
-                    if (checkbox && checkbox.checked) {
-                        categoryHasCheckedItem = true;
-                        const count = data.stats[type] || 0;
-                        categoryHtml += `
-                            <div class="stat-item">
-                                <span class="stat-label"><i class="fas fa-${poiTypes[type].icon} ${poiTypes[type].class}"></i> ${poiTypes[type].name}:</span>
-                                <span class="stat-value">${count}</span>
-                            </div>
-                        `;
-                    }
-                });
-                
-                categoryHtml += '</div>';
-                
-                // Adicionar a categoria ao HTML apenas se tiver pelo menos um item selecionado
-                if (categoryHasCheckedItem) {
-                    html += categoryHtml;
-                }
-            }
-            
-            // Adicionar informações gerais da área
-            html += `
-                <div class="stat-category">
-                    <div class="stat-category-title">Informações Gerais</div>
-                    <div class="stat-item">
-                        <span class="stat-label"><i class="fas fa-ruler-combined"></i> Área Total:</span>
-                        <span class="stat-value">${data.stats.area_km2.toFixed(2)} km²</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label"><i class="fas fa-users"></i> População (est.):</span>
-                        <span class="stat-value">${data.stats.population_estimate || 'N/D'}</span>
-                    </div>
-            `;
-            
-            // Adicionar informações administrativas se disponíveis
-            if (data.stats.freguesia && data.stats.freguesia !== 'Unknown') {
-                html += `
-                    <div class="stat-item">
-                        <span class="stat-label"><i class="fas fa-map-marker-alt"></i> Freguesia:</span>
-                        <span class="stat-value">${data.stats.freguesia}</span>
-                    </div>
-                `;
-            }
-            
-            if (data.stats.concelho && data.stats.concelho !== 'Unknown') {
-                html += `
-                    <div class="stat-item">
-                        <span class="stat-label"><i class="fas fa-city"></i> Concelho:</span>
-                        <span class="stat-value">${data.stats.concelho}</span>
-                    </div>
-                `;
-            }
-            
-            if (data.stats.distrito && data.stats.distrito !== 'Unknown') {
-                html += `
-                    <div class="stat-item">
-                        <span class="stat-label"><i class="fas fa-map"></i> Distrito:</span>
-                        <span class="stat-value">${data.stats.distrito}</span>
-                    </div>
-                `;
-            }
-            
-            html += '</div>';
-            
-            // Adicionar informações demográficas do INE via GeoAPI.pt se disponíveis
-            if (data.stats.demographics) {
-                const demo = data.stats.demographics;
-                
-                html += `
-                    <div class="stat-category">
-                        <div class="stat-category-title">Dados Demográficos (INE)</div>
-                `;
-                
-                if (demo.population !== null) {
-                    html += `
-                        <div class="stat-item">
-                            <span class="stat-label"><i class="fas fa-users"></i> População:</span>
-                            <span class="stat-value">${demo.population.toLocaleString('pt-PT')}</span>
-                        </div>
-                    `;
-                }
-                
-                if (demo.households !== null) {
-                    html += `
-                        <div class="stat-item">
-                            <span class="stat-label"><i class="fas fa-home"></i> Famílias:</span>
-                            <span class="stat-value">${demo.households.toLocaleString('pt-PT')}</span>
-                        </div>
-                    `;
-                }
-                
-                if (demo.buildings !== null) {
-                    html += `
-                        <div class="stat-item">
-                            <span class="stat-label"><i class="fas fa-building"></i> Edifícios:</span>
-                            <span class="stat-value">${demo.buildings.toLocaleString('pt-PT')}</span>
-                        </div>
-                    `;
-                }
-                
-                if (demo.housing_units !== null) {
-                    html += `
-                        <div class="stat-item">
-                            <span class="stat-label"><i class="fas fa-door-open"></i> Alojamentos:</span>
-                            <span class="stat-value">${demo.housing_units.toLocaleString('pt-PT')}</span>
-                        </div>
-                    `;
-                }
-                
-                if (demo.area_km2 !== null) {
-                    html += `
-                        <div class="stat-item">
-                            <span class="stat-label"><i class="fas fa-ruler-combined"></i> Área:</span>
-                            <span class="stat-value">${demo.area_km2.toFixed(2)} km²</span>
-                        </div>
-                    `;
-                }
-                
-                if (demo.population_density !== null) {
-                    html += `
-                        <div class="stat-item">
-                            <span class="stat-label"><i class="fas fa-chart-area"></i> Densidade Pop.:</span>
-                            <span class="stat-value">${demo.population_density.toFixed(1)} hab/km²</span>
-                        </div>
-                    `;
-                }
-                
-                if (demo.census_year !== null) {
-                    html += `
-                        <div class="stat-item census-year">
-                            <span class="stat-label"><i class="fas fa-calendar"></i> Dados do Censo:</span>
-                            <span class="stat-value">${demo.census_year}</span>
-                        </div>
-                    `;
-                }
-                
-                html += `
-                    <div class="stat-item data-source">
-                        <span class="stat-label"><i class="fas fa-info-circle"></i> Fonte:</span>
-                        <span class="stat-value">GeoAPI.pt / INE</span>
-                    </div>
-                `;
-                
-                html += '</div>';
-            }
-            
-            html += '</div>';
-            statsDiv.innerHTML = html;
-            
-            // Adicionar botão para ver mais detalhes da freguesia
-            if (data.stats.freguesia && data.stats.freguesia !== 'Unknown' && 
-                data.stats.concelho && data.stats.concelho !== 'Unknown') {
-                
-                const viewMoreBtn = document.createElement('button');
-                viewMoreBtn.className = 'view-more-btn';
-                viewMoreBtn.innerHTML = '<i class="fas fa-info-circle"></i> Ver Mais Detalhes';
-                viewMoreBtn.onclick = function() {
-                    // Criar URL para a nova página de localização
-                    const url = `location.php?freguesia=${encodeURIComponent(data.stats.freguesia)}&concelho=${encodeURIComponent(data.stats.concelho)}&lat=${latlng.lat}&lng=${latlng.lng}`;
-                    window.location.href = url;
-                };
-                
-                statsDiv.appendChild(viewMoreBtn);
+            // Get freguesia demographics if available
+            if (data.freguesia) {
+                displayFreguesiaDemographics(data.freguesia);
             }
         } else {
-            statsDiv.innerHTML = '<p>Erro ao carregar estatísticas</p>';
+            document.getElementById('stats-content').innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Erro ao obter estatísticas: ${data.message}</p>
+                </div>
+            `;
         }
     })
     .catch(error => {
-        console.error('Erro:', error);
-        statsDiv.innerHTML = '<p>Erro ao carregar estatísticas</p>';
+        console.error('Error fetching area statistics:', error);
+        document.getElementById('stats-content').innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Erro ao obter estatísticas. Por favor, tente novamente.</p>
+            </div>
+        `;
     });
+}
+
+/**
+ * Display area statistics in the panel
+ */
+function displayAreaStats(stats, latlng) {
+    // Get the stats content element
+    const statsContent = document.getElementById('stats-content');
+    
+    // Calculate accessibility score
+    const accessibilityScore = calculateAccessibilityScore(stats);
+    
+    // Create HTML for the statistics
+    let html = `
+        <div class="stats-section accessibility-score">
+            <h3>Pontuação de Acessibilidade</h3>
+            <div class="score-display score-${getScoreLabel(accessibilityScore.score).toLowerCase()}">
+                <div class="score-value">${accessibilityScore.score}</div>
+                <div class="score-label">${getScoreLabel(accessibilityScore.score)}</div>
+            </div>
+            <p class="score-explanation">
+                Esta pontuação é baseada na disponibilidade de serviços essenciais 
+                a ${selectedMaxDistance} minutos ${getTransportModeText()}.
+            </p>
+        </div>
+        
+        <div class="stats-section general-info" data-lat="${latlng.lat}" data-lng="${latlng.lng}">
+            <h3>Informações Gerais</h3>
+            <p><strong>Área:</strong> ${stats.area_km2.toFixed(2)} km²</p>
+            <p><strong>Tempo:</strong> ${selectedMaxDistance} minutos ${getTransportModeText()}</p>
+            <p><strong>Coordenadas:</strong> ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</p>
+            <p class="freguesia-info">Clique aqui para identificar a freguesia</p>
+        </div>
+    `;
+    
+    // Add POI statistics by category
+    const poiCategories = {
+        'Saúde': ['hospitals', 'health_centers', 'pharmacies', 'dentists'],
+        'Educação': ['schools', 'universities', 'kindergartens', 'libraries'],
+        'Comércio e Serviços': ['supermarkets', 'malls', 'restaurants', 'atms'],
+        'Segurança e Emergência': ['police', 'fire_stations', 'civil_protection'],
+        'Administração Pública': ['parish_councils', 'city_halls', 'post_offices'],
+        'Cultura e Lazer': ['museums', 'theaters', 'sports', 'parks'],
+        'Transportes': ['bus_stops', 'train_stations', 'subway_stations', 'parking']
+    };
+    
+    // Add POI statistics for each category
+    for (const [category, types] of Object.entries(poiCategories)) {
+        let categoryHtml = `<div class="stats-section poi-stats"><h3>${category}</h3><ul>`;
+        let hasData = false;
+        
+        for (const type of types) {
+            if (stats[type] !== undefined) {
+                const poiName = poiTypes[type]?.name || type;
+                const poiIcon = poiTypes[type]?.icon || 'map-marker-alt';
+                const poiClass = poiTypes[type]?.class || '';
+                
+                categoryHtml += `
+                    <li>
+                        <i class="fas fa-${poiIcon} ${poiClass}"></i>
+                        <span class="poi-name">${poiName}</span>
+                        <span class="poi-count">${stats[type]}</span>
+                    </li>
+                `;
+                hasData = true;
+            }
+        }
+        
+        categoryHtml += `</ul></div>`;
+        
+        if (hasData) {
+            html += categoryHtml;
+        }
+    }
+    
+    // Set the HTML content
+    statsContent.innerHTML = html;
+    
+    // Add click event to the freguesia info element
+    document.querySelector('.freguesia-info').addEventListener('click', function() {
+        identifyFreguesia(latlng);
+    });
+    
+    // Make the general-info section clickable to identify freguesia
+    document.querySelector('.general-info').addEventListener('click', function() {
+        const lat = parseFloat(this.getAttribute('data-lat'));
+        const lng = parseFloat(this.getAttribute('data-lng'));
+        identifyFreguesia({lat, lng});
+    });
+}
+
+/**
+ * Identify freguesia at the given coordinates
+ */
+function identifyFreguesia(latlng) {
+    // Update the freguesia info text to show loading
+    const freguesiaInfo = document.querySelector('.freguesia-info');
+    freguesiaInfo.textContent = 'A identificar freguesia...';
+    freguesiaInfo.classList.add('loading');
+    
+    // Fetch freguesia data from GeoAPI
+    fetch(`includes/geoapi_proxy.php?endpoint=${encodeURIComponent(`gps/${latlng.lat},${latlng.lng}`)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.freguesia) {
+                // Update the freguesia info with the result
+                freguesiaInfo.textContent = `Freguesia: ${data.freguesia.nome}, ${data.concelho.nome}, ${data.distrito.nome}`;
+                freguesiaInfo.classList.remove('loading');
+                freguesiaInfo.classList.add('freguesia-found');
+                
+                // Fetch demographic data
+                fetchFreguesiaDemographics(data.freguesia.codigo);
+            } else {
+                freguesiaInfo.textContent = 'Não foi possível identificar a freguesia';
+                freguesiaInfo.classList.remove('loading');
+            }
+        })
+        .catch(error => {
+            console.error('Error identifying freguesia:', error);
+            freguesiaInfo.textContent = 'Erro ao identificar freguesia';
+            freguesiaInfo.classList.remove('loading');
+        });
+}
+
+/**
+ * Fetch demographic data for a freguesia
+ */
+function fetchFreguesiaDemographics(freguesiaCode) {
+    // Create a new section for demographics if it doesn't exist
+    let demographicsSection = document.querySelector('.demographics-section');
+    if (!demographicsSection) {
+        demographicsSection = document.createElement('div');
+        demographicsSection.className = 'stats-section demographics-section';
+        demographicsSection.innerHTML = '<h3>Dados Demográficos</h3><div class="loading-spinner"></div>';
+        
+        // Insert after general info section
+        const generalInfoSection = document.querySelector('.general-info');
+        generalInfoSection.parentNode.insertBefore(demographicsSection, generalInfoSection.nextSibling);
+    } else {
+        demographicsSection.innerHTML = '<h3>Dados Demográficos</h3><div class="loading-spinner"></div>';
+    }
+    
+    // Fetch freguesia data from GeoAPI
+    fetch(`includes/geoapi_proxy.php?endpoint=${encodeURIComponent(`freguesia/${freguesiaCode}`)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data) {
+                displayDemographicData(data, demographicsSection);
+            } else {
+                demographicsSection.innerHTML = '<h3>Dados Demográficos</h3><p>Dados não disponíveis</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching freguesia demographics:', error);
+            demographicsSection.innerHTML = '<h3>Dados Demográficos</h3><p>Erro ao obter dados demográficos</p>';
+        });
+}
+
+/**
+ * Display demographic data in the statistics panel
+ */
+function displayDemographicData(freguesiaData, container) {
+    // Get census data (prefer 2021 over 2011)
+    const census = freguesiaData.censos2021 || freguesiaData.censos2011;
+    
+    if (!census) {
+        container.innerHTML = '<h3>Dados Demográficos</h3><p>Dados censitários não disponíveis</p>';
+        return;
+    }
+    
+    // Create HTML content
+    let html = '<h3>Dados Demográficos</h3>';
+    
+    // Population
+    if (census.N_INDIVIDUOS_RESIDENT) {
+        html += `<p><strong>População:</strong> ${census.N_INDIVIDUOS_RESIDENT.toLocaleString()} habitantes</p>`;
+    }
+    
+    // Buildings and housing
+    if (census.N_EDIFICIOS_CLASSICOS) {
+        html += `<p><strong>Edifícios:</strong> ${census.N_EDIFICIOS_CLASSICOS.toLocaleString()}</p>`;
+    }
+    
+    if (census.N_ALOJAMENTOS) {
+        html += `<p><strong>Alojamentos:</strong> ${census.N_ALOJAMENTOS.toLocaleString()}</p>`;
+    }
+    
+    // Households
+    if (census.N_AGREGADOS || freguesiaData.censos2011?.N_FAMILIAS_CLASSICAS) {
+        const households = census.N_AGREGADOS || freguesiaData.censos2011?.N_FAMILIAS_CLASSICAS;
+        html += `<p><strong>Famílias:</strong> ${households.toLocaleString()}</p>`;
+    }
+    
+    // Area and density if available
+    if (freguesiaData.areaha) {
+        const areaKm2 = parseFloat(freguesiaData.areaha) / 100;
+        html += `<p><strong>Área:</strong> ${areaKm2.toLocaleString()} km²</p>`;
+        
+        if (census.N_INDIVIDUOS_RESIDENT) {
+            const density = Math.round(census.N_INDIVIDUOS_RESIDENT / areaKm2);
+            html += `<p><strong>Densidade Populacional:</strong> ${density.toLocaleString()} hab/km²</p>`;
+        }
+    }
+    
+    // Set the HTML content
+    container.innerHTML = html;
+}
+
+/**
+ * Display freguesia demographics data from fetch_statistics.php
+ */
+function displayFreguesiaDemographics(freguesiaData) {
+    if (!freguesiaData || !freguesiaData.demographics) return;
+    
+    // Create a new section for demographics if it doesn't exist
+    let demographicsSection = document.querySelector('.demographics-section');
+    if (!demographicsSection) {
+        demographicsSection = document.createElement('div');
+        demographicsSection.className = 'stats-section demographics-section';
+        
+        // Insert after general info section
+        const generalInfoSection = document.querySelector('.general-info');
+        generalInfoSection.parentNode.insertBefore(demographicsSection, generalInfoSection.nextSibling);
+    }
+    
+    // Create HTML content
+    let html = '<h3>Dados Demográficos</h3>';
+    html += `<p><strong>Freguesia:</strong> ${freguesiaData.freguesia}</p>`;
+    
+    if (freguesiaData.concelho) {
+        html += `<p><strong>Concelho:</strong> ${freguesiaData.concelho}</p>`;
+    }
+    
+    if (freguesiaData.distrito) {
+        html += `<p><strong>Distrito:</strong> ${freguesiaData.distrito}</p>`;
+    }
+    
+    const demographics = freguesiaData.demographics;
+    
+    // Population
+    if (demographics.population && demographics.population.total) {
+        html += `<p><strong>População:</strong> ${demographics.population.total.toLocaleString()} habitantes</p>`;
+        
+        if (demographics.population.male && demographics.population.female) {
+            const malePercent = Math.round((demographics.population.male / demographics.population.total) * 100);
+            const femalePercent = 100 - malePercent;
+            html += `<p><strong>Distribuição:</strong> ${malePercent}% homens, ${femalePercent}% mulheres</p>`;
+        }
+        
+        if (demographics.population.density) {
+            html += `<p><strong>Densidade:</strong> ${demographics.population.density.toLocaleString()} hab/km²</p>`;
+        }
+    }
+    
+    // Housing
+    if (demographics.housing) {
+        if (demographics.housing.buildings) {
+            html += `<p><strong>Edifícios:</strong> ${demographics.housing.buildings.toLocaleString()}</p>`;
+        }
+        
+        if (demographics.housing.dwellings) {
+            html += `<p><strong>Alojamentos:</strong> ${demographics.housing.dwellings.toLocaleString()}</p>`;
+        }
+        
+        if (demographics.housing.households) {
+            html += `<p><strong>Famílias:</strong> ${demographics.housing.households.toLocaleString()}</p>`;
+        }
+    }
+    
+    // Set the HTML content
+    demographicsSection.innerHTML = html;
 }
 
 // Calcular o Accessibility Score baseado nos POIs disponíveis

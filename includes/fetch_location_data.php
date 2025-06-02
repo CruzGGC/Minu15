@@ -117,14 +117,17 @@ function fetchLocationByCoordinates($lat, $lng) {
     // Create the endpoint URL for reverse geocoding
     $endpoint = "gps/{$lat},{$lng}";
     
+    // Use our proxy with caching
+    $proxyUrl = "../includes/geoapi_proxy.php?endpoint=" . urlencode($endpoint);
+    
     // Initialize cURL
     $ch = curl_init();
     
     // Set cURL options
-    curl_setopt($ch, CURLOPT_URL, "https://geoapi.pt/{$endpoint}");
+    curl_setopt($ch, CURLOPT_URL, $proxyUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     
     // Execute the request
     $response = curl_exec($ch);
@@ -148,13 +151,14 @@ function fetchLocationByCoordinates($lat, $lng) {
     
     // Get the freguesia code
     $freguesiaCode = $data['freguesia']['codigo'] ?? null;
+    $municipioNome = $data['municipio']['nome'] ?? null;
     
-    if (!$freguesiaCode) {
+    if (!$freguesiaCode || !$municipioNome) {
         return null;
     }
     
     // Fetch detailed data for the freguesia
-    return fetchLocationByCode($freguesiaCode, 'freguesia');
+    return fetchLocationByCode($freguesiaCode, 'freguesia', $municipioNome);
 }
 
 /**
@@ -162,16 +166,19 @@ function fetchLocationByCoordinates($lat, $lng) {
  */
 function fetchLocationByFreguesia($freguesia, $concelho) {
     // Create the endpoint URL for freguesia search
-    $endpoint = "freguesias?nome=" . urlencode($freguesia) . "&concelho=" . urlencode($concelho);
+    $endpoint = "municipio/" . urlencode($concelho) . "/freguesia/" . urlencode($freguesia);
+    
+    // Use our proxy with caching
+    $proxyUrl = "../includes/geoapi_proxy.php?endpoint=" . urlencode($endpoint);
     
     // Initialize cURL
     $ch = curl_init();
     
     // Set cURL options
-    curl_setopt($ch, CURLOPT_URL, "https://geoapi.pt/{$endpoint}");
+    curl_setopt($ch, CURLOPT_URL, $proxyUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     
     // Execute the request
     $response = curl_exec($ch);
@@ -189,19 +196,19 @@ function fetchLocationByFreguesia($freguesia, $concelho) {
     // Parse the response
     $data = json_decode($response, true);
     
-    if (!$data || empty($data)) {
+    if (!$data || !isset($data['codigo'])) {
         return null;
     }
     
-    // Get the first freguesia match
-    $freguesiaData = $data[0] ?? null;
+    // Get the freguesia code
+    $freguesiaCode = $data['codigo'] ?? null;
     
-    if (!$freguesiaData || !isset($freguesiaData['codigo'])) {
+    if (!$freguesiaCode) {
         return null;
     }
     
     // Fetch detailed data for the freguesia
-    return fetchLocationByCode($freguesiaData['codigo'], 'freguesia');
+    return fetchLocationByCode($freguesiaCode, 'freguesia', $concelho);
 }
 
 /**
@@ -209,16 +216,19 @@ function fetchLocationByFreguesia($freguesia, $concelho) {
  */
 function fetchLocationByConcelho($concelho) {
     // Create the endpoint URL for concelho search
-    $endpoint = "concelhos?nome=" . urlencode($concelho);
+    $endpoint = "municipio/" . urlencode($concelho);
+    
+    // Use our proxy with caching
+    $proxyUrl = "../includes/geoapi_proxy.php?endpoint=" . urlencode($endpoint);
     
     // Initialize cURL
     $ch = curl_init();
     
     // Set cURL options
-    curl_setopt($ch, CURLOPT_URL, "https://geoapi.pt/{$endpoint}");
+    curl_setopt($ch, CURLOPT_URL, $proxyUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     
     // Execute the request
     $response = curl_exec($ch);
@@ -236,19 +246,19 @@ function fetchLocationByConcelho($concelho) {
     // Parse the response
     $data = json_decode($response, true);
     
-    if (!$data || empty($data)) {
+    if (!$data || !isset($data['codigo'])) {
         return null;
     }
     
-    // Get the first concelho match
-    $concelhoData = $data[0] ?? null;
+    // Get the concelho code
+    $concelhoCode = $data['codigo'] ?? null;
     
-    if (!$concelhoData || !isset($concelhoData['codigo'])) {
+    if (!$concelhoCode) {
         return null;
     }
     
     // Fetch detailed data for the concelho
-    return fetchLocationByCode($concelhoData['codigo'], 'concelho');
+    return fetchLocationByCode($concelhoCode, 'concelho');
 }
 
 /**
@@ -256,16 +266,19 @@ function fetchLocationByConcelho($concelho) {
  */
 function fetchLocationByDistrito($distrito) {
     // Create the endpoint URL for distrito search
-    $endpoint = "distritos?nome=" . urlencode($distrito);
+    $endpoint = "distrito/" . urlencode($distrito);
+    
+    // Use our proxy with caching
+    $proxyUrl = "../includes/geoapi_proxy.php?endpoint=" . urlencode($endpoint);
     
     // Initialize cURL
     $ch = curl_init();
     
     // Set cURL options
-    curl_setopt($ch, CURLOPT_URL, "https://geoapi.pt/{$endpoint}");
+    curl_setopt($ch, CURLOPT_URL, $proxyUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     
     // Execute the request
     $response = curl_exec($ch);
@@ -283,41 +296,57 @@ function fetchLocationByDistrito($distrito) {
     // Parse the response
     $data = json_decode($response, true);
     
-    if (!$data || empty($data)) {
+    if (!$data || !isset($data['codigo'])) {
         return null;
     }
     
-    // Get the first distrito match
-    $distritoData = $data[0] ?? null;
+    // Get the distrito code
+    $distritoCode = $data['codigo'] ?? null;
     
-    if (!$distritoData || !isset($distritoData['codigo'])) {
+    if (!$distritoCode) {
         return null;
     }
     
     // Fetch detailed data for the distrito
-    return fetchLocationByCode($distritoData['codigo'], 'distrito');
+    return fetchLocationByCode($distritoCode, 'distrito');
 }
 
 /**
- * Fetch location data by code and type
+ * Fetch location data by code (freguesia, concelho, or distrito)
  */
-function fetchLocationByCode($code, $type) {
+function fetchLocationByCode($code, $type, $municipioName = null) {
     // Validate type
     if (!in_array($type, ['freguesia', 'concelho', 'distrito'])) {
         return null;
     }
     
-    // Create the endpoint URL
-    $endpoint = "{$type}s/{$code}";
+    // Create the endpoint URL based on type
+    switch ($type) {
+        case 'freguesia':
+            if (!$municipioName) {
+                return null;
+            }
+            $endpoint = "municipio/" . urlencode($municipioName) . "/freguesia/" . urlencode($code);
+            break;
+        case 'concelho':
+            $endpoint = "municipio/" . urlencode($code);
+            break;
+        case 'distrito':
+            $endpoint = "distrito/" . urlencode($code);
+            break;
+    }
+    
+    // Use our proxy with caching
+    $proxyUrl = "../includes/geoapi_proxy.php?endpoint=" . urlencode($endpoint);
     
     // Initialize cURL
     $ch = curl_init();
     
     // Set cURL options
-    curl_setopt($ch, CURLOPT_URL, "https://geoapi.pt/{$endpoint}");
+    curl_setopt($ch, CURLOPT_URL, $proxyUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     
     // Execute the request
     $response = curl_exec($ch);
@@ -339,44 +368,79 @@ function fetchLocationByCode($code, $type) {
         return null;
     }
     
-    // Fetch census data
-    $censusData = fetchCensusData($code, $type);
+    // Add additional data based on type
+    if ($type === 'freguesia') {
+        // Add census data
+        $censusData = fetchCensusData($code, $type, $municipioName);
+        if ($censusData) {
+            $locationData['censos2021'] = isset($censusData['censos2021']) ? $censusData['censos2021'] : null;
+            $locationData['censos2011'] = isset($censusData['censos2011']) ? $censusData['censos2011'] : null;
+        }
+        
+        // Add geometry data
+        $geometryData = fetchGeometryData($code, $type, $municipioName);
+        if ($geometryData) {
+            $locationData['geometry'] = $geometryData;
+            $locationData['geojson'] = $geometryData; // Add both keys for consistency
+            
+            // Add POI counts if geometry is available
+            $poiCounts = fetchPOICounts($geometryData);
+            if ($poiCounts) {
+                $locationData['poi_counts'] = $poiCounts;
+            }
+        }
+    } else if ($type === 'concelho' || $type === 'distrito') {
+        // Add census data for concelho and distrito
+        $censusData = fetchCensusData($code, $type, $municipioName);
+        if ($censusData) {
+            $locationData['censos2021'] = isset($censusData['censos2021']) ? $censusData['censos2021'] : null;
+            $locationData['censos2011'] = isset($censusData['censos2011']) ? $censusData['censos2011'] : null;
+        }
+        
+        // Add geometry data for concelho and distrito
+        $geometryData = fetchGeometryData($code, $type, $municipioName);
+        if ($geometryData) {
+            $locationData['geometry'] = $geometryData;
+            $locationData['geojson'] = $geometryData; // Add both keys for consistency
+        }
+    }
     
-    // Fetch geometry data
-    $geometryData = fetchGeometryData($code, $type);
-    
-    // Fetch POI counts from Geofabrik database
-    $poiCounts = fetchPOICounts($geometryData);
-    
-    // Combine all data
-    $result = [
-        'type' => $type,
-        'code' => $code,
-        'name' => $locationData['nome'] ?? null,
-        'basic' => $locationData,
-        'census' => $censusData,
-        'geometry' => $geometryData,
-        'pois' => $poiCounts
-    ];
-    
-    return $result;
+    return $locationData;
 }
 
 /**
  * Fetch census data for a location
  */
-function fetchCensusData($code, $type) {
-    // Create the endpoint URL
-    $endpoint = "{$type}s/{$code}/censos";
+function fetchCensusData($code, $type, $municipioName = null) {
+    // Create the endpoint URL based on type
+    switch ($type) {
+        case 'freguesia':
+            if (!$municipioName) {
+                return null;
+            }
+            $endpoint = "municipio/" . urlencode($municipioName) . "/freguesia/" . urlencode($code) . "/censos";
+            break;
+        case 'concelho':
+            $endpoint = "municipio/" . urlencode($code) . "/censos";
+            break;
+        case 'distrito':
+            $endpoint = "distrito/" . urlencode($code) . "/censos";
+            break;
+        default:
+            return null;
+    }
+    
+    // Use our proxy with caching
+    $proxyUrl = "../includes/geoapi_proxy.php?endpoint=" . urlencode($endpoint);
     
     // Initialize cURL
     $ch = curl_init();
     
     // Set cURL options
-    curl_setopt($ch, CURLOPT_URL, "https://geoapi.pt/{$endpoint}");
+    curl_setopt($ch, CURLOPT_URL, $proxyUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     
     // Execute the request
     $response = curl_exec($ch);
@@ -398,18 +462,36 @@ function fetchCensusData($code, $type) {
 /**
  * Fetch geometry data for a location
  */
-function fetchGeometryData($code, $type) {
-    // Create the endpoint URL
-    $endpoint = "{$type}s/{$code}/geometria";
+function fetchGeometryData($code, $type, $municipioName = null) {
+    // Create the endpoint URL based on type
+    switch ($type) {
+        case 'freguesia':
+            if (!$municipioName) {
+                return null;
+            }
+            $endpoint = "municipio/" . urlencode($municipioName) . "/freguesia/" . urlencode($code) . "/geometry";
+            break;
+        case 'concelho':
+            $endpoint = "municipio/" . urlencode($code) . "/geometry";
+            break;
+        case 'distrito':
+            $endpoint = "distrito/" . urlencode($code) . "/geometry";
+            break;
+        default:
+            return null;
+    }
+    
+    // Use our proxy with caching
+    $proxyUrl = "../includes/geoapi_proxy.php?endpoint=" . urlencode($endpoint);
     
     // Initialize cURL
     $ch = curl_init();
     
     // Set cURL options
-    curl_setopt($ch, CURLOPT_URL, "https://geoapi.pt/{$endpoint}");
+    curl_setopt($ch, CURLOPT_URL, $proxyUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Longer timeout for geometry data
+    curl_setopt($ch, CURLOPT_TIMEOUT, 60); // Increased timeout for geometry data
     
     // Execute the request
     $response = curl_exec($ch);
@@ -425,7 +507,18 @@ function fetchGeometryData($code, $type) {
     curl_close($ch);
     
     // Parse the response
-    return json_decode($response, true);
+    $geometryData = json_decode($response, true);
+    
+    // For distrito and concelho, we need to extract the actual GeoJSON
+    if ($type === 'distrito' || $type === 'concelho') {
+        // Check if we have a valid GeoJSON response
+        if (isset($geometryData['type']) && $geometryData['type'] === 'Feature' && 
+            isset($geometryData['geometry'])) {
+            return $geometryData;
+        }
+    }
+    
+    return $geometryData;
 }
 
 /**

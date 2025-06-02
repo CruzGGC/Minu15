@@ -353,20 +353,23 @@ function useBufferFallback($conn, $lat, $lng, $radius, &$spatialCondition, &$buf
 }
 
 /**
- * Fetch freguesia demographics from GeoAPI.pt
+ * Fetch freguesia information and demographics based on coordinates
  */
 function fetchFreguesiaDemographics($lat, $lng) {
     // Create the endpoint URL for reverse geocoding
     $endpoint = "gps/{$lat},{$lng}";
     
+    // Use our proxy with caching
+    $proxyUrl = "../includes/geoapi_proxy.php?endpoint=" . urlencode($endpoint);
+    
     // Initialize cURL
     $ch = curl_init();
     
     // Set cURL options
-    curl_setopt($ch, CURLOPT_URL, "https://geoapi.pt/{$endpoint}");
+    curl_setopt($ch, CURLOPT_URL, $proxyUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     
     // Execute the request
     $response = curl_exec($ch);
@@ -388,41 +391,53 @@ function fetchFreguesiaDemographics($lat, $lng) {
         return null;
     }
     
-    // Extract basic location information
-    $result = [
-        'freguesia' => $data['freguesia']['nome'] ?? 'Unknown',
-        'concelho' => $data['concelho']['nome'] ?? 'Unknown',
-        'distrito' => $data['distrito']['nome'] ?? 'Unknown'
-    ];
+    // Get the freguesia data
+    $freguesia = $data['freguesia'];
+    $freguesiaCode = $freguesia['codigo'] ?? null;
+    $municipioName = $data['municipio']['nome'] ?? null;
     
-    // If we have a freguesia code, fetch demographic data
-    if (isset($data['freguesia']['codigo'])) {
-        $freguesiaCode = $data['freguesia']['codigo'];
-        $demographicData = fetchDemographicData($freguesiaCode);
-        
-        if ($demographicData !== null) {
-            $result['demographics'] = $demographicData;
-        }
+    if (!$freguesiaCode || !$municipioName) {
+        return null;
     }
     
-    return $result;
+    // Fetch detailed demographic data for the freguesia
+    $demographics = fetchDemographicData($freguesiaCode, $municipioName);
+    
+    if (!$demographics) {
+        return [
+            'freguesia' => $freguesia['nome'],
+            'concelho' => $data['municipio']['nome'] ?? null,
+            'distrito' => $data['distrito']['nome'] ?? null,
+            'demographics' => null
+        ];
+    }
+    
+    return [
+        'freguesia' => $freguesia['nome'],
+        'concelho' => $data['municipio']['nome'] ?? null,
+        'distrito' => $data['distrito']['nome'] ?? null,
+        'demographics' => $demographics
+    ];
 }
 
 /**
- * Fetch demographic data for a freguesia
+ * Fetch demographic data for a freguesia by code
  */
-function fetchDemographicData($freguesiaCode) {
-    // Create the endpoint URL for freguesia details
-    $endpoint = "freguesias/{$freguesiaCode}/censos";
+function fetchDemographicData($freguesiaCode, $municipioName) {
+    // Create the endpoint URL for freguesia demographics
+    $endpoint = "municipio/" . urlencode($municipioName) . "/freguesia/" . urlencode($freguesiaCode) . "/censos";
+    
+    // Use our proxy with caching
+    $proxyUrl = "../includes/geoapi_proxy.php?endpoint=" . urlencode($endpoint);
     
     // Initialize cURL
     $ch = curl_init();
     
     // Set cURL options
-    curl_setopt($ch, CURLOPT_URL, "https://geoapi.pt/{$endpoint}");
+    curl_setopt($ch, CURLOPT_URL, $proxyUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     
     // Execute the request
     $response = curl_exec($ch);
@@ -444,17 +459,6 @@ function fetchDemographicData($freguesiaCode) {
         return null;
     }
     
-    // Extract relevant demographic information
-    $demographics = [
-        'population' => $data['populacao_residente'] ?? null,
-        'households' => $data['familias'] ?? null,
-        'buildings' => $data['edificios'] ?? null,
-        'housing_units' => $data['alojamentos'] ?? null,
-        'area_km2' => $data['area'] ?? null,
-        'population_density' => $data['densidade_populacional'] ?? null,
-        'census_year' => $data['censos'] ?? null
-    ];
-    
-    return $demographics;
+    return $data;
 }
 ?>

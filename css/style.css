@@ -2252,3 +2252,86 @@ body:has(.top-nav) #map {
         display: none;
     }
 }
+
+/* Freguesia identification in statistics panel */
+.freguesia-info {
+    cursor: pointer;
+    color: #2980b9;
+    text-decoration: underline;
+    margin-top: 10px;
+    padding: 5px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    display: inline-block;
+    transition: all 0.2s ease;
+}
+
+.freguesia-info:hover {
+    background-color: #e9f0f7;
+    color: #1a5a89;
+}
+
+.freguesia-info.loading {
+    background-color: #f5f5f5;
+    color: #7f8c8d;
+    text-decoration: none;
+    cursor: wait;
+    position: relative;
+    padding-left: 25px;
+}
+
+.freguesia-info.loading::before {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    margin-top: -7px;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #bdc3c7;
+    border-top-color: #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.freguesia-info.freguesia-found {
+    background-color: #eafaf1;
+    color: #27ae60;
+    text-decoration: none;
+    cursor: default;
+}
+
+.demographics-section {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #3498db;
+}
+
+.demographics-section h3 {
+    color: #2980b9;
+    margin-top: 0;
+    margin-bottom: 12px;
+}
+
+.demographics-section p {
+    margin: 6px 0;
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: #3498db;
+    animation: spin 1s ease-in-out infinite;
+    margin: 20px auto;
+    display: block;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
