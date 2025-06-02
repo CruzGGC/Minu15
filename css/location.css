@@ -1,0 +1,254 @@
+/* Estilos para o Explorador de Localização */
+
+/* Location Selector Styles */
+.location-selector {
+    margin-top: 15px;
+}
+
+.selector-group {
+    margin-bottom: 15px;
+}
+
+.selector-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.selector-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--border-radius);
+    border: 1px solid #ddd;
+    background-color: white;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.selector-group select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+}
+
+.selector-group select:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.selector-info {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: var(--border-radius);
+    font-size: 0.85rem;
+    color: #666;
+    text-align: center;
+    border-left: 3px solid var(--primary-color);
+}
+
+/* Location Data Panel Styles */
+.location-data-panel {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 380px;
+    background-color: rgba(255, 255, 255, 0.97);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    z-index: 998;
+    padding: 20px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    transform: translateX(110%);
+    transition: transform 0.3s ease-in-out;
+}
+
+.location-data-panel.visible {
+    transform: translateX(0);
+}
+
+.location-data-panel .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    font-weight: 600;
+    color: var(--secondary-color);
+}
+
+.close-panel {
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.close-panel:hover {
+    color: var(--danger-color);
+}
+
+/* Location Data Content Styles */
+.location-data {
+    font-size: 0.95rem;
+}
+
+.data-section {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.data-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.data-section-title {
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.data-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.data-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Map Boundary Styles */
+.freguesia-boundary {
+    stroke: var(--primary-color);
+    stroke-width: 2;
+    stroke-opacity: 0.8;
+    fill: var(--primary-color);
+    fill-opacity: 0.1;
+}
+
+.concelho-boundary {
+    stroke: var(--secondary-color);
+    stroke-width: 3;
+    stroke-opacity: 0.7;
+    fill: var(--secondary-color);
+    fill-opacity: 0.05;
+}
+
+.distrito-boundary {
+    stroke: var(--accent-color);
+    stroke-width: 4;
+    stroke-opacity: 0.6;
+    fill: var(--accent-color);
+    fill-opacity: 0.02;
+}
+
+/* Centroid Marker Styles */
+.centroid-marker {
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    background-color: var(--primary-color);
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+/* POI Count Chart Styles */
+.poi-chart-container {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: var(--border-radius);
+}
+
+.poi-bar {
+    height: 25px;
+    margin-bottom: 10px;
+    position: relative;
+    background-color: #eee;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.poi-bar-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 4px;
+    transition: width 0.5s ease-in-out;
+}
+
+.poi-bar-label {
+    position: absolute;
+    top: 0;
+    left: 10px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.poi-bar-value {
+    position: absolute;
+    top: 0;
+    right: 10px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .location-data-panel {
+        width: 100%;
+        top: auto;
+        bottom: 0;
+        right: 0;
+        max-height: 70vh;
+        transform: translateY(100%);
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+    }
+    
+    .location-data-panel.visible {
+        transform: translateY(0);
+    }
+    
+    .selector-group select {
+        padding: 12px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .poi-chart-container {
+        padding: 10px;
+    }
+    
+    .poi-bar {
+        height: 30px;
+    }
+    
+    .poi-bar-label, .poi-bar-value {
+        font-size: 0.8rem;
+    }
+} 

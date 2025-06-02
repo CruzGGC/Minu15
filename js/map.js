@@ -779,18 +779,136 @@ function updateAreaStats(latlng, radius, isochroneGeoJSON) {
                     </div>
             `;
             
-            // Adicionar informações da freguesia se disponíveis
-            if (data.stats.parish && data.stats.parish !== 'Unknown') {
+            // Adicionar informações administrativas se disponíveis
+            if (data.stats.freguesia && data.stats.freguesia !== 'Unknown') {
                 html += `
                     <div class="stat-item">
                         <span class="stat-label"><i class="fas fa-map-marker-alt"></i> Freguesia:</span>
-                        <span class="stat-value">${data.stats.parish}</span>
+                        <span class="stat-value">${data.stats.freguesia}</span>
                     </div>
                 `;
             }
             
-            html += '</div></div>';
+            if (data.stats.concelho && data.stats.concelho !== 'Unknown') {
+                html += `
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fas fa-city"></i> Concelho:</span>
+                        <span class="stat-value">${data.stats.concelho}</span>
+                    </div>
+                `;
+            }
+            
+            if (data.stats.distrito && data.stats.distrito !== 'Unknown') {
+                html += `
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fas fa-map"></i> Distrito:</span>
+                        <span class="stat-value">${data.stats.distrito}</span>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            
+            // Adicionar informações demográficas do INE via GeoAPI.pt se disponíveis
+            if (data.stats.demographics) {
+                const demo = data.stats.demographics;
+                
+                html += `
+                    <div class="stat-category">
+                        <div class="stat-category-title">Dados Demográficos (INE)</div>
+                `;
+                
+                if (demo.population !== null) {
+                    html += `
+                        <div class="stat-item">
+                            <span class="stat-label"><i class="fas fa-users"></i> População:</span>
+                            <span class="stat-value">${demo.population.toLocaleString('pt-PT')}</span>
+                        </div>
+                    `;
+                }
+                
+                if (demo.households !== null) {
+                    html += `
+                        <div class="stat-item">
+                            <span class="stat-label"><i class="fas fa-home"></i> Famílias:</span>
+                            <span class="stat-value">${demo.households.toLocaleString('pt-PT')}</span>
+                        </div>
+                    `;
+                }
+                
+                if (demo.buildings !== null) {
+                    html += `
+                        <div class="stat-item">
+                            <span class="stat-label"><i class="fas fa-building"></i> Edifícios:</span>
+                            <span class="stat-value">${demo.buildings.toLocaleString('pt-PT')}</span>
+                        </div>
+                    `;
+                }
+                
+                if (demo.housing_units !== null) {
+                    html += `
+                        <div class="stat-item">
+                            <span class="stat-label"><i class="fas fa-door-open"></i> Alojamentos:</span>
+                            <span class="stat-value">${demo.housing_units.toLocaleString('pt-PT')}</span>
+                        </div>
+                    `;
+                }
+                
+                if (demo.area_km2 !== null) {
+                    html += `
+                        <div class="stat-item">
+                            <span class="stat-label"><i class="fas fa-ruler-combined"></i> Área:</span>
+                            <span class="stat-value">${demo.area_km2.toFixed(2)} km²</span>
+                        </div>
+                    `;
+                }
+                
+                if (demo.population_density !== null) {
+                    html += `
+                        <div class="stat-item">
+                            <span class="stat-label"><i class="fas fa-chart-area"></i> Densidade Pop.:</span>
+                            <span class="stat-value">${demo.population_density.toFixed(1)} hab/km²</span>
+                        </div>
+                    `;
+                }
+                
+                if (demo.census_year !== null) {
+                    html += `
+                        <div class="stat-item census-year">
+                            <span class="stat-label"><i class="fas fa-calendar"></i> Dados do Censo:</span>
+                            <span class="stat-value">${demo.census_year}</span>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                    <div class="stat-item data-source">
+                        <span class="stat-label"><i class="fas fa-info-circle"></i> Fonte:</span>
+                        <span class="stat-value">GeoAPI.pt / INE</span>
+                    </div>
+                `;
+                
+                html += '</div>';
+            }
+            
+            html += '</div>';
             statsDiv.innerHTML = html;
+            
+            // Adicionar botão para ver mais detalhes da freguesia
+            if (data.stats.freguesia && data.stats.freguesia !== 'Unknown' && 
+                data.stats.concelho && data.stats.concelho !== 'Unknown') {
+                
+                const viewMoreBtn = document.createElement('button');
+                viewMoreBtn.className = 'view-more-btn';
+                viewMoreBtn.innerHTML = '<i class="fas fa-info-circle"></i> Ver Mais Detalhes';
+                viewMoreBtn.onclick = function() {
+                    // Criar URL para a nova página de localização
+                    const url = `location.php?freguesia=${encodeURIComponent(data.stats.freguesia)}&concelho=${encodeURIComponent(data.stats.concelho)}&lat=${latlng.lat}&lng=${latlng.lng}`;
+                    window.location.href = url;
+                };
+                
+                statsDiv.appendChild(viewMoreBtn);
+            }
         } else {
             statsDiv.innerHTML = '<p>Erro ao carregar estatísticas</p>';
         }

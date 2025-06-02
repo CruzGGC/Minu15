@@ -427,36 +427,33 @@ body:has(.top-nav) #map {
 /* Statistics Panel */
 .statistics-panel {
     position: absolute;
-    bottom: 40px;
+    top: 20px;
     right: 20px;
-    width: 280px;
+    width: 350px;
     background-color: rgba(255, 255, 255, 0.97);
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
-    padding: 20px;
     z-index: 998;
-    display: none;
-    transition: var(--transition);
-    max-height: 60vh; /* Limit the height to 60% of the viewport height */
-    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 20px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    transform: translateX(110%);
+    transition: transform 0.3s ease-in-out;
 }
 
 .statistics-panel.visible {
-    display: block;
+    transform: translateX(0);
 }
 
 .statistics-title {
-    font-weight: 600;
-    margin-bottom: 15px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: var(--primary-color);
-    position: sticky; /* Make the title sticky */
-    top: 0; /* Stick to the top */
-    background-color: rgba(255, 255, 255, 0.97); /* Match panel background */
-    padding: 5px 0; /* Add some padding */
-    z-index: 2; /* Above the content */
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    font-weight: 600;
+    color: var(--secondary-color);
 }
 
 .close-stats {
@@ -475,19 +472,20 @@ body:has(.top-nav) #map {
 .stat-item {
     display: flex;
     justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
+    margin-bottom: 8px;
+    align-items: center;
 }
 
 .stat-label {
-    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-/* Statistics Category Styles */
 .stat-category {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
     border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
 }
 
 .stat-category:last-child {
@@ -497,33 +495,35 @@ body:has(.top-nav) #map {
 
 .stat-category-title {
     font-weight: 600;
-    color: var(--primary-color);
-    margin-bottom: 8px;
-    font-size: 1rem;
+    color: var(--secondary-color);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-/* Accessibility Score Styles */
 .accessibility-score {
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 20px;
-    border: none;
+    background-color: #f5f9ff;
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-bottom: 25px;
+    border-left: 4px solid var(--primary-color);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .accessibility-score .stat-category-title {
-    text-align: center;
+    color: var(--primary-color);
     font-size: 1.1rem;
-    margin-bottom: 10px;
-    color: var(--secondary-color);
+    margin-bottom: 15px;
+    text-align: center;
+    font-weight: 700;
 }
 
 .score-display {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
 .score-value {
@@ -537,31 +537,56 @@ body:has(.top-nav) #map {
 .score-label {
     font-size: 1rem;
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--secondary-color);
 }
 
 .score-description {
-    font-size: 0.85rem;
     text-align: center;
-    color: #666;
+    font-size: 0.9rem;
+    color: var(--text-color);
     line-height: 1.4;
-    margin-top: 8px;
+    opacity: 0.85;
 }
 
-.time-bonus {
-    display: block;
-    color: #2ecc71;
-    font-weight: 500;
-    font-size: 0.8rem;
-    margin-top: 4px;
+/* Census data styling */
+.census-year {
+    font-style: italic;
+    opacity: 0.8;
+    margin-top: 10px;
 }
 
-.time-penalty {
+.data-source {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* View more button styling */
+.view-more-btn {
     display: block;
-    color: #e74c3c;
-    font-weight: 500;
-    font-size: 0.8rem;
-    margin-top: 4px;
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.view-more-btn:hover {
+    background-color: var(--secondary-color);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.view-more-btn i {
+    margin-right: 8px;
 }
 
 /* POI Legend */

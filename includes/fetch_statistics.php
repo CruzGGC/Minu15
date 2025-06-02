@@ -3,8 +3,9 @@
  * Fetch Area Statistics Endpoint
  * Calculates statistics for an area defined by an isochrone polygon or radius
  * Now includes both point and polygon POIs for accurate counting
+ * Added integration with GeoAPI.pt for freguesia identification and demographic data
  * 
- * @version 2.1
+ * @version 2.2
  */
 
 // Prevent any output before JSON response
@@ -248,58 +249,32 @@ foreach ($poiCategories as $category => $condition) {
 
 // Count buildings for population estimation
 $buildingQuery = "
-    SELECT 
-        COUNT(*) as count 
-    FROM 
-        planet_osm_polygon 
-    WHERE 
-        building IS NOT NULL 
-        AND building != 'no' 
-        AND $spatialCondition
+    SELECT COUNT(*) as building_count 
+    FROM planet_osm_polygon 
+    WHERE building IS NOT NULL AND building != 'no' AND $spatialCondition
 ";
 
 $buildingResult = pg_query($conn, $buildingQuery);
-$buildingCount = 0;
-
 if ($buildingResult && $buildingRow = pg_fetch_assoc($buildingResult)) {
-    $buildingCount = (int) $buildingRow['count'];
-    // Rough estimate of population: ~2.5 people per building
+    $buildingCount = (int) $buildingRow['building_count'];
+    $statistics['building_count'] = $buildingCount;
+    
+    // Estimate population based on buildings (rough estimate: ~2.5 people per building)
     $statistics['population_estimate'] = round($buildingCount * 2.5);
-    $debug_info['building_count'] = $buildingCount;
 }
 
-// Get administrative area information (parish and municipality)
-$adminQuery = "
-    SELECT 
-        name, admin_level
-    FROM 
-        planet_osm_polygon 
-    WHERE 
-        admin_level IN ('8', '9', '10') 
-        AND ST_Contains(
-            way,
-            ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857)
-        )
-    ORDER BY 
-        admin_level DESC
-";
+// Get freguesia information from GeoAPI.pt
+$geoApiData = fetchFreguesiaDemographics($lat, $lng);
 
-$adminResult = pg_query($conn, $adminQuery);
-
-if (!$adminResult) {
-    $statistics['parish'] = 'Unknown';
-    $statistics['municipality'] = 'Unknown';
-    $debug_info['admin_error'] = pg_last_error($conn);
-} else {
-    $statistics['parish'] = 'Unknown';
-    $statistics['municipality'] = 'Unknown';
+// Add freguesia information to statistics if available
+if ($geoApiData !== null) {
+    $statistics['freguesia'] = $geoApiData['freguesia'] ?? 'Unknown';
+    $statistics['concelho'] = $geoApiData['concelho'] ?? 'Unknown';
+    $statistics['distrito'] = $geoApiData['distrito'] ?? 'Unknown';
     
-    while ($adminRow = pg_fetch_assoc($adminResult)) {
-        if ($adminRow['admin_level'] === '10' || $adminRow['admin_level'] === '9') {
-            $statistics['parish'] = $adminRow['name'];
-        } else if ($adminRow['admin_level'] === '8') {
-            $statistics['municipality'] = $adminRow['name'];
-        }
+    // Add demographic information if available
+    if (isset($geoApiData['demographics'])) {
+        $statistics['demographics'] = $geoApiData['demographics'];
     }
 }
 
@@ -313,43 +288,173 @@ echo json_encode([
 // Close the database connection
 pg_close($conn);
 
-// Helper function to use the buffer fallback method
+/**
+ * Fallback to a simple buffer if isochrone is not available
+ */
 function useBufferFallback($conn, $lat, $lng, $radius, &$spatialCondition, &$bufferGeometry, &$areaKm2, &$debug_info) {
-    // Create a buffer polygon around the point
-    $bufferQuery = "
+    // Convert time to meters based on average walking speed (5 km/h)
+    // 5 km/h = 83.33 m/min
+    // So for 15 minutes, radius would be 15 * 83.33 = 1250 meters
+    $radiusMeters = $radius * 83.33;
+    $debug_info['radius_meters'] = $radiusMeters;
+    
+    // Create a point from lat/lng
+    $point = "ST_SetSRID(ST_MakePoint($lng, $lat), 4326)";
+    
+    // Create a buffer around the point in meters
+    // We need to transform to a projected coordinate system (EPSG:3857) for accurate distance
+    $buffer = "ST_Transform(
+        ST_Buffer(
+            ST_Transform(
+                $point,
+                3857
+            ),
+            $radiusMeters
+        ),
+        4326
+    )";
+    
+    // Calculate the area of the buffer in square kilometers
+    $areaQuery = "
         SELECT 
-            ST_AsGeoJSON(
-                ST_Buffer(
-                    ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857), 
-                    $radius
-                )
-            ) as buffer_geom,
             ST_Area(
-                ST_Buffer(
-                    ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857), 
-                    $radius
+                ST_Transform(
+                    ST_Buffer(
+                        ST_Transform(
+                            $point,
+                            3857
+                        ),
+                        $radiusMeters
+                    ),
+                    3857
                 )
             ) / 1000000 as area_km2
     ";
-
-    // Execute buffer query
-    $bufferResult = pg_query($conn, $bufferQuery);
-
-    if (!$bufferResult) {
-        throw new Exception('Buffer generation failed: ' . pg_last_error($conn));
-    }
-
-    $bufferData = pg_fetch_assoc($bufferResult);
-    $bufferGeometry = $bufferData['buffer_geom'];
-    $areaKm2 = $bufferData['area_km2'];
     
-    // Define spatial condition using buffer
+    $areaResult = pg_query($conn, $areaQuery);
+    if ($areaResult && $areaRow = pg_fetch_assoc($areaResult)) {
+        $areaKm2 = floatval($areaRow['area_km2']);
+        $debug_info['area_calculated'] = $areaKm2;
+    }
+    
+    // Create spatial condition for POI counting
     $spatialCondition = "ST_DWithin(
-        way, 
-        ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857), 
-        $radius
+        ST_Transform($point, 3857),
+        way,
+        $radiusMeters
     )";
     
-    $debug_info['buffer_area'] = $areaKm2;
+    // Get the buffer geometry as GeoJSON for visualization
+    $bufferQuery = "SELECT ST_AsGeoJSON($buffer) as geojson";
+    $bufferResult = pg_query($conn, $bufferQuery);
+    if ($bufferResult && $bufferRow = pg_fetch_assoc($bufferResult)) {
+        $bufferGeometry = $bufferRow['geojson'];
+    }
+}
+
+/**
+ * Fetch freguesia demographics from GeoAPI.pt
+ */
+function fetchFreguesiaDemographics($lat, $lng) {
+    // Create the endpoint URL for reverse geocoding
+    $endpoint = "gps/{$lat},{$lng}";
+    
+    // Initialize cURL
+    $ch = curl_init();
+    
+    // Set cURL options
+    curl_setopt($ch, CURLOPT_URL, "https://geoapi.pt/{$endpoint}");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    
+    // Execute the request
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    
+    // Check for errors
+    if (curl_errno($ch) || $httpCode !== 200) {
+        curl_close($ch);
+        return null;
+    }
+    
+    // Close cURL
+    curl_close($ch);
+    
+    // Parse the response
+    $data = json_decode($response, true);
+    
+    if (!$data || !isset($data['freguesia'])) {
+        return null;
+    }
+    
+    // Extract basic location information
+    $result = [
+        'freguesia' => $data['freguesia']['nome'] ?? 'Unknown',
+        'concelho' => $data['concelho']['nome'] ?? 'Unknown',
+        'distrito' => $data['distrito']['nome'] ?? 'Unknown'
+    ];
+    
+    // If we have a freguesia code, fetch demographic data
+    if (isset($data['freguesia']['codigo'])) {
+        $freguesiaCode = $data['freguesia']['codigo'];
+        $demographicData = fetchDemographicData($freguesiaCode);
+        
+        if ($demographicData !== null) {
+            $result['demographics'] = $demographicData;
+        }
+    }
+    
+    return $result;
+}
+
+/**
+ * Fetch demographic data for a freguesia
+ */
+function fetchDemographicData($freguesiaCode) {
+    // Create the endpoint URL for freguesia details
+    $endpoint = "freguesias/{$freguesiaCode}/censos";
+    
+    // Initialize cURL
+    $ch = curl_init();
+    
+    // Set cURL options
+    curl_setopt($ch, CURLOPT_URL, "https://geoapi.pt/{$endpoint}");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    
+    // Execute the request
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    
+    // Check for errors
+    if (curl_errno($ch) || $httpCode !== 200) {
+        curl_close($ch);
+        return null;
+    }
+    
+    // Close cURL
+    curl_close($ch);
+    
+    // Parse the response
+    $data = json_decode($response, true);
+    
+    if (!$data) {
+        return null;
+    }
+    
+    // Extract relevant demographic information
+    $demographics = [
+        'population' => $data['populacao_residente'] ?? null,
+        'households' => $data['familias'] ?? null,
+        'buildings' => $data['edificios'] ?? null,
+        'housing_units' => $data['alojamentos'] ?? null,
+        'area_km2' => $data['area'] ?? null,
+        'population_density' => $data['densidade_populacional'] ?? null,
+        'census_year' => $data['censos'] ?? null
+    ];
+    
+    return $demographics;
 }
 ?>
