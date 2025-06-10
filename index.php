@@ -26,13 +26,6 @@
             <div class="navbar-content">
                 <img src="images/Minu15.png" alt="Minu15 Logo" class="logo">
                 <ul class="nav-links">
-                    <li><a href="#about" class="nav-link">Sobre</a></li>
-                    <li><a href="#features" class="nav-link">Funcionalidades</a></li>
-                    <li><a href="#how-it-works" class="nav-link">Como Funciona</a></li>
-                    <li><a href="#screenshots" class="nav-link">Capturas</a></li>
-                    <li><a href="#faq" class="nav-link">FAQ</a></li>
-                    <li><a href="app.php" class="nav-link nav-cta">Explorador</a></li>
-                    <li><a href="ideal_finder.php" class="nav-link nav-cta">Localizador</a></li>
                 </ul>
             </div>
         </div>
@@ -51,7 +44,11 @@
                 </a>
                 <a href="ideal_finder.php" class="cta-button cta-secondary">
                     <i class="fas fa-search-location"></i>
-                    Localizador Ideal
+                    Localizador Ideal <span class="button-indicator">(Conceito)</span>
+                </a>
+                <a href="location.php" class="cta-button cta-tertiary">
+                    <i class="fas fa-location-arrow"></i>
+                    Dados do INE
                 </a>
             </div>
         </div>
