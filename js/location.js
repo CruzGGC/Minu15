@@ -175,14 +175,14 @@ function loadConcelhos(distrito) {
             // Get the municipios array from the response
             const municipios = data.municipios || [];
             
-            // Sort municipios alphabetically
-            municipios.sort();
+            // Sort municipios alphabetically (by name)
+            municipios.sort((a, b) => a.nome.localeCompare(b.nome));
             
             // Add options to select
-            municipios.forEach(municipioName => {
+            municipios.forEach(municipio => {
                 const option = document.createElement('option');
-                option.value = municipioName;
-                option.textContent = municipioName;
+                option.value = municipio.nome;
+                option.textContent = municipio.nome;
                 concelhoSelect.appendChild(option);
             });
             
@@ -210,16 +210,27 @@ function loadFreguesias(concelho) {
             // Clear previous options
             freguesiaSelect.innerHTML = '<option value="">Selecione uma freguesia...</option>';
             
-            // Get the freguesias array from the response
-            const freguesias = data.freguesias || [];
+            // Get the freguesias names array and geojsons data from the response
+            const freguesiaNames = data.freguesias || [];
+            const freguesiaGeojsons = data.geojsons?.freguesias || [];
             
-            // Sort freguesias alphabetically
-            freguesias.sort();
+            // Create a map of freguesia names to their respective codes from geojsons
+            const freguesiaCodes = {};
+            freguesiaGeojsons.forEach(geojson => {
+                if (geojson?.properties?.Freguesia && geojson?.properties?.Dicofre) {
+                    freguesiaCodes[geojson.properties.Freguesia] = geojson.properties.Dicofre;
+                }
+            });
+            
+            // Sort freguesia names alphabetically
+            freguesiaNames.sort((a, b) => a.localeCompare(b));
             
             // Add options to select
-            freguesias.forEach(freguesiaName => {
+            freguesiaNames.forEach(freguesiaName => {
                 const option = document.createElement('option');
-                option.value = freguesiaName;
+                // Store both code and name - the name is what we'll use for API calls
+                option.value = freguesiaName; // Store freguesia name as value for API calls
+                option.dataset.code = freguesiaCodes[freguesiaName] || ''; // Store code as data attribute
                 option.textContent = freguesiaName;
                 freguesiaSelect.appendChild(option);
             });
@@ -335,7 +346,9 @@ function fetchLocationByFreguesia(freguesia, concelho) {
     document.querySelector('.calculate-button').textContent = 'A carregar...';
     document.querySelector('.calculate-button').disabled = true;
     
-    fetch(`../includes/fetch_location_data.php?freguesia=${encodeURIComponent(freguesia)}&concelho=${encodeURIComponent(concelho)}`)
+    // Use the freguesia name for the API call, not the code
+    // Arrange parameters to match the API structure: /municipio/{municipio}/freguesia/{freguesia}
+    fetch(`../includes/fetch_location_data.php?municipio=${encodeURIComponent(concelho)}&freguesia=${encodeURIComponent(freguesia)}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -370,14 +383,14 @@ function fetchLocationByFreguesia(freguesia, concelho) {
 }
 
 /**
- * Fetch location data by concelho
+ * Fetch location data by municipio
  */
-function fetchLocationByConcelho(concelho) {
+function fetchLocationByMunicipio(municipio) {
     // Update UI to show loading state
     document.querySelector('.calculate-button').textContent = 'A carregar...';
     document.querySelector('.calculate-button').disabled = true;
     
-    fetch(`../includes/fetch_location_data.php?concelho=${encodeURIComponent(concelho)}`)
+    fetch(`../includes/fetch_location_data.php?municipio=${encodeURIComponent(municipio)}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -398,14 +411,14 @@ function fetchLocationByConcelho(concelho) {
                     drawLocationBoundary(currentLocation.geometry);
                 }
             } else {
-                alert('Não foi possível obter dados para este concelho.');
+                alert('Não foi possível obter dados para este município.');
                 document.querySelector('.calculate-button').textContent = 'Carregar Dados';
                 document.querySelector('.calculate-button').disabled = false;
             }
         })
         .catch(error => {
-            console.error('Error fetching concelho data:', error);
-            alert('Ocorreu um erro ao obter os dados do concelho.');
+            console.error('Error fetching municipio data:', error);
+            alert('Ocorreu um erro ao obter os dados do município.');
             document.querySelector('.calculate-button').textContent = 'Carregar Dados';
             document.querySelector('.calculate-button').disabled = false;
         });
@@ -750,7 +763,7 @@ function setupEventListeners() {
         if (freguesia) {
             fetchLocationByFreguesia(freguesia, concelho);
         } else if (concelho) {
-            fetchLocationByConcelho(concelho);
+            fetchLocationByMunicipio(concelho);
         } else if (distrito) {
             fetchLocationByDistrito(distrito);
         } else {

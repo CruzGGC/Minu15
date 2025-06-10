@@ -237,10 +237,32 @@ if (file_exists($rateLimitFile)) {
             $fallbackMunicipios = isset($fallbackData[$distritoName]) ? $fallbackData[$distritoName] : $defaultFallback;
             
             // Cache this response
-            $fallbackJson = json_encode($fallbackMunicipios);
+            $fallbackJson = json_encode(['municipios' => $fallbackMunicipios]); // Wrap in 'municipios' key
             file_put_contents($cacheFile, $fallbackJson);
             
             debug_log('Returning fallback municipios response');
+            echo $fallbackJson;
+            exit;
+        }
+        
+        // If this is a municipio/freguesias request, return a fallback response
+        if (preg_match('/municipio\/([^\/]+)\/freguesias/', $endpoint, $matches)) {
+            $concelhoName = urldecode($matches[1]);
+            debug_log('Creating fallback municipio/freguesias response', ['concelho' => $concelhoName]);
+            
+            // Create fallback freguesias data based on concelho
+            // For simplicity, we'll use generic names and dummy codes for fallback
+            $fallbackFreguesias = [
+                ['nome' => 'Freguesia A', 'codigo' => '000001'],
+                ['nome' => 'Freguesia B', 'codigo' => '000002'],
+                ['nome' => 'Freguesia C', 'codigo' => '000003'],
+            ];
+            
+            // Cache this response
+            $fallbackJson = json_encode(['freguesias' => $fallbackFreguesias]); // Wrap in 'freguesias' key
+            file_put_contents($cacheFile, $fallbackJson);
+            
+            debug_log('Returning fallback freguesias response');
             echo $fallbackJson;
             exit;
         }
@@ -396,6 +418,65 @@ function makeApiRequest($url, $postData = null, $retryCount = 0, $maxRetries = 3
     
     curl_close($ch);
     
+    // Parse the response body for potential normalization
+    $parsedBody = json_decode($body, true);
+
+    // Check if the endpoint is for freguesias list and normalize the response if necessary
+    $isFreguesiasListEndpoint = (strpos($url, '/municipio/') !== false && strpos($url, '/freguesias') !== false);
+
+    if ($isFreguesiasListEndpoint && isset($parsedBody['freguesias']) && is_array($parsedBody['freguesias'])) {
+        // The primary 'freguesias' key might contain just names (strings)
+        // The 'geojsons.freguesias' might contain objects with names and codes
+        
+        $normalizedFreguesias = [];
+        if (isset($parsedBody['geojsons']['freguesias']) && is_array($parsedBody['geojsons']['freguesias'])) {
+            $geoJsonFreguesias = $parsedBody['geojsons']['freguesias'];
+            
+            // Map geojson data to a more consistent format
+            foreach ($geoJsonFreguesias as $freguesiaGeoJson) {
+                if (isset($freguesiaGeoJson['properties']['Freguesia']) && isset($freguesiaGeoJson['properties']['Dicofre'])) {
+                    $normalizedFreguesias[] = [
+                        'nome' => $freguesiaGeoJson['properties']['Freguesia'],
+                        'codigo' => $freguesiaGeoJson['properties']['Dicofre']
+                    ];
+                }
+            }
+        } else {
+            // Fallback: If no geojson data, use the plain names. This might happen if the API response is simpler.
+            // In this case, we won't have the 'codigo' readily available, which will cause issues later.
+            // However, this branch should ideally not be hit if the API provides geojsons for freguesias.
+            foreach ($parsedBody['freguesias'] as $freguesiaName) {
+                $normalizedFreguesias[] = [
+                    'nome' => $freguesiaName,
+                    'codigo' => null // Indicate that code is missing for this entry
+                ];
+            }
+        }
+        
+        // Override the response body with the normalized data wrapped in 'freguesias' key
+        $body = json_encode(['freguesias' => $normalizedFreguesias]);
+        debug_log("Normalized Freguesias List Response", ['normalized_body_sample' => substr($body, 0, 200) . '...']);
+    }
+    // Check if this is a specific freguesia endpoint
+    else if ((strpos($url, '/municipio/') !== false && strpos($url, '/freguesia/') !== false) || 
+             (strpos($url, '/freguesia/') !== false && strpos($url, '?municipio=') !== false)) {
+        
+        // For single freguesia endpoints, ensure we pass through all data including censos data
+        // No normalization needed, but log for debugging
+        debug_log("Freguesia Detail Response", [
+            'endpoint' => $url,
+            'has_censos2011' => isset($parsedBody['censos2011']),
+            'has_censos2021' => isset($parsedBody['censos2021']),
+            'freguesia_nome' => $parsedBody['nome'] ?? 'unknown'
+        ]);
+    }
+    else if (strpos($url, '/distrito/') !== false && strpos($url, '/municipios') !== false && isset($parsedBody['municipios'])) {
+        // Ensure municipios response is also consistently wrapped for direct API calls
+        // The fallback already wraps it, this handles direct API responses
+        $body = json_encode(['municipios' => $parsedBody['municipios']]);
+        debug_log("Normalized Municipios Response", ['normalized_body_sample' => substr($body, 0, 200) . '...']);
+    }
+
     return [
         'success' => $httpCode >= 200 && $httpCode < 300,
         'code' => $httpCode,
