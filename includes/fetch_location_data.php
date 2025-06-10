@@ -69,6 +69,25 @@ if ($debug) {
 $locationData = null;
 
 try {
+    // Add detailed debug information about the action being executed
+    if ($debug) {
+        $debug_info['executing_action'] = $action;
+        switch ($action) {
+            case 'fetchLocationByCoordinates':
+                $debug_info['action_parameters'] = ['lat' => $lat, 'lng' => $lng];
+                break;
+            case 'fetchLocationByFreguesia':
+                $debug_info['action_parameters'] = ['freguesia' => $freguesia, 'municipio' => $municipio];
+                break;
+            case 'fetchLocationByMunicipio':
+                $debug_info['action_parameters'] = ['municipio' => $municipio];
+                break;
+            case 'fetchLocationByDistrito':
+                $debug_info['action_parameters'] = ['distrito' => $distrito];
+                break;
+        }
+    }
+    
     switch ($action) {
         case 'fetchLocationByCoordinates':
             $locationData = fetchLocationByCoordinates($lat, $lng, $debug);
@@ -82,6 +101,18 @@ try {
         case 'fetchLocationByDistrito':
             $locationData = fetchLocationByDistrito($distrito, $debug);
             break;
+    }
+    
+    // Check if we got valid location data
+    if ($locationData === null) {
+        if ($debug) {
+            $debug_info['action_result'] = 'No location data returned';
+        }
+    } else {
+        if ($debug) {
+            $debug_info['action_result'] = 'Location data retrieved successfully';
+            $debug_info['location_data_keys'] = array_keys($locationData);
+        }
     }
 } catch (Exception $e) {
     if ($debug) {
@@ -115,8 +146,8 @@ if ($locationData) {
 function fetchLocationByCoordinates($lat, $lng, $debug = false) {
     global $debug_info;
     
-    // Create the endpoint URL for reverse geocoding - use the faster /base endpoint
-    $endpoint = "gps/{$lat},{$lng}/base";
+    // Create the endpoint URL for reverse geocoding - use the /base/detalhes endpoint
+    $endpoint = "gps/{$lat},{$lng}/base/detalhes";
     
     if ($debug) {
         $debug_info['coordinates_endpoint'] = $endpoint;
@@ -141,17 +172,45 @@ function fetchLocationByCoordinates($lat, $lng, $debug = false) {
                 $debug_info['cache_data_valid'] = true;
             }
             
-            // Extract freguesia data from cached response
-            if (isset($data['freguesia'])) {
-                // Standard response format
+            // Check for JSON parsing errors
+            if ($data === null) {
+                if ($debug) {
+                    $debug_info['coordinates_json_error'] = json_last_error_msg();
+                }
+                return null;
+            }
+            
+            if ($debug) {
+                $debug_info['coordinates_data_structure'] = array_keys($data);
+            }
+            
+            // Extract freguesia data from response
+            // The /base/detalhes endpoint returns a different structure with detalhesFreguesia and detalhesMunicipio
+            if (isset($data['detalhesFreguesia'])) {
+                // New response format from /base/detalhes
+                $freguesiaData = $data['detalhesFreguesia'];
+                $municipioNome = $data['detalhesMunicipio']['nome'] ?? $data['concelho'] ?? null;
+                $freguesiaCode = $freguesiaData['codigo'] ?? null;
+                
+                if ($freguesiaCode && $municipioNome) {
+                    if ($debug) {
+                        $debug_info['using_freguesia_code'] = $freguesiaCode;
+                        $debug_info['using_municipio_name'] = $municipioNome;
+                    }
+                    
+                    // Fetch detailed data for the freguesia
+                    return fetchLocationByCode($freguesiaCode, 'freguesia', $municipioNome, $debug);
+                }
+            } else if (isset($data['freguesia'])) {
+                // Standard response format from old endpoint
                 $freguesiaData = $data['freguesia'];
                 $municipioNome = $data['municipio']['nome'] ?? null;
                 $freguesiaCode = $freguesiaData['codigo'] ?? null;
                 
                 if ($freguesiaCode && $municipioNome) {
                     if ($debug) {
-                        $debug_info['using_cached_freguesia'] = $freguesiaCode;
-                        $debug_info['using_cached_municipio'] = $municipioNome;
+                        $debug_info['using_freguesia_code'] = $freguesiaCode;
+                        $debug_info['using_municipio_name'] = $municipioNome;
                     }
                     
                     // Fetch detailed data for the freguesia
@@ -165,14 +224,20 @@ function fetchLocationByCoordinates($lat, $lng, $debug = false) {
                 
                 if ($freguesiaCode && $municipioNome) {
                     if ($debug) {
-                        $debug_info['using_cached_freguesia'] = $freguesiaCode;
-                        $debug_info['using_cached_municipio'] = $municipioNome;
+                        $debug_info['using_freguesia_code'] = $freguesiaCode;
+                        $debug_info['using_municipio_name'] = $municipioNome;
                     }
                     
                     // Fetch detailed data for the freguesia
                     return fetchLocationByCode($freguesiaCode, 'freguesia', $municipioNome, $debug);
                 }
             }
+            
+            if ($debug) {
+                $debug_info['coordinates_no_freguesia_data'] = true;
+            }
+            
+            return null;
         }
     }
     
@@ -250,7 +315,6 @@ function fetchLocationByCoordinates($lat, $lng, $debug = false) {
     if ($data === null) {
         if ($debug) {
             $debug_info['coordinates_json_error'] = json_last_error_msg();
-            $debug_info['coordinates_raw_response'] = $response;
         }
         return null;
     }
@@ -267,41 +331,60 @@ function fetchLocationByCoordinates($lat, $lng, $debug = false) {
         return null;
     }
     
-    // Check for different possible response structures
-    if (isset($data['freguesia'])) {
-        // Standard response format
+    // Extract freguesia data from response
+    // The /base/detalhes endpoint returns a different structure with detalhesFreguesia and detalhesMunicipio
+    if (isset($data['detalhesFreguesia'])) {
+        // New response format from /base/detalhes
+        $freguesiaData = $data['detalhesFreguesia'];
+        $municipioNome = $data['detalhesMunicipio']['nome'] ?? $data['concelho'] ?? null;
+        $freguesiaCode = $freguesiaData['codigo'] ?? null;
+        
+        if ($freguesiaCode && $municipioNome) {
+            if ($debug) {
+                $debug_info['using_freguesia_code'] = $freguesiaCode;
+                $debug_info['using_municipio_name'] = $municipioNome;
+            }
+            
+            // Fetch detailed data for the freguesia
+            return fetchLocationByCode($freguesiaCode, 'freguesia', $municipioNome, $debug);
+        }
+    } else if (isset($data['freguesia'])) {
+        // Standard response format from old endpoint
         $freguesiaData = $data['freguesia'];
         $municipioNome = $data['municipio']['nome'] ?? null;
         $freguesiaCode = $freguesiaData['codigo'] ?? null;
+        
+        if ($freguesiaCode && $municipioNome) {
+            if ($debug) {
+                $debug_info['using_freguesia_code'] = $freguesiaCode;
+                $debug_info['using_municipio_name'] = $municipioNome;
+            }
+            
+            // Fetch detailed data for the freguesia
+            return fetchLocationByCode($freguesiaCode, 'freguesia', $municipioNome, $debug);
+        }
     } else if (isset($data['local']) && isset($data['local']['freguesia'])) {
         // Alternative response format
         $freguesiaData = $data['local']['freguesia'];
         $municipioNome = $data['local']['concelho']['nome'] ?? null;
         $freguesiaCode = $freguesiaData['codigo'] ?? null;
-    } else {
-        // No freguesia data found
-        if ($debug) {
-            $debug_info['coordinates_error'] = 'No freguesia data in response';
-            $debug_info['coordinates_keys'] = is_array($data) ? array_keys($data) : 'not_array';
+        
+        if ($freguesiaCode && $municipioNome) {
+            if ($debug) {
+                $debug_info['using_freguesia_code'] = $freguesiaCode;
+                $debug_info['using_municipio_name'] = $municipioNome;
+            }
+            
+            // Fetch detailed data for the freguesia
+            return fetchLocationByCode($freguesiaCode, 'freguesia', $municipioNome, $debug);
         }
-        return null;
     }
     
     if ($debug) {
-        $debug_info['freguesia_code'] = $freguesiaCode;
-        $debug_info['municipio_nome'] = $municipioNome;
-        $debug_info['freguesia_data'] = $freguesiaData;
+        $debug_info['coordinates_no_freguesia_data'] = true;
     }
     
-    if (!$freguesiaCode || !$municipioNome) {
-        if ($debug) {
-            $debug_info['coordinates_error'] = 'Missing freguesia code or municipio name';
-        }
-        return null;
-    }
-    
-    // Fetch detailed data for the freguesia
-    return fetchLocationByCode($freguesiaCode, 'freguesia', $municipioNome, $debug);
+    return null;
 }
 
 /**
@@ -351,57 +434,89 @@ function fetchLocationByFreguesia($freguesiaName, $municipio, $debug = false) {
         }
     }
     
+    // Check for cURL errors
+    if (curl_errno($ch)) {
+        if ($debug) {
+            $debug_info['freguesia_curl_error'] = curl_error($ch);
+            $debug_info['freguesia_curl_errno'] = curl_errno($ch);
+        }
+        curl_close($ch);
+        
+        // Try the fallback approach
+        return tryFreguesiaMunicipioFallback($freguesiaName, $municipio, $debug);
+    }
+    
     // Close cURL
     curl_close($ch);
     
-    // If successful, parse and return the data
-    if ($httpCode === 200 && $response) {
-        $data = json_decode($response, true);
+    // Check for HTTP errors
+    if ($httpCode !== 200) {
+        if ($debug) {
+            $debug_info['freguesia_http_error'] = "HTTP error code: $httpCode";
+        }
         
-        if ($data) {
+        // Try the fallback approach
+        return tryFreguesiaMunicipioFallback($freguesiaName, $municipio, $debug);
+    }
+    
+    // Parse JSON response
+    $data = json_decode($response, true);
+    
+    // Check for JSON parsing errors
+    if ($data === null) {
+        if ($debug) {
+            $debug_info['freguesia_json_error'] = json_last_error_msg();
+        }
+        
+        // Try the fallback approach
+        return tryFreguesiaMunicipioFallback($freguesiaName, $municipio, $debug);
+    }
+    
+    if ($debug) {
+        $debug_info['freguesia_data_structure'] = array_keys($data);
+    }
+    
+    // Ensure we have a proper municipio structure
+    if (!isset($data['municipio']) || !is_array($data['municipio'])) {
+        $data['municipio'] = ['nome' => $municipio];
+    } else if (is_string($data['municipio'])) {
+        $data['municipio'] = ['nome' => $data['municipio']];
+    }
+    
+    // Get geometry data if not already included
+    if (!isset($data['geometry']) && !isset($data['geojson'])) {
+        $geometryEndpoint = "municipio/" . urlencode($municipio) . "/freguesia/" . urlencode($freguesiaName) . "/geometry";
+        $geometryData = fetchGeometryFromEndpoint($geometryEndpoint, $debug);
+        
+        if ($geometryData) {
+            $data['geometry'] = $geometryData;
+            $data['geojson'] = $geometryData; // Add both keys for consistency
+            
             if ($debug) {
-                $debug_info['freguesia_endpoint_success'] = true;
+                $debug_info['geometry_data_added'] = true;
             }
             
-            // Ensure we have a proper municipio structure
-            if (!isset($data['municipio']) || !is_array($data['municipio'])) {
-                $data['municipio'] = ['nome' => $municipio];
-            } else if (is_string($data['municipio'])) {
-                $data['municipio'] = ['nome' => $data['municipio']];
-            }
-            
-            // Get geometry data if not already included
-            if (!isset($data['geometry']) && !isset($data['geojson'])) {
-                $geometryEndpoint = "municipio/" . urlencode($municipio) . "/freguesia/" . urlencode($freguesiaName) . "/geometry";
-                $geometryData = fetchGeometryFromEndpoint($geometryEndpoint, $debug);
+            // Add POI counts if geometry is available
+            $poiCounts = fetchPOICounts($geometryData, $debug);
+            if ($poiCounts) {
+                $data['poi_counts'] = $poiCounts;
                 
-                if ($geometryData) {
-                    $data['geometry'] = $geometryData;
-                    $data['geojson'] = $geometryData; // Add both keys for consistency
-                    
-                    if ($debug) {
-                        $debug_info['geometry_data_added'] = true;
-                    }
-                    
-                    // Add POI counts if geometry is available
-                    $poiCounts = fetchPOICounts($geometryData, $debug);
-                    if ($poiCounts) {
-                        $data['poi_counts'] = $poiCounts;
-                        
-                        if ($debug) {
-                            $debug_info['poi_counts_added'] = true;
-                        }
-                    }
+                if ($debug) {
+                    $debug_info['poi_counts_added'] = true;
                 }
             }
-            
-            return $data;
-        } else if ($debug) {
-            $debug_info['freguesia_endpoint_invalid_json'] = true;
         }
-    } else if ($debug) {
-        $debug_info['freguesia_endpoint_failed'] = true;
     }
+    
+    return $data;
+}
+
+/**
+ * Try fallback approach for freguesia lookup
+ * Uses the alternate endpoint format: /freguesia/{freguesia}?municipio={municipio}
+ */
+function tryFreguesiaMunicipioFallback($freguesiaName, $municipio, $debug = false) {
+    global $debug_info;
     
     // Fallback: try using the /freguesia endpoint with municipio query param
     $fallbackEndpoint = "freguesia/" . urlencode($freguesiaName) . "?municipio=" . urlencode($municipio);
@@ -439,77 +554,106 @@ function fetchLocationByFreguesia($freguesiaName, $municipio, $debug = false) {
         }
     }
     
+    // Check for cURL errors
+    if (curl_errno($ch)) {
+        if ($debug) {
+            $debug_info['fallback_curl_error'] = curl_error($ch);
+            $debug_info['fallback_curl_errno'] = curl_errno($ch);
+        }
+        curl_close($ch);
+        
+        // Create minimal data from available info as last resort
+        return createMinimalLocationData($freguesiaName, $municipio, $debug);
+    }
+    
     // Close cURL
     curl_close($ch);
     
-    // If successful, parse and return the data
-    if ($httpCode === 200 && $response) {
-        $data = json_decode($response, true);
-        
-        if ($data) {
-            if ($debug) {
-                $debug_info['fallback_endpoint_success'] = true;
-            }
-            
-            // Ensure we have a proper municipio structure
-            if (!isset($data['municipio']) || !is_array($data['municipio'])) {
-                $data['municipio'] = ['nome' => $municipio];
-            } else if (is_string($data['municipio'])) {
-                $data['municipio'] = ['nome' => $data['municipio']];
-            }
-            
-            // Get geometry data if not already included
-            if (!isset($data['geometry']) && !isset($data['geojson'])) {
-                $geometryEndpoint = "freguesia/" . urlencode($freguesiaName) . "/geometry?municipio=" . urlencode($municipio);
-                $geometryData = fetchGeometryFromEndpoint($geometryEndpoint, $debug);
-                
-                if ($geometryData) {
-                    $data['geometry'] = $geometryData;
-                    $data['geojson'] = $geometryData; // Add both keys for consistency
-                    
-                    if ($debug) {
-                        $debug_info['geometry_data_added'] = true;
-                    }
-                    
-                    // Add POI counts if geometry is available
-                    $poiCounts = fetchPOICounts($geometryData, $debug);
-                    if ($poiCounts) {
-                        $data['poi_counts'] = $poiCounts;
-                        
-                        if ($debug) {
-                            $debug_info['poi_counts_added'] = true;
-                        }
-                    }
-                }
-            }
-            
-            return $data;
-        } else if ($debug) {
-            $debug_info['fallback_endpoint_invalid_json'] = true;
+    // Check for HTTP errors
+    if ($httpCode !== 200) {
+        if ($debug) {
+            $debug_info['fallback_http_error'] = "HTTP error code: $httpCode";
         }
-    } else if ($debug) {
-        $debug_info['fallback_endpoint_failed'] = true;
+        
+        // Create minimal data from available info as last resort
+        return createMinimalLocationData($freguesiaName, $municipio, $debug);
     }
     
-    // Ultimate fallback - try to create minimal data from available info
+    // Parse JSON response
+    $data = json_decode($response, true);
+    
+    // Check for JSON parsing errors
+    if ($data === null) {
+        if ($debug) {
+            $debug_info['fallback_json_error'] = json_last_error_msg();
+        }
+        
+        // Create minimal data from available info as last resort
+        return createMinimalLocationData($freguesiaName, $municipio, $debug);
+    }
+    
+    if ($debug) {
+        $debug_info['fallback_data_structure'] = array_keys($data);
+    }
+    
+    // Ensure we have a proper municipio structure
+    if (!isset($data['municipio']) || !is_array($data['municipio'])) {
+        $data['municipio'] = ['nome' => $municipio];
+    } else if (is_string($data['municipio'])) {
+        $data['municipio'] = ['nome' => $data['municipio']];
+    }
+    
+    // Get geometry data if not already included
+    if (!isset($data['geometry']) && !isset($data['geojson'])) {
+        $geometryEndpoint = "freguesia/" . urlencode($freguesiaName) . "/geometry?municipio=" . urlencode($municipio);
+        $geometryData = fetchGeometryFromEndpoint($geometryEndpoint, $debug);
+        
+        if ($geometryData) {
+            $data['geometry'] = $geometryData;
+            $data['geojson'] = $geometryData; // Add both keys for consistency
+            
+            if ($debug) {
+                $debug_info['geometry_data_added'] = true;
+            }
+            
+            // Add POI counts if geometry is available
+            $poiCounts = fetchPOICounts($geometryData, $debug);
+            if ($poiCounts) {
+                $data['poi_counts'] = $poiCounts;
+                
+                if ($debug) {
+                    $debug_info['poi_counts_added'] = true;
+                }
+            }
+        }
+    }
+    
+    return $data;
+}
+
+/**
+ * Create minimal location data when API calls fail
+ */
+function createMinimalLocationData($freguesiaName, $municipio, $debug = false) {
+    global $debug_info;
+    
     if ($debug) {
         $debug_info['creating_minimal_fallback_data'] = true;
     }
     
-    // Create basic location data
-    $minimalData = [
+    // Create a basic data structure with the information we have
+    return [
         'nome' => $freguesiaName,
         'municipio' => [
             'nome' => $municipio
         ],
-        'tipo' => 'Freguesia'
+        'tipo' => 'Freguesia',
+        'error' => 'Limited data available - API calls failed'
     ];
-    
-    return $minimalData;
 }
 
 /**
- * Helper function to fetch geometry data from a specific endpoint
+ * Fetch geometry data from a specific endpoint
  */
 function fetchGeometryFromEndpoint($endpoint, $debug = false) {
     global $debug_info;
@@ -541,35 +685,65 @@ function fetchGeometryFromEndpoint($endpoint, $debug = false) {
     
     if ($debug) {
         $debug_info['geometry_http_code'] = $httpCode;
+        $debug_info['geometry_response_size'] = strlen($response);
+        if ($response) {
+            $debug_info['geometry_response_sample'] = substr($response, 0, 100) . '...';
+        }
+    }
+    
+    // Check for cURL errors
+    if (curl_errno($ch)) {
+        if ($debug) {
+            $debug_info['geometry_curl_error'] = curl_error($ch);
+            $debug_info['geometry_curl_errno'] = curl_errno($ch);
+        }
+        curl_close($ch);
+        return null;
     }
     
     // Close cURL
     curl_close($ch);
     
-    // If successful, parse and return the data
-    if ($httpCode === 200 && $response) {
-        $data = json_decode($response, true);
-        
-        if ($data) {
-            if ($debug) {
-                $debug_info['geometry_endpoint_success'] = true;
-            }
-            return $data;
+    // Check for HTTP errors
+    if ($httpCode !== 200) {
+        if ($debug) {
+            $debug_info['geometry_http_error'] = "HTTP error code: $httpCode";
         }
+        return null;
+    }
+    
+    // Parse JSON response
+    $data = json_decode($response, true);
+    
+    // Check for JSON parsing errors
+    if ($data === null) {
+        if ($debug) {
+            $debug_info['geometry_json_error'] = json_last_error_msg();
+        }
+        return null;
     }
     
     if ($debug) {
-        $debug_info['geometry_endpoint_failed'] = true;
+        $debug_info['geometry_data_type'] = gettype($data);
+        if (is_array($data)) {
+            $debug_info['geometry_data_keys'] = array_keys($data);
+        }
     }
     
-    return null;
+    return $data;
 }
 
 /**
  * Fetch location data by municipio name
  */
 function fetchLocationByMunicipio($municipio, $debug = false) {
-    // Create the endpoint URL for municipio search
+    global $debug_info;
+    
+    if ($debug) {
+        $debug_info['municipio_name_received'] = $municipio;
+    }
+    
+    // Construct the endpoint URL
     $endpoint = "municipio/" . urlencode($municipio);
     
     if ($debug) {
@@ -579,11 +753,6 @@ function fetchLocationByMunicipio($municipio, $debug = false) {
     // Use our proxy with caching
     $proxyUrl = "http://localhost:8000/includes/geoapi_proxy.php?endpoint=" . urlencode($endpoint);
     
-    if ($debug) {
-        $debug_info['municipio_endpoint'] = $endpoint;
-        $debug_info['municipio_proxy_url'] = $proxyUrl;
-    }
-    
     // Initialize cURL
     $ch = curl_init();
     
@@ -592,6 +761,7 @@ function fetchLocationByMunicipio($municipio, $debug = false) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Minu15-App/1.0');
     
     // Execute the request
     $response = curl_exec($ch);
@@ -599,12 +769,17 @@ function fetchLocationByMunicipio($municipio, $debug = false) {
     
     if ($debug) {
         $debug_info['municipio_http_code'] = $httpCode;
+        $debug_info['municipio_response_size'] = strlen($response);
+        if ($response) {
+            $debug_info['municipio_response_sample'] = substr($response, 0, 200) . '...';
+        }
     }
     
-    // Check for errors
-    if (curl_errno($ch) || $httpCode !== 200) {
+    // Check for cURL errors
+    if (curl_errno($ch)) {
         if ($debug) {
-            $debug_info['municipio_error'] = curl_error($ch);
+            $debug_info['municipio_curl_error'] = curl_error($ch);
+            $debug_info['municipio_curl_errno'] = curl_errno($ch);
         }
         curl_close($ch);
         return null;
@@ -613,39 +788,68 @@ function fetchLocationByMunicipio($municipio, $debug = false) {
     // Close cURL
     curl_close($ch);
     
-    // Parse the response
+    // Check for HTTP errors
+    if ($httpCode !== 200) {
+        if ($debug) {
+            $debug_info['municipio_http_error'] = "HTTP error code: $httpCode";
+        }
+        return null;
+    }
+    
+    // Parse JSON response
     $data = json_decode($response, true);
     
+    // Check for JSON parsing errors
+    if ($data === null) {
+        if ($debug) {
+            $debug_info['municipio_json_error'] = json_last_error_msg();
+        }
+        return null;
+    }
+    
     if ($debug) {
-        $debug_info['municipio_response'] = $data;
+        $debug_info['municipio_data_structure'] = array_keys($data);
     }
     
-    if (!$data || !isset($data['codigo'])) {
-        if ($debug) {
-            $debug_info['municipio_error'] = 'No municipio code in response';
+    // Get geometry data if not already included
+    if (!isset($data['geometry']) && !isset($data['geojson'])) {
+        $geometryEndpoint = "municipio/" . urlencode($municipio) . "/geometry";
+        $geometryData = fetchGeometryFromEndpoint($geometryEndpoint, $debug);
+        
+        if ($geometryData) {
+            $data['geometry'] = $geometryData;
+            $data['geojson'] = $geometryData; // Add both keys for consistency
+            
+            if ($debug) {
+                $debug_info['geometry_data_added'] = true;
+            }
+            
+            // Add POI counts if geometry is available
+            $poiCounts = fetchPOICounts($geometryData, $debug);
+            if ($poiCounts) {
+                $data['poi_counts'] = $poiCounts;
+                
+                if ($debug) {
+                    $debug_info['poi_counts_added'] = true;
+                }
+            }
         }
-        return null;
     }
     
-    // Get the municipio code
-    $municipioCode = $data['codigo'] ?? null;
-    
-    if (!$municipioCode) {
-        if ($debug) {
-            $debug_info['municipio_error'] = 'Missing municipio code';
-        }
-        return null;
-    }
-    
-    // Fetch detailed data for the municipio
-    return fetchLocationByCode($municipioCode, 'municipio', null, $debug);
+    return $data;
 }
 
 /**
  * Fetch location data by distrito name
  */
 function fetchLocationByDistrito($distrito, $debug = false) {
-    // Create the endpoint URL for distrito search
+    global $debug_info;
+    
+    if ($debug) {
+        $debug_info['distrito_name_received'] = $distrito;
+    }
+    
+    // Construct the endpoint URL
     $endpoint = "distrito/" . urlencode($distrito);
     
     if ($debug) {
@@ -655,11 +859,6 @@ function fetchLocationByDistrito($distrito, $debug = false) {
     // Use our proxy with caching
     $proxyUrl = "http://localhost:8000/includes/geoapi_proxy.php?endpoint=" . urlencode($endpoint);
     
-    if ($debug) {
-        $debug_info['distrito_endpoint'] = $endpoint;
-        $debug_info['distrito_proxy_url'] = $proxyUrl;
-    }
-    
     // Initialize cURL
     $ch = curl_init();
     
@@ -668,47 +867,25 @@ function fetchLocationByDistrito($distrito, $debug = false) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    
-    // Enable verbose output for debugging
-    if ($debug) {
-        $verbose = fopen('php://temp', 'w+');
-        curl_setopt($ch, CURLOPT_VERBOSE, true);
-        curl_setopt($ch, CURLOPT_STDERR, $verbose);
-    }
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Minu15-App/1.0');
     
     // Execute the request
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $effectiveUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
     
     if ($debug) {
         $debug_info['distrito_http_code'] = $httpCode;
         $debug_info['distrito_response_size'] = strlen($response);
-        $debug_info['distrito_effective_url'] = $effectiveUrl;
         if ($response) {
-            $debug_info['distrito_raw_response_sample'] = substr($response, 0, 200) . '...';
-        }
-        
-        if (isset($verbose)) {
-            rewind($verbose);
-            $debug_info['distrito_curl_verbose'] = stream_get_contents($verbose);
+            $debug_info['distrito_response_sample'] = substr($response, 0, 200) . '...';
         }
     }
     
-    // Check for errors
+    // Check for cURL errors
     if (curl_errno($ch)) {
         if ($debug) {
-            $debug_info['distrito_error'] = curl_error($ch);
+            $debug_info['distrito_curl_error'] = curl_error($ch);
             $debug_info['distrito_curl_errno'] = curl_errno($ch);
-        }
-        curl_close($ch);
-        return null;
-    }
-    
-    // Check for non-200 response
-    if ($httpCode !== 200) {
-        if ($debug) {
-            $debug_info['distrito_http_error'] = "HTTP error code: $httpCode";
         }
         curl_close($ch);
         return null;
@@ -717,32 +894,55 @@ function fetchLocationByDistrito($distrito, $debug = false) {
     // Close cURL
     curl_close($ch);
     
-    // Parse the response
+    // Check for HTTP errors
+    if ($httpCode !== 200) {
+        if ($debug) {
+            $debug_info['distrito_http_error'] = "HTTP error code: $httpCode";
+        }
+        return null;
+    }
+    
+    // Parse JSON response
     $data = json_decode($response, true);
     
+    // Check for JSON parsing errors
+    if ($data === null) {
+        if ($debug) {
+            $debug_info['distrito_json_error'] = json_last_error_msg();
+        }
+        return null;
+    }
+    
     if ($debug) {
-        $debug_info['distrito_response'] = $data;
+        $debug_info['distrito_data_structure'] = array_keys($data);
     }
     
-    if (!$data || !isset($data['codigo'])) {
-        if ($debug) {
-            $debug_info['distrito_error'] = 'No distrito code in response';
+    // Get geometry data if not already included
+    if (!isset($data['geometry']) && !isset($data['geojson'])) {
+        $geometryEndpoint = "distrito/" . urlencode($distrito) . "/geometry";
+        $geometryData = fetchGeometryFromEndpoint($geometryEndpoint, $debug);
+        
+        if ($geometryData) {
+            $data['geometry'] = $geometryData;
+            $data['geojson'] = $geometryData; // Add both keys for consistency
+            
+            if ($debug) {
+                $debug_info['geometry_data_added'] = true;
+            }
+            
+            // Add POI counts if geometry is available
+            $poiCounts = fetchPOICounts($geometryData, $debug);
+            if ($poiCounts) {
+                $data['poi_counts'] = $poiCounts;
+                
+                if ($debug) {
+                    $debug_info['poi_counts_added'] = true;
+                }
+            }
         }
-        return null;
     }
     
-    // Get the distrito code
-    $distritoCode = $data['codigo'] ?? null;
-    
-    if (!$distritoCode) {
-        if ($debug) {
-            $debug_info['distrito_error'] = 'Missing distrito code';
-        }
-        return null;
-    }
-    
-    // Fetch detailed data for the distrito
-    return fetchLocationByCode($distritoCode, 'distrito', null, $debug);
+    return $data;
 }
 
 /**

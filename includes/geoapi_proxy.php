@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== 'POST
 }
 
 // Define GeoAPI.pt base URL
-$geoApiBaseUrl = 'https://json.geoapi.pt';
+$geoApiBaseUrl = 'http://json.localhost:8080';
 
 // Get the endpoint from the request
 $endpoint = isset($_GET['endpoint']) ? $_GET['endpoint'] : '';
@@ -421,41 +421,98 @@ function makeApiRequest($url, $postData = null, $retryCount = 0, $maxRetries = 3
     // Parse the response body for potential normalization
     $parsedBody = json_decode($body, true);
 
+    // Add debug logging for raw response
+    debug_log("Raw API response parsed", [
+        'endpoint' => $url,
+        'response_structure' => is_array($parsedBody) ? array_keys($parsedBody) : gettype($parsedBody),
+        'response_sample' => substr($body, 0, 200) . '...'
+    ]);
+
     // Check if the endpoint is for freguesias list and normalize the response if necessary
     $isFreguesiasListEndpoint = (strpos($url, '/municipio/') !== false && strpos($url, '/freguesias') !== false);
 
-    if ($isFreguesiasListEndpoint && isset($parsedBody['freguesias']) && is_array($parsedBody['freguesias'])) {
-        // The primary 'freguesias' key might contain just names (strings)
-        // The 'geojsons.freguesias' might contain objects with names and codes
+    if ($isFreguesiasListEndpoint) {
+        debug_log("Processing freguesias list endpoint", [
+            'has_freguesias_key' => isset($parsedBody['freguesias']),
+            'freguesias_type' => isset($parsedBody['freguesias']) ? gettype($parsedBody['freguesias']) : 'not set',
+            'has_geojsons' => isset($parsedBody['geojsons'])
+        ]);
         
-        $normalizedFreguesias = [];
-        if (isset($parsedBody['geojsons']['freguesias']) && is_array($parsedBody['geojsons']['freguesias'])) {
-            $geoJsonFreguesias = $parsedBody['geojsons']['freguesias'];
-            
-            // Map geojson data to a more consistent format
-            foreach ($geoJsonFreguesias as $freguesiaGeoJson) {
-                if (isset($freguesiaGeoJson['properties']['Freguesia']) && isset($freguesiaGeoJson['properties']['Dicofre'])) {
-                    $normalizedFreguesias[] = [
-                        'nome' => $freguesiaGeoJson['properties']['Freguesia'],
-                        'codigo' => $freguesiaGeoJson['properties']['Dicofre']
-                    ];
-                }
-            }
-        } else {
-            // Fallback: If no geojson data, use the plain names. This might happen if the API response is simpler.
-            // In this case, we won't have the 'codigo' readily available, which will cause issues later.
-            // However, this branch should ideally not be hit if the API provides geojsons for freguesias.
-            foreach ($parsedBody['freguesias'] as $freguesiaName) {
-                $normalizedFreguesias[] = [
-                    'nome' => $freguesiaName,
-                    'codigo' => null // Indicate that code is missing for this entry
-                ];
+        // Handle case where response might be an array (direct freguesias array) instead of object with freguesias key
+        if (!isset($parsedBody['freguesias']) && is_array($parsedBody)) {
+            debug_log("Raw freguesias array detected, wrapping in freguesias key");
+            $parsedBody = ['freguesias' => $parsedBody];
+            $body = json_encode($parsedBody);
+        }
+        
+        // Ensure freguesias is set as an array
+        if (!isset($parsedBody['freguesias']) || !is_array($parsedBody['freguesias'])) {
+            debug_log("No freguesias array found, creating empty array");
+            $parsedBody['freguesias'] = [];
+            $body = json_encode($parsedBody);
+        }
+        
+        // Check if the freguesias are already proper objects with nome and codigo
+        $isFreguesiasObjects = false;
+        if (!empty($parsedBody['freguesias']) && is_array($parsedBody['freguesias'][0])) {
+            if (isset($parsedBody['freguesias'][0]['nome'])) {
+                debug_log("Freguesias are already objects with nome", [
+                    'sample' => $parsedBody['freguesias'][0]
+                ]);
+                $isFreguesiasObjects = true;
             }
         }
         
-        // Override the response body with the normalized data wrapped in 'freguesias' key
-        $body = json_encode(['freguesias' => $normalizedFreguesias]);
-        debug_log("Normalized Freguesias List Response", ['normalized_body_sample' => substr($body, 0, 200) . '...']);
+        // Only normalize if freguesias are not already objects
+        if (!$isFreguesiasObjects && isset($parsedBody['freguesias']) && is_array($parsedBody['freguesias'])) {
+            // The primary 'freguesias' key might contain just names (strings)
+            // The 'geojsons.freguesias' might contain objects with names and codes
+            
+            $normalizedFreguesias = [];
+            if (isset($parsedBody['geojsons']['freguesias']) && is_array($parsedBody['geojsons']['freguesias'])) {
+                $geoJsonFreguesias = $parsedBody['geojsons']['freguesias'];
+                
+                // Map geojson data to a more consistent format
+                foreach ($geoJsonFreguesias as $freguesiaGeoJson) {
+                    if (isset($freguesiaGeoJson['properties']['Freguesia']) && isset($freguesiaGeoJson['properties']['Dicofre'])) {
+                        $normalizedFreguesias[] = [
+                            'nome' => $freguesiaGeoJson['properties']['Freguesia'],
+                            'codigo' => $freguesiaGeoJson['properties']['Dicofre']
+                        ];
+                    }
+                }
+                
+                debug_log("Normalized freguesias from geojson", [
+                    'count' => count($normalizedFreguesias),
+                    'sample' => !empty($normalizedFreguesias) ? $normalizedFreguesias[0] : null
+                ]);
+            } else {
+                // Fallback: If no geojson data, use the plain names and convert to objects
+                foreach ($parsedBody['freguesias'] as $freguesiaName) {
+                    if (is_string($freguesiaName)) {
+                        $normalizedFreguesias[] = [
+                            'nome' => $freguesiaName,
+                            'codigo' => null // Indicate that code is missing for this entry
+                        ];
+                    } else {
+                        // If it's not a string, try to convert it
+                        $normalizedFreguesias[] = [
+                            'nome' => is_object($freguesiaName) || is_array($freguesiaName) ? json_encode($freguesiaName) : (string)$freguesiaName,
+                            'codigo' => null
+                        ];
+                    }
+                }
+                
+                debug_log("Normalized freguesias from names", [
+                    'count' => count($normalizedFreguesias),
+                    'sample' => !empty($normalizedFreguesias) ? $normalizedFreguesias[0] : null
+                ]);
+            }
+            
+            // Override the response body with the normalized data wrapped in 'freguesias' key
+            $body = json_encode(['freguesias' => $normalizedFreguesias]);
+            debug_log("Normalized Freguesias List Response", ['normalized_body_sample' => substr($body, 0, 200) . '...']);
+        }
     }
     // Check if this is a specific freguesia endpoint
     else if ((strpos($url, '/municipio/') !== false && strpos($url, '/freguesia/') !== false) || 

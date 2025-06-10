@@ -205,14 +205,32 @@ function loadFreguesias(concelho) {
     fetch('../includes/geoapi_proxy.php?endpoint=' + encodeURIComponent(`municipio/${encodeURIComponent(concelho)}/freguesias`))
         .then(response => response.json())
         .then(data => {
+            console.log('Freguesias data received:', data);
+            
             const freguesiaSelect = document.getElementById('freguesia-select');
             
             // Clear previous options
             freguesiaSelect.innerHTML = '<option value="">Selecione uma freguesia...</option>';
             
-            // Get the freguesias names array and geojsons data from the response
-            const freguesiaNames = data.freguesias || [];
+            // Get the freguesias names array from the response
+            let freguesiaNames = data.freguesias || [];
             const freguesiaGeojsons = data.geojsons?.freguesias || [];
+            
+            console.log('Original freguesias array:', freguesiaNames);
+            
+            // Handle case where freguesias might be objects instead of strings
+            if (freguesiaNames.length > 0 && typeof freguesiaNames[0] !== 'string') {
+                // Check if freguesias are objects with 'nome' property
+                if (freguesiaNames[0] && typeof freguesiaNames[0].nome === 'string') {
+                    console.log('Freguesias are objects with nome property');
+                    freguesiaNames = freguesiaNames.map(f => f.nome);
+                } else {
+                    console.log('Freguesias have unexpected format, trying to convert to strings');
+                    freguesiaNames = freguesiaNames.map(f => String(f));
+                }
+            }
+            
+            console.log('Processed freguesias array:', freguesiaNames);
             
             // Create a map of freguesia names to their respective codes from geojsons
             const freguesiaCodes = {};
@@ -222,8 +240,15 @@ function loadFreguesias(concelho) {
                 }
             });
             
-            // Sort freguesia names alphabetically
-            freguesiaNames.sort((a, b) => a.localeCompare(b));
+            // Sort freguesia names alphabetically only if they are strings
+            if (freguesiaNames.length > 0 && typeof freguesiaNames[0] === 'string') {
+                try {
+                    freguesiaNames.sort((a, b) => a.localeCompare(b));
+                } catch (error) {
+                    console.error('Error sorting freguesia names:', error);
+                    console.log('Unable to sort freguesia names, using as-is');
+                }
+            }
             
             // Add options to select
             freguesiaNames.forEach(freguesiaName => {
@@ -249,92 +274,100 @@ function loadFreguesias(concelho) {
 function fetchLocationByCoordinates(lat, lng) {
     console.log(`Fetching location data for coordinates: ${lat}, ${lng}`);
     
-    // Show loading state
-    document.querySelector('.calculate-button').textContent = 'A carregar...';
-    document.querySelector('.calculate-button').disabled = true;
+    // Construct the API URL
+    const apiUrl = `../includes/fetch_location_data.php?lat=${lat}&lng=${lng}`;
     
-    fetch(`../includes/fetch_location_data.php?lat=${lat}&lng=${lng}&debug=true`)
-        .then(response => {
-            console.log('Response status:', response.status);
-            return response.json();
-        })
+    // Fetch data from the API
+    fetch(apiUrl)
+        .then(response => response.json())
         .then(data => {
-            console.log('API Response:', data);
+            // Reset UI state
+            document.querySelector('.calculate-button').textContent = 'Carregar Dados';
+            document.querySelector('.calculate-button').disabled = false;
             
-            if (data.success) {
+            if (data.success && data.data) {
+                // Store the current location data
                 currentLocation = data.data;
-                console.log('Current Location Data:', currentLocation);
                 
-                // Check if we have the expected data structure
-                if (!currentLocation || !currentLocation.nome) {
-                    console.error('Invalid location data structure:', currentLocation);
-                    alert('Dados de localização inválidos. Por favor tente novamente.');
-                    document.querySelector('.calculate-button').textContent = 'Carregar Dados';
-                    document.querySelector('.calculate-button').disabled = false;
-                    return;
+                // Update dropdowns to match the selected location
+                if (currentLocation.distrito) {
+                    const distritoSelect = document.getElementById('distrito-select');
+                    distritoSelect.value = currentLocation.distrito;
+                    
+                    // Load concelhos for this distrito
+                    loadConcelhos(currentLocation.distrito);
+                    
+                    // Wait for concelhos to load, then set the concelho
+                    setTimeout(() => {
+                        if (currentLocation.concelho) {
+                            const concelhoSelect = document.getElementById('concelho-select');
+                            concelhoSelect.value = currentLocation.concelho;
+                            
+                            // Load freguesias for this concelho
+                            loadFreguesias(currentLocation.concelho);
+                            
+                            // Wait for freguesias to load, then set the freguesia
+                            setTimeout(() => {
+                                if (currentLocation.freguesia) {
+                                    const freguesiaSelect = document.getElementById('freguesia-select');
+                                    
+                                    // Find the option with matching text
+                                    const options = Array.from(freguesiaSelect.options);
+                                    const option = options.find(opt => opt.textContent === currentLocation.freguesia);
+                                    
+                                    if (option) {
+                                        freguesiaSelect.value = option.value;
+                                    }
+                                }
+                            }, 1000);
+                        }
+                    }, 1000);
                 }
                 
+                // Draw the location boundary
+                if (currentLocation.geometry) {
+                    drawLocationBoundary(currentLocation.geometry);
+                }
+                
+                // Display location data
                 displayLocationData(currentLocation);
                 
-                // Show the location data panel
-                document.querySelector('.location-data-panel').classList.add('active');
-                
-                // Update UI to show normal state
-                document.querySelector('.calculate-button').textContent = 'Carregar Dados';
-                document.querySelector('.calculate-button').disabled = false;
-                
-                // Check for geometry data
-                console.log('Checking for geometry data...');
-                console.log('geojson property exists:', !!currentLocation.geojson);
-                console.log('geometry property exists:', !!currentLocation.geometry);
-                
-                // Draw the location boundary if geometry is available
-                if (currentLocation.geojson) {
-                    console.log('Using geojson property for boundary');
-                    console.log('GeoJSON type:', currentLocation.geojson.type);
-                    drawLocationBoundary(currentLocation.geojson);
-                } else if (currentLocation.geometry) {
-                    console.log('Using geometry property for boundary');
-                    console.log('Geometry type:', currentLocation.geometry.type);
-                    drawLocationBoundary(currentLocation.geometry);
-                } else {
-                    console.log('No geometry data available for drawing boundary');
+                // If we have coordinates, center the map
+                if (currentLocation.centroid) {
+                    map.setView([currentLocation.centroid.lat, currentLocation.centroid.lng], 12);
                 }
             } else {
-                console.error('API returned success: false', data.message);
+                // Show error message
+                document.getElementById('location-data').innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Não foi possível obter dados para esta localização.</p>
+                        <p class="error-details">${data.message || 'Erro desconhecido'}</p>
+                    </div>
+                `;
                 
-                // Display debug information in console
-                if (data.debug) {
-                    console.log('Debug information:', data.debug);
-                    
-                    // Check specific error points
-                    if (data.debug.coordinates_error) {
-                        console.error('Coordinates error:', data.debug.coordinates_error);
-                    }
-                    if (data.debug.coordinates_response) {
-                        console.log('Coordinates response:', data.debug.coordinates_response);
-                    }
-                    if (data.debug.geometry_error) {
-                        console.error('Geometry error:', data.debug.geometry_error);
-                    }
-                    if (data.debug.coordinates_endpoint) {
-                        console.log('Endpoint used:', data.debug.coordinates_endpoint);
-                    }
-                    if (data.debug.coordinates_http_code) {
-                        console.log('HTTP code:', data.debug.coordinates_http_code);
-                    }
-                }
-                
-                alert('Não foi possível obter dados para esta localização.');
-                document.querySelector('.calculate-button').textContent = 'Carregar Dados';
-                document.querySelector('.calculate-button').disabled = false;
+                // Show the data panel
+                document.querySelector('.location-data-panel').classList.add('visible');
             }
         })
         .catch(error => {
             console.error('Error fetching location data:', error);
-            alert('Ocorreu um erro ao obter os dados da localização.');
+            
+            // Reset UI state
             document.querySelector('.calculate-button').textContent = 'Carregar Dados';
             document.querySelector('.calculate-button').disabled = false;
+            
+            // Show error message
+            document.getElementById('location-data').innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Erro ao obter dados da localização.</p>
+                    <p class="error-details">${error.message}</p>
+                </div>
+            `;
+            
+            // Show the data panel
+            document.querySelector('.location-data-panel').classList.add('visible');
         });
 }
 
