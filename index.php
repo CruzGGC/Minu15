@@ -111,21 +111,33 @@
             </div>
             <div class="feature-grid">
                 <div class="feature-card fade-in">
-                    <div class="feature-img" style="background-color: #4361ee;"></div>
+                    <div class="feature-img">
+                        <img src="images/landing/mapa_interativo.png" alt="Mapeamento Interativo" 
+                             onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#4361ee';" 
+                             style="width: 100%; height: 200px; object-fit: cover;">
+                    </div>
                     <div class="feature-content">
                         <h3>Mapeamento Interativo</h3>
                         <p>Visualize todas as amenidades e serviços num mapa interativo e personalizável.</p>
                     </div>
                 </div>
                 <div class="feature-card fade-in">
-                    <div class="feature-img" style="background-color: #3a0ca3;"></div>
+                    <div class="feature-img">
+                        <img src="images/landing/acessibilidade.png" alt="Análise de Acessibilidade" 
+                             onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#3a0ca3';" 
+                             style="width: 100%; height: 200px; object-fit: cover;">
+                    </div>
                     <div class="feature-content">
                         <h3>Análise de Acessibilidade</h3>
                         <p>Calcule e visualize áreas acessíveis a pé, de bicicleta ou de carro em diferentes intervalos de tempo.</p>
                     </div>
                 </div>
                 <div class="feature-card fade-in">
-                    <div class="feature-img" style="background-color: #4cc9f0;"></div>
+                    <div class="feature-img">
+                        <img src="images/landing/estatisticas.png" alt="Estatísticas Detalhadas" 
+                             onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#4cc9f0';" 
+                             style="width: 100%; height: 200px; object-fit: cover;">
+                    </div>
                     <div class="feature-content">
                         <h3>Estatísticas Detalhadas</h3>
                         <p>Obtenha estatísticas sobre serviços públicos, transporte, comércio e áreas verdes na sua vizinhança.</p>
@@ -176,7 +188,9 @@
             <div class="carousel-container fade-in">
                 <div class="carousel">
                     <div class="carousel-item">
-                        <div class="carousel-img" style="background-color: #4361ee; display: flex; justify-content: center; align-items: center; color: white;">
+                        <img src="images/landing/1.png" alt="Captura de Ecrã 1" class="carousel-img"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="carousel-img fallback-content" style="display: none; background-color: #4361ee; justify-content: center; align-items: center; color: white;">
                             <div>
                                 <i class="fas fa-map-marked-alt" style="font-size: 5rem; margin-bottom: 20px;"></i>
                                 <h3>Vista do Mapa</h3>
@@ -184,7 +198,9 @@
                         </div>
                     </div>
                     <div class="carousel-item">
-                        <div class="carousel-img" style="background-color: #3a0ca3; display: flex; justify-content: center; align-items: center; color: white;">
+                        <img src="images/landing/2.png" alt="Captura de Ecrã 2" class="carousel-img"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="carousel-img fallback-content" style="display: none; background-color: #3a0ca3; justify-content: center; align-items: center; color: white;">
                             <div>
                                 <i class="fas fa-chart-pie" style="font-size: 5rem; margin-bottom: 20px;"></i>
                                 <h3>Análise de Dados</h3>
@@ -192,10 +208,22 @@
                         </div>
                     </div>
                     <div class="carousel-item">
-                        <div class="carousel-img" style="background-color: #4cc9f0; display: flex; justify-content: center; align-items: center; color: white;">
+                        <img src="images/landing/3.png" alt="Captura de Ecrã 3" class="carousel-img"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="carousel-img fallback-content" style="display: none; background-color: #4cc9f0; justify-content: center; align-items: center; color: white;">
                             <div>
                                 <i class="fas fa-ruler-combined" style="font-size: 5rem; margin-bottom: 20px;"></i>
                                 <h3>Medição de Distâncias</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <img src="images/landing/4.png" alt="Captura de Ecrã 4" class="carousel-img"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="carousel-img fallback-content" style="display: none; background-color: #7209b7; justify-content: center; align-items: center; color: white;">
+                            <div>
+                                <i class="fas fa-search-location" style="font-size: 5rem; margin-bottom: 20px;"></i>
+                                <h3>Pesquisa de Locais</h3>
                             </div>
                         </div>
                     </div>
@@ -212,6 +240,7 @@
                     <div class="carousel-indicator active" data-index="0"></div>
                     <div class="carousel-indicator" data-index="1"></div>
                     <div class="carousel-indicator" data-index="2"></div>
+                    <div class="carousel-indicator" data-index="3"></div>
                 </div>
             </div>
         </div>
