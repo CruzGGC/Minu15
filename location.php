@@ -1,4 +1,62 @@
 <?php
+require_once 'includes/fetch_location_data.php';
+
+// Debug incoming requests
+error_log("Request method: " . $_SERVER['REQUEST_METHOD']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    error_log("POST data: " . print_r($_POST, true));
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    $fetcher = new LocationFetcher();
+    $response = ['status' => 'error', 'message' => 'Invalid action or parameters.'];
+
+    error_log("Processing action: " . $_POST['action']);
+
+    switch ($_POST['action']) {
+        case 'fetchByGps':
+            if (isset($_POST['latitude']) && isset($_POST['longitude'])) {
+                error_log("Fetching by GPS: " . $_POST['latitude'] . ", " . $_POST['longitude']);
+                $response = $fetcher->fetchByGps($_POST['latitude'], $_POST['longitude']);
+                error_log("GPS response: " . print_r($response, true));
+            }
+            break;
+        case 'fetchByFreguesiaAndMunicipio':
+            if (isset($_POST['freguesia']) && isset($_POST['municipio'])) {
+                $response = $fetcher->fetchByFreguesiaAndMunicipio($_POST['freguesia'], $_POST['municipio']);
+            }
+            break;
+        case 'fetchByMunicipio':
+            if (isset($_POST['municipio'])) {
+                $response = $fetcher->fetchByMunicipio($_POST['municipio']);
+            }
+            break;
+        case 'fetchByDistrito':
+            if (isset($_POST['distrito'])) {
+                $response = $fetcher->fetchByDistrito($_POST['distrito']);
+            }
+            break;
+        case 'fetchAllDistritos':
+            $response = $fetcher->fetchAllDistritos();
+            break;
+        case 'fetchMunicipiosByDistrito':
+            if (isset($_POST['distrito'])) {
+                $response = $fetcher->fetchMunicipiosByDistrito($_POST['distrito']);
+            }
+            break;
+        case 'fetchFreguesiasByMunicipio':
+            if (isset($_POST['municipio'])) {
+                $response = $fetcher->fetchFreguesiasByMunicipio($_POST['municipio']);
+            }
+            break;
+    }
+
+    error_log("Final response to be sent: " . json_encode($response));
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit;
+}
+
 /**
  * Location Data Explorer
  * Allows users to select a district, municipality, or freguesia in Portugal

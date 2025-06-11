@@ -139,16 +139,25 @@ function setMapStyle(provider) {
  * Load the list of distritos from the API
  */
 function loadDistritos() {
-    fetch('../includes/geoapi_proxy.php?endpoint=' + encodeURIComponent('distritos/base'))
+    fetch('../location.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'action=fetchAllDistritos'
+    })
         .then(response => response.json())
         .then(data => {
             const distritoSelect = document.getElementById('distrito-select');
             
-            // Sort distritos alphabetically (they should already be sorted)
-            data.sort();
+            // Ensure data.data is an array before sorting
+            const distritos = data.data || [];
+
+            // Sort distritos alphabetically
+            distritos.sort();
             
             // Add options to select
-            data.forEach(distritoName => {
+            distritos.forEach(distritoName => {
                 const option = document.createElement('option');
                 option.value = distritoName;
                 option.textContent = distritoName;
@@ -157,6 +166,7 @@ function loadDistritos() {
         })
         .catch(error => {
             console.error('Error loading distritos:', error);
+            alert('Ocorreu um erro ao carregar os distritos.');
         });
 }
 
@@ -164,7 +174,13 @@ function loadDistritos() {
  * Load concelhos for the selected distrito
  */
 function loadConcelhos(distrito) {
-    fetch('../includes/geoapi_proxy.php?endpoint=' + encodeURIComponent(`distrito/${encodeURIComponent(distrito)}/municipios`))
+    fetch('../location.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=fetchMunicipiosByDistrito&distrito=${encodeURIComponent(distrito)}`
+    })
         .then(response => response.json())
         .then(data => {
             const concelhoSelect = document.getElementById('concelho-select');
@@ -173,9 +189,9 @@ function loadConcelhos(distrito) {
             concelhoSelect.innerHTML = '<option value="">Selecione um concelho...</option>';
             
             // Get the municipios array from the response
-            const municipios = data.municipios || [];
+            const municipios = data.data?.municipios || [];
             
-            // Sort municipios alphabetically (by name)
+            // Sort municipios alphabetically (by nome)
             municipios.sort((a, b) => a.nome.localeCompare(b.nome));
             
             // Add options to select
@@ -195,6 +211,7 @@ function loadConcelhos(distrito) {
         })
         .catch(error => {
             console.error('Error loading concelhos:', error);
+            alert('Ocorreu um erro ao carregar os concelhos.');
         });
 }
 
@@ -202,7 +219,13 @@ function loadConcelhos(distrito) {
  * Load freguesias for the selected concelho
  */
 function loadFreguesias(concelho) {
-    fetch('../includes/geoapi_proxy.php?endpoint=' + encodeURIComponent(`municipio/${encodeURIComponent(concelho)}/freguesias`))
+    fetch('../location.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=fetchFreguesiasByMunicipio&municipio=${encodeURIComponent(concelho)}`
+    })
         .then(response => response.json())
         .then(data => {
             console.log('Freguesias data received:', data);
@@ -212,25 +235,25 @@ function loadFreguesias(concelho) {
             // Clear previous options
             freguesiaSelect.innerHTML = '<option value="">Selecione uma freguesia...</option>';
             
-            // Get the freguesias names array from the response
-            let freguesiaNames = data.freguesias || [];
-            const freguesiaGeojsons = data.geojsons?.freguesias || [];
-            
-            console.log('Original freguesias array:', freguesiaNames);
-            
+            // Get the freguesias names array from the response, handling the new structure
+            let freguesias = data.data?.freguesias || [];
+            const freguesiaGeojsons = data.data?.geojsons?.freguesias || [];
+
+            console.log('Original freguesias array:', freguesias);
+
             // Handle case where freguesias might be objects instead of strings
-            if (freguesiaNames.length > 0 && typeof freguesiaNames[0] !== 'string') {
+            if (freguesias.length > 0 && typeof freguesias[0] !== 'string') {
                 // Check if freguesias are objects with 'nome' property
-                if (freguesiaNames[0] && typeof freguesiaNames[0].nome === 'string') {
+                if (freguesias[0] && typeof freguesias[0].nome === 'string') {
                     console.log('Freguesias are objects with nome property');
-                    freguesiaNames = freguesiaNames.map(f => f.nome);
+                    freguesias = freguesias.map(f => f.nome);
                 } else {
                     console.log('Freguesias have unexpected format, trying to convert to strings');
-                    freguesiaNames = freguesiaNames.map(f => String(f));
+                    freguesias = freguesias.map(f => String(f));
                 }
             }
             
-            console.log('Processed freguesias array:', freguesiaNames);
+            console.log('Processed freguesias array:', freguesias);
             
             // Create a map of freguesia names to their respective codes from geojsons
             const freguesiaCodes = {};
@@ -241,9 +264,9 @@ function loadFreguesias(concelho) {
             });
             
             // Sort freguesia names alphabetically only if they are strings
-            if (freguesiaNames.length > 0 && typeof freguesiaNames[0] === 'string') {
+            if (freguesias.length > 0 && typeof freguesias[0] === 'string') {
                 try {
-                    freguesiaNames.sort((a, b) => a.localeCompare(b));
+                    freguesias.sort((a, b) => a.localeCompare(b));
                 } catch (error) {
                     console.error('Error sorting freguesia names:', error);
                     console.log('Unable to sort freguesia names, using as-is');
@@ -251,7 +274,7 @@ function loadFreguesias(concelho) {
             }
             
             // Add options to select
-            freguesiaNames.forEach(freguesiaName => {
+            freguesias.forEach(freguesiaName => {
                 const option = document.createElement('option');
                 // Store both code and name - the name is what we'll use for API calls
                 option.value = freguesiaName; // Store freguesia name as value for API calls
@@ -265,6 +288,7 @@ function loadFreguesias(concelho) {
         })
         .catch(error => {
             console.error('Error loading freguesias:', error);
+            alert('Ocorreu um erro ao carregar as freguesias.');
         });
 }
 
@@ -274,12 +298,36 @@ function loadFreguesias(concelho) {
 function fetchLocationByCoordinates(lat, lng) {
     console.log(`Fetching location data for coordinates: ${lat}, ${lng}`);
     
-    // Construct the API URL
-    const apiUrl = `../includes/fetch_location_data.php?lat=${lat}&lng=${lng}`;
+    // Format coordinates to 6 decimal places for precision
+    const formattedLat = parseFloat(lat.toFixed(6));
+    const formattedLng = parseFloat(lng.toFixed(6));
     
     // Fetch data from the API
-    fetch(apiUrl)
-        .then(response => response.json())
+    fetch('../location.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=fetchByGps&latitude=${formattedLat}&longitude=${formattedLng}`
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            console.log("Response received:", response);
+            return response.text().then(text => {
+                console.log("Raw response text:", text);
+                if (!text || text.trim() === '') {
+                    throw new Error('Empty response received');
+                }
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error("JSON parse error:", e);
+                    throw new Error(`JSON parse error: ${e.message}`);
+                }
+            });
+        })
         .then(data => {
             // Reset UI state
             document.querySelector('.calculate-button').textContent = 'Carregar Dados';
@@ -381,7 +429,13 @@ function fetchLocationByFreguesia(freguesia, concelho) {
     
     // Use the freguesia name for the API call, not the code
     // Arrange parameters to match the API structure: /municipio/{municipio}/freguesia/{freguesia}
-    fetch(`../includes/fetch_location_data.php?municipio=${encodeURIComponent(concelho)}&freguesia=${encodeURIComponent(freguesia)}`)
+    fetch('../includes/fetch_location_data.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=fetchByFreguesiaAndMunicipio&freguesia=${encodeURIComponent(freguesia)}&municipio=${encodeURIComponent(concelho)}`
+    })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -423,7 +477,13 @@ function fetchLocationByMunicipio(municipio) {
     document.querySelector('.calculate-button').textContent = 'A carregar...';
     document.querySelector('.calculate-button').disabled = true;
     
-    fetch(`../includes/fetch_location_data.php?municipio=${encodeURIComponent(municipio)}`)
+    fetch('../includes/fetch_location_data.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=fetchByMunicipio&municipio=${encodeURIComponent(municipio)}`
+    })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -465,7 +525,13 @@ function fetchLocationByDistrito(distrito) {
     document.querySelector('.calculate-button').textContent = 'A carregar...';
     document.querySelector('.calculate-button').disabled = true;
     
-    fetch(`../includes/fetch_location_data.php?distrito=${encodeURIComponent(distrito)}`)
+    fetch('../includes/fetch_location_data.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=fetchByDistrito&distrito=${encodeURIComponent(distrito)}`
+    })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -629,6 +695,9 @@ function displayLocationData(location) {
     
     // Set the HTML content
     locationDataElement.innerHTML = html;
+
+    // Show the data panel
+    document.querySelector('.location-data-panel').classList.add('visible');
 }
 
 /**
@@ -643,202 +712,182 @@ function drawLocationBoundary(geojson) {
         map.removeLayer(locationPolygon);
     }
     
-    try {
-        // Handle different GeoJSON formats
-        let validGeoJSON = geojson;
-        
-        // If it's a Feature with geometry property
-        if (geojson.type === 'Feature' && geojson.geometry) {
-            console.log('Processing Feature type GeoJSON');
-            validGeoJSON = geojson;
-        } 
-        // If it's just the geometry object itself
-        else if (geojson.type === 'Polygon' || geojson.type === 'MultiPolygon') {
-            console.log('Processing direct geometry GeoJSON');
-            validGeoJSON = {
-                type: 'Feature',
-                geometry: geojson,
-                properties: {}
-            };
-        }
-        // If it's a FeatureCollection
-        else if (geojson.type === 'FeatureCollection' && geojson.features) {
-            console.log('Processing FeatureCollection with', geojson.features.length, 'features');
-            validGeoJSON = geojson;
-        }
-        // If it's an unexpected format
-        else {
-            console.warn('Unexpected GeoJSON format:', geojson.type);
-            console.log('Full GeoJSON data:', geojson);
-        }
-        
-        // Create the polygon from GeoJSON
-        locationPolygon = L.geoJSON(validGeoJSON, {
-            style: {
-                color: '#2980b9',
-                weight: 3,
-                opacity: 0.8,
-                fillColor: '#3498db',
-                fillOpacity: 0.2
+    // Add new polygon
+    if (geojson && geojson.coordinates) {
+        console.log('Adding new polygon');
+        locationPolygon = L.geoJSON(geojson, {
+            style: function (feature) {
+                return {
+                    color: '#3498db',
+                    weight: 3,
+                    opacity: 0.7,
+                    fillOpacity: 0.2
+                };
+            },
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup(feature.properties.Nome || 'Localização');
             }
         }).addTo(map);
         
-        console.log('Polygon created successfully');
-        
-        // Zoom to the polygon bounds
+        // Fit map to polygon bounds
         map.fitBounds(locationPolygon.getBounds());
-        console.log('Map zoomed to polygon bounds');
-    } catch (error) {
-        console.error('Error creating boundary polygon:', error);
-        console.error('GeoJSON data that caused the error:', JSON.stringify(geojson));
-        
-        // Try to recover by extracting geometry if possible
-        try {
-            if (geojson && typeof geojson === 'object') {
-                let geometryData = null;
-                
-                // Try different possible paths to geometry
-                if (geojson.geometry && geojson.geometry.coordinates) {
-                    console.log('Attempting recovery using .geometry');
-                    geometryData = geojson.geometry;
-                } else if (geojson.coordinates) {
-                    console.log('Attempting recovery using direct coordinates');
-                    geometryData = {
-                        type: Array.isArray(geojson.coordinates[0][0]) ? 'MultiPolygon' : 'Polygon',
-                        coordinates: geojson.coordinates
-                    };
-                }
-                
-                if (geometryData) {
-                    console.log('Recovery geometry:', geometryData);
-                    locationPolygon = L.geoJSON({
-                        type: 'Feature',
-                        geometry: geometryData,
-                        properties: {}
-                    }, {
-                        style: {
-                            color: '#e74c3c',
-                            weight: 3,
-                            opacity: 0.8,
-                            fillColor: '#e74c3c',
-                            fillOpacity: 0.2
-                        }
-                    }).addTo(map);
-                    
-                    map.fitBounds(locationPolygon.getBounds());
-                    console.log('Recovery successful');
-                }
-            }
-        } catch (recoveryError) {
-            console.error('Recovery attempt failed:', recoveryError);
-        }
+    } else {
+        console.warn('No valid GeoJSON coordinates to draw boundary.', geojson);
     }
 }
 
 /**
- * Clear the current location selection
+ * Clear any previous location selection (marker, polygon, dropdowns)
  */
 function clearLocationSelection() {
-    // Remove marker if it exists
+    // Remove marker
     if (locationMarker) {
         map.removeLayer(locationMarker);
         locationMarker = null;
     }
     
-    // Remove polygon if it exists
+    // Remove polygon
     if (locationPolygon) {
         map.removeLayer(locationPolygon);
         locationPolygon = null;
     }
     
-    // Reset current location
-    currentLocation = null;
+    // Reset dropdowns
+    document.getElementById('distrito-select').value = '';
+    document.getElementById('concelho-select').value = '';
+    document.getElementById('concelho-select').disabled = true;
+    document.getElementById('freguesia-select').value = '';
+    document.getElementById('freguesia-select').disabled = true;
     
-    // Hide the location data panel
-    document.querySelector('.location-data-panel').classList.remove('active');
+    // Clear location data panel
+    document.getElementById('location-data').innerHTML = '<p>Selecione uma localização para ver os dados</p>';
+    document.querySelector('.location-data-panel').classList.remove('visible');
 }
 
 /**
- * Set up event listeners for UI elements
+ * Setup all event listeners for UI elements
  */
 function setupEventListeners() {
-    // Distrito select change
-    document.getElementById('distrito-select').addEventListener('change', function() {
-        const distrito = this.value;
-        if (distrito) {
-            loadConcelhos(distrito);
-            clearLocationSelection();
-        }
+    // Mobile menu toggle
+    document.getElementById('mobile-menu-toggle').addEventListener('click', function() {
+        document.getElementById('overlay-panel').classList.toggle('active');
     });
-    
-    // Concelho select change
-    document.getElementById('concelho-select').addEventListener('change', function() {
-        const concelho = this.value;
-        if (concelho) {
-            loadFreguesias(concelho);
-            clearLocationSelection();
-        }
+
+    // Mobile panel close
+    document.getElementById('mobile-panel-close').addEventListener('click', function() {
+        document.getElementById('overlay-panel').classList.remove('active');
     });
-    
-    // Freguesia select change
-    document.getElementById('freguesia-select').addEventListener('change', function() {
-        clearLocationSelection();
-    });
-    
-    // Calculate button click
-    document.querySelector('.calculate-button').addEventListener('click', function() {
-        const distrito = document.getElementById('distrito-select').value;
-        const concelho = document.getElementById('concelho-select').value;
-        const freguesia = document.getElementById('freguesia-select').value;
-        
-        clearLocationSelection();
-        
-        if (freguesia) {
-            fetchLocationByFreguesia(freguesia, concelho);
-        } else if (concelho) {
-            fetchLocationByMunicipio(concelho);
-        } else if (distrito) {
-            fetchLocationByDistrito(distrito);
+
+    // POI header dropdown
+    document.getElementById('poi-header').addEventListener('click', function() {
+        const poiContent = document.getElementById('poi-content');
+        const dropdownArrow = this.querySelector('.dropdown-arrow');
+        if (poiContent.style.display === 'none' || poiContent.style.display === '') {
+            poiContent.style.display = 'block';
+            dropdownArrow.textContent = '▼';
         } else {
-            alert('Por favor, selecione pelo menos um distrito ou clique no mapa.');
+            poiContent.style.display = 'none';
+            dropdownArrow.textContent = '►';
         }
     });
     
-    // Map style selector
-    document.querySelectorAll('.map-style-option').forEach(function(el) {
-        el.addEventListener('click', function() {
-            const provider = this.getAttribute('data-provider');
+    // POI category dropdowns
+    document.querySelectorAll('.poi-category .category-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const categoryContent = this.nextElementSibling;
+            const dropdownArrow = this.querySelector('.dropdown-arrow');
+            if (categoryContent.style.display === 'none' || categoryContent.style.display === '') {
+                categoryContent.style.display = 'block';
+                dropdownArrow.textContent = '▼';
+            } else {
+                categoryContent.style.display = 'none';
+                dropdownArrow.textContent = '►';
+            }
+        });
+    });
+
+    // Map style options
+    document.querySelectorAll('.map-style-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const provider = this.dataset.provider;
             setMapStyle(provider);
         });
     });
     
-    // Mobile panel toggle
-    document.getElementById('mobile-menu-toggle').addEventListener('click', function() {
-        document.getElementById('overlay-panel').classList.toggle('active');
+    // District select change event
+    document.getElementById('distrito-select').addEventListener('change', function() {
+        const selectedDistrito = this.value;
+        clearLocationSelection(); // Clear existing map features and data
+        if (selectedDistrito) {
+            loadConcelhos(selectedDistrito);
+            fetchLocationByDistrito(selectedDistrito); // Fetch and display data for the selected distrito
+        } else {
+            // Reset concelho and freguesia dropdowns if no distrito is selected
+            document.getElementById('concelho-select').disabled = true;
+            document.getElementById('concelho-select').innerHTML = '<option value="">Selecione um concelho...</option>';
+            document.getElementById('freguesia-select').disabled = true;
+            document.getElementById('freguesia-select').innerHTML = '<option value="">Selecione uma freguesia...</option>';
+        }
+    });
+
+    // Concelho select change event
+    document.getElementById('concelho-select').addEventListener('change', function() {
+        const selectedConcelho = this.value;
+        const selectedDistrito = document.getElementById('distrito-select').value;
+        clearLocationSelection(); // Clear existing map features and data
+        if (selectedConcelho) {
+            loadFreguesias(selectedConcelho);
+            fetchLocationByMunicipio(selectedConcelho); // Fetch and display data for the selected concelho
+        } else if (selectedDistrito) {
+            // If concelho is deselected but distrito is still selected, load distrito data
+            fetchLocationByDistrito(selectedDistrito);
+        } else {
+            // Reset freguesia dropdown if no concelho is selected
+            document.getElementById('freguesia-select').disabled = true;
+            document.getElementById('freguesia-select').innerHTML = '<option value="">Selecione uma freguesia...</option>';
+        }
+    });
+
+    // Freguesia select change event
+    document.getElementById('freguesia-select').addEventListener('change', function() {
+        const selectedFreguesia = this.value;
+        const selectedConcelho = document.getElementById('concelho-select').value;
+        clearLocationSelection(); // Clear existing map features and data
+        if (selectedFreguesia) {
+            // Pass both freguesia and concelho to fetch data
+            fetchLocationByFreguesia(selectedFreguesia, selectedConcelho);
+        } else if (selectedConcelho) {
+            // If freguesia is deselected but concelho is still selected, load concelho data
+            fetchLocationByMunicipio(selectedConcelho);
+        }
     });
     
-    document.getElementById('mobile-panel-close').addEventListener('click', function() {
-        document.getElementById('overlay-panel').classList.remove('active');
+    // Calculate button event
+    document.querySelector('.calculate-button').addEventListener('click', function() {
+        // This button is primarily for triggering map click actions or re-fetching based on dropdowns
+        // The primary fetch logic is now tied to dropdown changes or map clicks.
+        // If no location is currently selected, prompt the user or do nothing.
+        if (!currentLocation) {
+            alert('Selecione uma localização no mapa ou através dos menus suspensos.');
+            return;
+        }
+
+        // If a location is selected, re-display its data (useful if POI checkboxes changed)
+        displayLocationData(currentLocation);
+
+        // Re-draw boundary if exists and current location has geometry
+        if (currentLocation.geometry) {
+            drawLocationBoundary(currentLocation.geometry);
+        } else if (currentLocation.geojson) {
+            drawLocationBoundary(currentLocation.geojson);
+        }
+
+        // Show the panel (ensure it's visible after calculations)
+        document.querySelector('.location-data-panel').classList.add('visible');
     });
-    
-    // POI category headers toggle
-    document.querySelectorAll('.category-header').forEach(function(header) {
-        header.addEventListener('click', function() {
-            this.parentElement.classList.toggle('collapsed');
-            this.querySelector('.dropdown-arrow').textContent = 
-                this.parentElement.classList.contains('collapsed') ? '▼' : '▲';
-        });
-    });
-    
-    // POI header toggle
-    document.getElementById('poi-header').addEventListener('click', function() {
-        document.getElementById('poi-content').classList.toggle('collapsed');
-        this.querySelector('.dropdown-arrow').textContent = 
-            document.getElementById('poi-content').classList.contains('collapsed') ? '▼' : '▲';
-    });
-    
+
     // Close location data panel
     document.querySelector('.location-data-panel .close-panel').addEventListener('click', function() {
-        document.querySelector('.location-data-panel').classList.remove('active');
+        document.querySelector('.location-data-panel').classList.remove('visible');
     });
 } 
