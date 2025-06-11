@@ -598,7 +598,6 @@ function displayLocationData(location) {
     
     const locationDataElement = document.getElementById('location-data');
     const locationPanel = document.querySelector('.location-data-panel');
-    const panelFooter = document.getElementById('panel-footer');
     const fullDataLink = document.getElementById('view-full-data');
     
     // Debug: mostrar o objeto completo no console
@@ -838,20 +837,20 @@ function displayLocationData(location) {
     // Configure full data link based on location type
     if (location.distrito) {
         fullDataLink.href = `location_data.php?type=distrito&id=${encodeURIComponent(location.distrito)}`;
-        panelFooter.style.display = 'block';
+        fullDataLink.style.display = 'block';
     } else if (location.municipio || location.concelho) {
         const municipioName = location.municipio || location.concelho;
         fullDataLink.href = `location_data.php?type=municipio&id=${encodeURIComponent(municipioName)}`;
-        panelFooter.style.display = 'block';
+        fullDataLink.style.display = 'block';
     } else if (location.freguesia && (location.municipio || location.concelho)) {
         const municipioName = location.municipio || location.concelho;
         fullDataLink.href = `location_data.php?type=freguesia&id=${encodeURIComponent(location.freguesia)}&municipio=${encodeURIComponent(municipioName)}`;
-        panelFooter.style.display = 'block';
+        fullDataLink.style.display = 'block';
     } else if (currentClickedCoordinates) {
         fullDataLink.href = `location_data.php?type=gps&id=${encodeURIComponent(currentClickedCoordinates.lat)},${encodeURIComponent(currentClickedCoordinates.lng)}`;
-        panelFooter.style.display = 'block';
+        fullDataLink.style.display = 'block';
     } else {
-        panelFooter.style.display = 'none';
+        fullDataLink.style.display = 'none';
     }
 
     // Show the data panel - garantir que a classe "visible" é adicionada corretamente
@@ -983,17 +982,21 @@ function drawLocationBoundary(geojson) {
 }
 
 /**
- * Clear any previous location selection (marker, polygon, dropdowns)
+ * Clear the current location selection
  */
 function clearLocationSelection() {
-    // Remove marker
+    console.log('Clearing location selection');
+    
+    // Remove marker if it exists
     if (locationMarker) {
+        console.log('Removing marker');
         map.removeLayer(locationMarker);
         locationMarker = null;
     }
     
-    // Remove polygon
+    // Remove polygon if it exists
     if (locationPolygon) {
+        console.log('Removing polygon');
         map.removeLayer(locationPolygon);
         locationPolygon = null;
     }
@@ -1011,13 +1014,17 @@ function clearLocationSelection() {
     // Clear location data panel
     document.getElementById('location-data').innerHTML = '<p>Selecione uma localização para ver os dados</p>';
     
-    // Esconder o painel de dados e o footer
+    // Esconder o painel de dados
     const locationPanel = document.querySelector('.location-data-panel');
-    const panelFooter = document.getElementById('panel-footer');
     console.log('Closing panel, before removing class:', locationPanel.className);
     locationPanel.classList.remove('visible');
-    panelFooter.style.display = 'none';
     console.log('Panel after removing class:', locationPanel.className);
+    
+    // Hide the "Página Completa" button
+    const fullDataLink = document.getElementById('view-full-data');
+    if (fullDataLink) {
+        fullDataLink.style.display = 'none';
+    }
     
     // Reset current location data
     currentLocation = null;
@@ -1036,34 +1043,12 @@ function setupEventListeners() {
     document.getElementById('mobile-panel-close').addEventListener('click', function() {
         document.getElementById('overlay-panel').classList.remove('active');
     });
-
-    // POI header dropdown
-    document.getElementById('poi-header').addEventListener('click', function() {
-        const poiContent = document.getElementById('poi-content');
-        const dropdownArrow = this.querySelector('.dropdown-arrow');
-        if (poiContent.style.display === 'none' || poiContent.style.display === '') {
-            poiContent.style.display = 'block';
-            dropdownArrow.textContent = '▼';
-        } else {
-            poiContent.style.display = 'none';
-            dropdownArrow.textContent = '►';
-        }
-    });
     
-    // POI category dropdowns
-    document.querySelectorAll('.poi-category .category-header').forEach(header => {
-        header.addEventListener('click', function() {
-            const categoryContent = this.nextElementSibling;
-            const dropdownArrow = this.querySelector('.dropdown-arrow');
-            if (categoryContent.style.display === 'none' || categoryContent.style.display === '') {
-                categoryContent.style.display = 'block';
-                dropdownArrow.textContent = '▼';
-            } else {
-                categoryContent.style.display = 'none';
-                dropdownArrow.textContent = '►';
-            }
-        });
-    });
+    // Initialize the "Página Completa" button as hidden
+    const fullDataLink = document.getElementById('view-full-data');
+    if (fullDataLink) {
+        fullDataLink.style.display = 'none';
+    }
 
     // Map style options
     document.querySelectorAll('.map-style-option').forEach(option => {

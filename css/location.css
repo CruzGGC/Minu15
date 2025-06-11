@@ -55,7 +55,7 @@
 /* Location Data Panel Styles */
 .location-data-panel {
     position: fixed;
-    top: 60px;
+    top: 0;
     right: -400px;
     bottom: 0;
     width: 380px;
@@ -104,15 +104,7 @@
     padding: 20px;
 }
 
-.location-data-panel .panel-footer {
-    padding: 15px;
-    text-align: center;
-    border-top: 1px solid #eee;
-    background-color: #f9f9f9;
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
-}
+/* Panel footer removed */
 
 /* Location Data Content Styles */
 .location-data {
@@ -276,7 +268,7 @@
 /* Map container */
 #map {
     position: absolute;
-    top: 60px;
+    top: 0;
     left: 0;
     right: 0;
     bottom: 0;
@@ -286,7 +278,7 @@
 /* Overlay panel */
 .overlay-panel {
     position: fixed;
-    top: 60px;
+    top: 0;
     left: 0;
     bottom: 0;
     width: 320px;
@@ -301,7 +293,7 @@
 /* Location data panel */
 .location-data-panel {
     position: fixed;
-    top: 60px;
+    top: 0;
     right: -400px;
     bottom: 0;
     width: 380px;
@@ -562,7 +554,7 @@
     .mobile-menu-toggle {
         display: block;
         position: fixed;
-        top: 70px;
+        top: 10px;
         left: 10px;
         background-color: #fff;
         width: 40px;
@@ -727,4 +719,31 @@
     color: #fff;
     transform: translateY(-2px);
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Button styles */
+.full-width-btn {
+    display: block;
+    width: 100%;
+    padding: 10px 15px;
+    text-align: center;
+    border-radius: 4px;
+    background-color: #3498db;
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+.full-width-btn:hover {
+    background-color: #2980b9;
+}
+
+@media (max-width: 768px) {
+    .full-width-btn {
+        padding: 12px 15px;
+        font-size: 1.1em;
+    }
 } 

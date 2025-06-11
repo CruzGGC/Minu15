@@ -106,30 +106,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <link rel="stylesheet" href="css/location.css">
 </head>
 <body class="location-page">
-    <!-- Navigation Header -->
-    <nav class="top-nav">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <img src="images/Minu15.png" alt="Minu15" class="nav-logo">
-                <span class="nav-title">Explorador de Localização</span>
-            </div>
-            <div class="nav-links">
-                <a href="index.php" class="nav-link">
-                    <i class="fas fa-home"></i>
-                    <span>Início</span>
-                </a>
-                <a href="app.php" class="nav-link">
-                    <i class="fas fa-map"></i>
-                    <span>Explorador</span>
-                </a>
-                <a href="location.php" class="nav-link active">
-                    <i class="fas fa-search-location"></i>
-                    <span>Localização</span>
-                </a>
-            </div>
-        </div>
-    </nav>
-
+    <!-- Navigation Header removed as requested -->
+    
     <div id="map"></div>
     
     <!-- Mobile menu toggle button -->
@@ -177,95 +155,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 <div class="selector-info">
                     <p>Ou clique diretamente no mapa para selecionar um local</p>
                 </div>
-                
-                <!-- Links rápidos para visualização de distritos -->
-                <div class="quick-links">
-                    <h4>Visualização Rápida</h4>
-                    <div class="district-links">
-                        <a href="location_data.php?type=distrito&id=Aveiro" class="district-link">Aveiro</a>
-                        <a href="location_data.php?type=distrito&id=Beja" class="district-link">Beja</a>
-                        <a href="location_data.php?type=distrito&id=Braga" class="district-link">Braga</a>
-                        <a href="location_data.php?type=distrito&id=Bragança" class="district-link">Bragança</a>
-                        <a href="location_data.php?type=distrito&id=Castelo Branco" class="district-link">Castelo Branco</a>
-                        <a href="location_data.php?type=distrito&id=Coimbra" class="district-link">Coimbra</a>
-                        <a href="location_data.php?type=distrito&id=Évora" class="district-link">Évora</a>
-                        <a href="location_data.php?type=distrito&id=Faro" class="district-link">Faro</a>
-                        <a href="location_data.php?type=distrito&id=Guarda" class="district-link">Guarda</a>
-                        <a href="location_data.php?type=distrito&id=Leiria" class="district-link">Leiria</a>
-                        <a href="location_data.php?type=distrito&id=Lisboa" class="district-link">Lisboa</a>
-                        <a href="location_data.php?type=distrito&id=Portalegre" class="district-link">Portalegre</a>
-                        <a href="location_data.php?type=distrito&id=Porto" class="district-link">Porto</a>
-                        <a href="location_data.php?type=distrito&id=Santarém" class="district-link">Santarém</a>
-                        <a href="location_data.php?type=distrito&id=Setúbal" class="district-link">Setúbal</a>
-                        <a href="location_data.php?type=distrito&id=Viana do Castelo" class="district-link">Viana do Castelo</a>
-                        <a href="location_data.php?type=distrito&id=Vila Real" class="district-link">Vila Real</a>
-                        <a href="location_data.php?type=distrito&id=Viseu" class="district-link">Viseu</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="panel-section">
-            <div class="panel-header" id="poi-header">
-                <span>Pontos de Interesse</span>
-                <span class="dropdown-arrow">▼</span>
-            </div>
-            <div class="panel-content" id="poi-content">
-                <!-- Saúde -->
-                <div class="poi-category">
-                    <div class="category-header">
-                        <span>Saúde</span>
-                        <span class="dropdown-arrow">▼</span>
-                    </div>
-                    <div class="category-content">
-                        <div><input type="checkbox" id="poi-hospitals" checked> <label for="poi-hospitals"><i class="fas fa-hospital poi-hospital"></i> Hospitais</label></div>
-                        <div><input type="checkbox" id="poi-health_centers" checked> <label for="poi-health_centers"><i class="fas fa-first-aid-kit poi-health"></i> Centros de Saúde</label></div>
-                        <div><input type="checkbox" id="poi-pharmacies" checked> <label for="poi-pharmacies"><i class="fas fa-prescription-bottle-alt poi-pharmacy"></i> Farmácias</label></div>
-                        <div><input type="checkbox" id="poi-dentists" checked> <label for="poi-dentists"><i class="fas fa-tooth poi-dentist"></i> Clínicas Dentárias</label></div>
-                    </div>
-                </div>
-                
-                <!-- Educação -->
-                <div class="poi-category">
-                    <div class="category-header">
-                        <span>Educação</span>
-                        <span class="dropdown-arrow">▼</span>
-                    </div>
-                    <div class="category-content">
-                        <div><input type="checkbox" id="poi-schools" checked> <label for="poi-schools"><i class="fas fa-school poi-school"></i> Escolas</label></div>
-                        <div><input type="checkbox" id="poi-universities" checked> <label for="poi-universities"><i class="fas fa-graduation-cap poi-university"></i> Universidades</label></div>
-                        <div><input type="checkbox" id="poi-kindergartens" checked> <label for="poi-kindergartens"><i class="fas fa-baby poi-kindergarten"></i> Jardins de Infância</label></div>
-                        <div><input type="checkbox" id="poi-libraries" checked> <label for="poi-libraries"><i class="fas fa-book poi-library"></i> Bibliotecas</label></div>
-                    </div>
-                </div>
-                
-                <!-- Comércio e serviços -->
-                <div class="poi-category">
-                    <div class="category-header">
-                        <span>Comércio e Serviços</span>
-                        <span class="dropdown-arrow">▼</span>
-                    </div>
-                    <div class="category-content">
-                        <div><input type="checkbox" id="poi-supermarkets" checked> <label for="poi-supermarkets"><i class="fas fa-shopping-basket poi-supermarket"></i> Supermercados</label></div>
-                        <div><input type="checkbox" id="poi-malls" checked> <label for="poi-malls"><i class="fas fa-shopping-bag poi-mall"></i> Centros Comerciais</label></div>
-                        <div><input type="checkbox" id="poi-restaurants" checked> <label for="poi-restaurants"><i class="fas fa-utensils poi-restaurant"></i> Restaurantes</label></div>
-                        <div><input type="checkbox" id="poi-atms" checked> <label for="poi-atms"><i class="fas fa-money-bill-wave poi-atm"></i> Multibanco</label></div>
-                    </div>
-                </div>
-                
-                <!-- Outros POIs -->
-                <div class="poi-category">
-                    <div class="category-header">
-                        <span>Outros</span>
-                        <span class="dropdown-arrow">▼</span>
-                    </div>
-                    <div class="category-content">
-                        <div><input type="checkbox" id="poi-parks" checked> <label for="poi-parks"><i class="fas fa-tree poi-park"></i> Parques</label></div>
-                        <div><input type="checkbox" id="poi-sports" checked> <label for="poi-sports"><i class="fas fa-dumbbell poi-sport"></i> Desporto</label></div>
-                        <div><input type="checkbox" id="poi-bus_stops" checked> <label for="poi-bus_stops"><i class="fas fa-bus"></i> Paragens</label></div>
-                        <div><input type="checkbox" id="poi-police_stations" checked> <label for="poi-police_stations"><i class="fas fa-shield-alt poi-police"></i> Polícia</label></div>
-                    </div>
-                </div>
             </div>
         </div>
         
@@ -291,6 +180,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         
         <button class="calculate-button">Carregar Dados</button>
         
+        <!-- Added "Página Completa" button to the bottom of the overlay panel -->
+        <div class="panel-section">
+            <a href="#" id="view-full-data" class="btn full-width-btn" style="display: block; padding: 10px 15px; background-color: #3498db; color: white; text-decoration: none; border-radius: 4px; font-weight: 500; text-align: center; margin-top: 15px;">
+                <i class="fas fa-external-link-alt"></i> Página Completa
+            </a>
+        </div>
+        
         <!-- Added footer attribution to the overlay panel -->
         <div class="panel-section footer-in-overlay">
             <p>&copy; <?php echo date('Y'); ?> Minu15 | Dados de <a href="https://geoapi.pt" target="_blank">GeoAPI.pt</a> e <a href="https://www.geofabrik.de/" target="_blank">Geofabrik</a></p>
@@ -304,11 +200,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         </div>
         <div class="panel-content" id="location-data">
             <p>Selecione uma localização para ver os dados</p>
-        </div>
-        <div class="panel-footer" id="panel-footer" style="display: none; padding: 15px; text-align: center; border-top: 1px solid #eee;">
-            <a href="#" id="view-full-data" class="btn" style="display: inline-block; padding: 8px 15px; background-color: #3498db; color: white; text-decoration: none; border-radius: 4px; font-weight: 500;">
-                <i class="fas fa-external-link-alt"></i> Ver Página Completa
-            </a>
         </div>
     </div>
 
