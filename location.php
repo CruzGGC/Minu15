@@ -2,7 +2,12 @@
 require_once 'includes/fetch_location_data.php';
 
 // Debug incoming requests
+error_log("------------ NEW REQUEST ------------");
 error_log("Request method: " . $_SERVER['REQUEST_METHOD']);
+error_log("Request URI: " . $_SERVER['REQUEST_URI']);
+error_log("Server software: " . $_SERVER['SERVER_SOFTWARE']);
+
+// Debug POST data
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     error_log("POST data: " . print_r($_POST, true));
 }
@@ -172,6 +177,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 <div class="selector-info">
                     <p>Ou clique diretamente no mapa para selecionar um local</p>
                 </div>
+                
+                <!-- Links rápidos para visualização de distritos -->
+                <div class="quick-links">
+                    <h4>Visualização Rápida</h4>
+                    <div class="district-links">
+                        <a href="location_data.php?type=distrito&id=Aveiro" class="district-link">Aveiro</a>
+                        <a href="location_data.php?type=distrito&id=Beja" class="district-link">Beja</a>
+                        <a href="location_data.php?type=distrito&id=Braga" class="district-link">Braga</a>
+                        <a href="location_data.php?type=distrito&id=Bragança" class="district-link">Bragança</a>
+                        <a href="location_data.php?type=distrito&id=Castelo Branco" class="district-link">Castelo Branco</a>
+                        <a href="location_data.php?type=distrito&id=Coimbra" class="district-link">Coimbra</a>
+                        <a href="location_data.php?type=distrito&id=Évora" class="district-link">Évora</a>
+                        <a href="location_data.php?type=distrito&id=Faro" class="district-link">Faro</a>
+                        <a href="location_data.php?type=distrito&id=Guarda" class="district-link">Guarda</a>
+                        <a href="location_data.php?type=distrito&id=Leiria" class="district-link">Leiria</a>
+                        <a href="location_data.php?type=distrito&id=Lisboa" class="district-link">Lisboa</a>
+                        <a href="location_data.php?type=distrito&id=Portalegre" class="district-link">Portalegre</a>
+                        <a href="location_data.php?type=distrito&id=Porto" class="district-link">Porto</a>
+                        <a href="location_data.php?type=distrito&id=Santarém" class="district-link">Santarém</a>
+                        <a href="location_data.php?type=distrito&id=Setúbal" class="district-link">Setúbal</a>
+                        <a href="location_data.php?type=distrito&id=Viana do Castelo" class="district-link">Viana do Castelo</a>
+                        <a href="location_data.php?type=distrito&id=Vila Real" class="district-link">Vila Real</a>
+                        <a href="location_data.php?type=distrito&id=Viseu" class="district-link">Viseu</a>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -274,6 +304,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         </div>
         <div class="panel-content" id="location-data">
             <p>Selecione uma localização para ver os dados</p>
+        </div>
+        <div class="panel-footer" id="panel-footer" style="display: none; padding: 15px; text-align: center; border-top: 1px solid #eee;">
+            <a href="#" id="view-full-data" class="btn" style="display: inline-block; padding: 8px 15px; background-color: #3498db; color: white; text-decoration: none; border-radius: 4px; font-weight: 500;">
+                <i class="fas fa-external-link-alt"></i> Ver Página Completa
+            </a>
         </div>
     </div>
 

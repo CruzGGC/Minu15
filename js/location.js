@@ -10,6 +10,7 @@ let map;
 let locationMarker;
 let locationPolygon;
 let currentLocation = null;
+let currentClickedCoordinates;
 
 // Map style providers
 const mapProviders = {
@@ -27,24 +28,27 @@ const mapProviders = {
     }
 };
 
-// POI icons and colors
+// POI Icons configuration
 const poiIcons = {
     hospitals: { icon: 'hospital', color: '#e74c3c' },
-    health_centers: { icon: 'first-aid', color: '#e74c3c' },
-    pharmacies: { icon: 'prescription-bottle-alt', color: '#e74c3c' },
-    dentists: { icon: 'tooth', color: '#e74c3c' },
+    health_centers: { icon: 'clinic-medical', color: '#e67e22' },
+    pharmacies: { icon: 'prescription-bottle-alt', color: '#27ae60' },
+    dentists: { icon: 'tooth', color: '#3498db' },
+    
     schools: { icon: 'school', color: '#3498db' },
-    universities: { icon: 'graduation-cap', color: '#3498db' },
-    kindergartens: { icon: 'baby', color: '#3498db' },
-    libraries: { icon: 'book', color: '#3498db' },
-    supermarkets: { icon: 'shopping-basket', color: '#f39c12' },
-    malls: { icon: 'shopping-bag', color: '#f39c12' },
-    restaurants: { icon: 'utensils', color: '#f39c12' },
-    atms: { icon: 'money-bill-wave', color: '#f39c12' },
-    parks: { icon: 'tree', color: '#2ecc71' },
-    sports: { icon: 'dumbbell', color: '#2ecc71' },
-    bus_stops: { icon: 'bus', color: '#9b59b6' },
-    police_stations: { icon: 'shield-alt', color: '#9b59b6' }
+    universities: { icon: 'graduation-cap', color: '#9b59b6' },
+    kindergartens: { icon: 'baby', color: '#f1c40f' },
+    libraries: { icon: 'book', color: '#34495e' },
+    
+    supermarkets: { icon: 'shopping-basket', color: '#27ae60' },
+    malls: { icon: 'shopping-bag', color: '#e67e22' },
+    restaurants: { icon: 'utensils', color: '#e74c3c' },
+    atms: { icon: 'money-bill-wave', color: '#2ecc71' },
+    
+    parks: { icon: 'tree', color: '#27ae60' },
+    sports: { icon: 'dumbbell', color: '#3498db' },
+    bus_stops: { icon: 'bus', color: '#f39c12' },
+    police_stations: { icon: 'shield-alt', color: '#34495e' }
 };
 
 // Initialize the map when the DOM is fully loaded
@@ -91,25 +95,30 @@ function initializeMap() {
         
         if (!inPortugal) {
             console.warn('Coordinates outside Portugal\'s bounding box');
-            // We'll still try to fetch data, but warn the user
+            // We'll still proceed but warn the user
+            alert('As coordenadas selecionadas parecem estar fora de Portugal. Os dados podem não estar disponíveis.');
         }
         
         // Clear previous selection
         clearLocationSelection();
         
+        // Store the clicked coordinates
+        currentClickedCoordinates = {
+            lat: parseFloat(lat.toFixed(6)),
+            lng: parseFloat(lng.toFixed(6))
+        };
+        
         // Add marker at clicked location
         locationMarker = L.marker([lat, lng]).addTo(map);
         
-        // Update UI to show loading state
-        document.querySelector('.calculate-button').textContent = 'A carregar...';
-        document.querySelector('.calculate-button').disabled = true;
+        // Focus the Carregar Dados button to indicate the next step
+        document.querySelector('.calculate-button').focus();
+        document.querySelector('.calculate-button').classList.add('highlight');
         
-        // Format coordinates to 6 decimal places for precision
-        const formattedLat = parseFloat(lat.toFixed(6));
-        const formattedLng = parseFloat(lng.toFixed(6));
-        
-        // Fetch location data for the clicked coordinates
-        fetchLocationByCoordinates(formattedLat, formattedLng);
+        // Remove highlight after 2 seconds
+        setTimeout(() => {
+            document.querySelector('.calculate-button').classList.remove('highlight');
+        }, 2000);
     });
 }
 
@@ -139,25 +148,44 @@ function setMapStyle(provider) {
  * Load the list of distritos from the API
  */
 function loadDistritos() {
-    fetch('../location.php', {
+    console.log('Loading distritos...');
+    
+    fetch('location.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: 'action=fetchAllDistritos'
     })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Distritos data received:', data);
             const distritoSelect = document.getElementById('distrito-select');
             
-            // Ensure data.data is an array before sorting
+            // Ensure data is properly structured
             const distritos = data.data || [];
-
-            // Sort distritos alphabetically
-            distritos.sort();
+            
+            // Check if distritos is an array of objects with distrito property
+            let distritoNames = [];
+            
+            if (distritos.length > 0 && typeof distritos[0] === 'object' && distritos[0].distrito) {
+                // Extract distrito names from objects
+                distritoNames = distritos.map(d => d.distrito);
+            } else if (Array.isArray(distritos)) {
+                // If it's just an array of strings, use as is
+                distritoNames = distritos;
+            }
+            
+            // Sort distrito names alphabetically
+            distritoNames.sort((a, b) => a.localeCompare(b));
             
             // Add options to select
-            distritos.forEach(distritoName => {
+            distritoNames.forEach(distritoName => {
                 const option = document.createElement('option');
                 option.value = distritoName;
                 option.textContent = distritoName;
@@ -166,7 +194,9 @@ function loadDistritos() {
         })
         .catch(error => {
             console.error('Error loading distritos:', error);
-            alert('Ocorreu um erro ao carregar os distritos.');
+            // Display error in the UI
+            const distritoSelect = document.getElementById('distrito-select');
+            distritoSelect.innerHTML = '<option value="">Erro ao carregar distritos</option>';
         });
 }
 
@@ -174,7 +204,7 @@ function loadDistritos() {
  * Load concelhos for the selected distrito
  */
 function loadConcelhos(distrito) {
-    fetch('../location.php', {
+    fetch('location.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -219,7 +249,7 @@ function loadConcelhos(distrito) {
  * Load freguesias for the selected concelho
  */
 function loadFreguesias(concelho) {
-    fetch('../location.php', {
+    fetch('location.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -298,17 +328,13 @@ function loadFreguesias(concelho) {
 function fetchLocationByCoordinates(lat, lng) {
     console.log(`Fetching location data for coordinates: ${lat}, ${lng}`);
     
-    // Format coordinates to 6 decimal places for precision
-    const formattedLat = parseFloat(lat.toFixed(6));
-    const formattedLng = parseFloat(lng.toFixed(6));
-    
     // Fetch data from the API
-    fetch('../location.php', {
+    fetch('location.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `action=fetchByGps&latitude=${formattedLat}&longitude=${formattedLng}`
+        body: `action=fetchByGps&latitude=${lat}&longitude=${lng}`
     })
         .then(response => {
             if (!response.ok) {
@@ -423,13 +449,14 @@ function fetchLocationByCoordinates(lat, lng) {
  * Fetch location data by freguesia
  */
 function fetchLocationByFreguesia(freguesia, concelho) {
+    console.log(`Fetching freguesia data: ${freguesia} in concelho ${concelho}`);
+    
     // Update UI to show loading state
     document.querySelector('.calculate-button').textContent = 'A carregar...';
     document.querySelector('.calculate-button').disabled = true;
     
     // Use the freguesia name for the API call, not the code
-    // Arrange parameters to match the API structure: /municipio/{municipio}/freguesia/{freguesia}
-    fetch('../includes/fetch_location_data.php', {
+    fetch('location.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -438,16 +465,16 @@ function fetchLocationByFreguesia(freguesia, concelho) {
     })
         .then(response => response.json())
         .then(data => {
+            // Reset UI state
+            document.querySelector('.calculate-button').textContent = 'Carregar Dados';
+            document.querySelector('.calculate-button').disabled = false;
+            
             if (data.success) {
                 currentLocation = data.data;
                 displayLocationData(currentLocation);
                 
                 // Show the location data panel
-                document.querySelector('.location-data-panel').classList.add('active');
-                
-                // Update UI to show normal state
-                document.querySelector('.calculate-button').textContent = 'Carregar Dados';
-                document.querySelector('.calculate-button').disabled = false;
+                document.querySelector('.location-data-panel').classList.add('visible');
                 
                 // Draw the location boundary if geometry is available
                 if (currentLocation.geojson) {
@@ -457,8 +484,6 @@ function fetchLocationByFreguesia(freguesia, concelho) {
                 }
             } else {
                 alert('Não foi possível obter dados para esta freguesia.');
-                document.querySelector('.calculate-button').textContent = 'Carregar Dados';
-                document.querySelector('.calculate-button').disabled = false;
             }
         })
         .catch(error => {
@@ -473,11 +498,13 @@ function fetchLocationByFreguesia(freguesia, concelho) {
  * Fetch location data by municipio
  */
 function fetchLocationByMunicipio(municipio) {
+    console.log(`Fetching municipio data: ${municipio}`);
+    
     // Update UI to show loading state
     document.querySelector('.calculate-button').textContent = 'A carregar...';
     document.querySelector('.calculate-button').disabled = true;
     
-    fetch('../includes/fetch_location_data.php', {
+    fetch('location.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -486,16 +513,16 @@ function fetchLocationByMunicipio(municipio) {
     })
         .then(response => response.json())
         .then(data => {
+            // Reset UI state
+            document.querySelector('.calculate-button').textContent = 'Carregar Dados';
+            document.querySelector('.calculate-button').disabled = false;
+            
             if (data.success) {
                 currentLocation = data.data;
                 displayLocationData(currentLocation);
                 
                 // Show the location data panel
-                document.querySelector('.location-data-panel').classList.add('active');
-                
-                // Update UI to show normal state
-                document.querySelector('.calculate-button').textContent = 'Carregar Dados';
-                document.querySelector('.calculate-button').disabled = false;
+                document.querySelector('.location-data-panel').classList.add('visible');
                 
                 // Draw the location boundary if geometry is available
                 if (currentLocation.geojson) {
@@ -505,8 +532,6 @@ function fetchLocationByMunicipio(municipio) {
                 }
             } else {
                 alert('Não foi possível obter dados para este município.');
-                document.querySelector('.calculate-button').textContent = 'Carregar Dados';
-                document.querySelector('.calculate-button').disabled = false;
             }
         })
         .catch(error => {
@@ -521,11 +546,13 @@ function fetchLocationByMunicipio(municipio) {
  * Fetch location data by distrito
  */
 function fetchLocationByDistrito(distrito) {
+    console.log(`Fetching distrito data: ${distrito}`);
+    
     // Update UI to show loading state
     document.querySelector('.calculate-button').textContent = 'A carregar...';
     document.querySelector('.calculate-button').disabled = true;
     
-    fetch('../includes/fetch_location_data.php', {
+    fetch('location.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -534,16 +561,16 @@ function fetchLocationByDistrito(distrito) {
     })
         .then(response => response.json())
         .then(data => {
+            // Reset UI state
+            document.querySelector('.calculate-button').textContent = 'Carregar Dados';
+            document.querySelector('.calculate-button').disabled = false;
+            
             if (data.success) {
                 currentLocation = data.data;
                 displayLocationData(currentLocation);
                 
                 // Show the location data panel
-                document.querySelector('.location-data-panel').classList.add('active');
-                
-                // Update UI to show normal state
-                document.querySelector('.calculate-button').textContent = 'Carregar Dados';
-                document.querySelector('.calculate-button').disabled = false;
+                document.querySelector('.location-data-panel').classList.add('visible');
                 
                 // Draw the location boundary if geometry is available
                 if (currentLocation.geojson) {
@@ -553,8 +580,6 @@ function fetchLocationByDistrito(distrito) {
                 }
             } else {
                 alert('Não foi possível obter dados para este distrito.');
-                document.querySelector('.calculate-button').textContent = 'Carregar Dados';
-                document.querySelector('.calculate-button').disabled = false;
             }
         })
         .catch(error => {
@@ -569,7 +594,15 @@ function fetchLocationByDistrito(distrito) {
  * Display location data in the panel
  */
 function displayLocationData(location) {
+    console.log('Displaying location data:', location);
+    
     const locationDataElement = document.getElementById('location-data');
+    const locationPanel = document.querySelector('.location-data-panel');
+    const panelFooter = document.getElementById('panel-footer');
+    const fullDataLink = document.getElementById('view-full-data');
+    
+    // Debug: mostrar o objeto completo no console
+    console.log('Dados completos recebidos:', JSON.stringify(location, null, 2));
     
     // Create HTML content
     let html = '';
@@ -577,17 +610,68 @@ function displayLocationData(location) {
     // Location header
     if (location.nome) {
         html += `<h2>${location.nome}</h2>`;
+    } else if (location.distrito) {
+        html += `<h2>Distrito de ${location.distrito}</h2>`;
+    } else if (location.concelho || location.municipio) {
+        html += `<h2>Município de ${location.concelho || location.municipio}</h2>`;
+    } else if (location.freguesia) {
+        html += `<h2>Freguesia de ${location.freguesia}</h2>`;
+    } else {
+        html += `<h2>Localização</h2>`;
+        console.warn('No name found in location data');
     }
     
     // Administrative hierarchy
     html += '<div class="location-hierarchy">';
-    if (location.municipio) {
-        html += `<p><strong>Concelho:</strong> ${location.municipio}</p>`;
+    if (location.freguesia) {
+        html += `<p><strong>Freguesia:</strong> ${location.freguesia}</p>`;
+    }
+    if (location.municipio || location.concelho) {
+        html += `<p><strong>Concelho:</strong> ${location.municipio || location.concelho}</p>`;
     }
     if (location.distrito) {
         html += `<p><strong>Distrito:</strong> ${location.distrito}</p>`;
     }
     html += '</div>';
+    
+    // Verificar e mostrar informações básicas administrativas para municípios
+    if (location.nif || location.codigo || location.email) {
+        html += '<div class="administrative-info">';
+        html += '<h3>Informações Administrativas</h3>';
+        
+        if (location.codigo) {
+            html += `<p><strong>Código:</strong> ${location.codigo}</p>`;
+        }
+        
+        if (location.nif) {
+            html += `<p><strong>NIF:</strong> ${location.nif}</p>`;
+        }
+        
+        if (location.email) {
+            html += `<p><strong>Email:</strong> ${location.email}</p>`;
+        }
+        
+        if (location.telefone) {
+            html += `<p><strong>Telefone:</strong> ${location.telefone}</p>`;
+        }
+        
+        if (location.sitio) {
+            const url = location.sitio.startsWith('http') ? location.sitio : `http://${location.sitio}`;
+            html += `<p><strong>Website:</strong> <a href="${url}" target="_blank">${location.sitio}</a></p>`;
+        }
+        
+        html += '</div>';
+    }
+    
+    // Debug: informações sobre a presença de censos
+    console.log('Censos2021 presente:', !!location.censos2021);
+    console.log('Censos2011 presente:', !!location.censos2011);
+    if (location.censos2021) {
+        console.log('Dados do Censos2021:', location.censos2021);
+    }
+    if (location.censos2011) {
+        console.log('Dados do Censos2011:', location.censos2011);
+    }
     
     // Census data
     if (location.censos2021 || location.censos2011) {
@@ -595,25 +679,28 @@ function displayLocationData(location) {
         html += '<h3>Dados Demográficos</h3>';
         
         // Population
-        const population = location.censos2021?.N_INDIVIDUOS_RESIDENT || location.censos2011?.N_INDIVIDUOS_RESIDENT;
+        const censusData = location.censos2021 || location.censos2011;
+        const censusYear = location.censos2021 ? 2021 : 2011;
+        
+        const population = getCensusValue(censusData, ['N_INDIVIDUOS_RESIDENT', 'N_INDIVIDUOS']);
         if (population) {
-            html += `<p><strong>População:</strong> ${population.toLocaleString()} habitantes</p>`;
+            html += `<p><strong>População:</strong> ${Number(population).toLocaleString()} habitantes (${censusYear})</p>`;
         }
         
         // Buildings and housing
-        const buildings = location.censos2021?.N_EDIFICIOS_CLASSICOS || location.censos2011?.N_EDIFICIOS_CLASSICOS;
+        const buildings = getCensusValue(censusData, ['N_EDIFICIOS_CLASSICOS', 'N_EDIFICIOS']);
         if (buildings) {
-            html += `<p><strong>Edifícios:</strong> ${buildings.toLocaleString()}</p>`;
+            html += `<p><strong>Edifícios:</strong> ${Number(buildings).toLocaleString()}</p>`;
         }
         
-        const dwellings = location.censos2021?.N_ALOJAMENTOS || location.censos2011?.N_ALOJAMENTOS;
+        const dwellings = getCensusValue(censusData, ['N_ALOJAMENTOS_TOTAL', 'N_ALOJAMENTOS']);
         if (dwellings) {
-            html += `<p><strong>Alojamentos:</strong> ${dwellings.toLocaleString()}</p>`;
+            html += `<p><strong>Alojamentos:</strong> ${Number(dwellings).toLocaleString()}</p>`;
         }
         
         // Area and density if available
-        if (location.area_ha || location.areaha) {
-            const areaHa = location.area_ha || location.areaha;
+        const areaHa = location.area_ha || location.areaha;
+        if (areaHa) {
             const areaKm2 = parseFloat(areaHa) / 100;
             html += `<p><strong>Área:</strong> ${areaKm2.toLocaleString()} km²</p>`;
             
@@ -621,6 +708,30 @@ function displayLocationData(location) {
                 const density = Math.round(population / areaKm2);
                 html += `<p><strong>Densidade Populacional:</strong> ${density.toLocaleString()} hab/km²</p>`;
             }
+        }
+        
+        html += '</div>';
+        
+        // Add demographic highlight if available
+        html += '<div class="demographic-highlights">';
+        html += '<h3>Destaques</h3>';
+        
+        // Working population
+        const workingPopulation = getCensusValue(censusData, ['N_IND_RESID_EMPREGADOS', 'N_INDIVIDUOS_25_64', 'N_INDIVIDUOS_RESIDENT_25A64']);
+        if (workingPopulation) {
+            html += `<p><strong>População em idade ativa:</strong> ${Number(workingPopulation).toLocaleString()}</p>`;
+        }
+        
+        // Young population
+        const youngPopulation = getCensusValue(censusData, ['N_INDIVIDUOS_0_14']);
+        if (youngPopulation) {
+            html += `<p><strong>População jovem (0-14):</strong> ${Number(youngPopulation).toLocaleString()}</p>`;
+        }
+        
+        // Elderly population
+        const elderlyPopulation = getCensusValue(censusData, ['N_INDIVIDUOS_65_OU_MAIS', 'N_INDIVIDUOS_RESIDENT_65']);
+        if (elderlyPopulation) {
+            html += `<p><strong>População idosa (65+):</strong> ${Number(elderlyPopulation).toLocaleString()}</p>`;
         }
         
         html += '</div>';
@@ -671,7 +782,7 @@ function displayLocationData(location) {
                     hasData = true;
                     categoryHtml += `
                         <tr>
-                            <td><i class="fas fa-${poiIcons[poi].icon}" style="color: ${poiIcons[poi].color}"></i> ${poiNames[poi]}</td>
+                            <td><i class="fas fa-${poiIcons[poi]?.icon || 'map-marker'}" style="color: ${poiIcons[poi]?.color || '#666'}"></i> ${poiNames[poi]}</td>
                             <td>${location.poi_counts[poi]}</td>
                         </tr>
                     `;
@@ -688,16 +799,89 @@ function displayLocationData(location) {
         html += '</div>';
     }
     
+    // Adicionar botão para mostrar dados completos para debugging
+    html += `
+        <div class="debug-section" style="margin-top: 20px; padding-top: 10px; border-top: 1px dashed #ccc;">
+            <button id="toggle-debug" style="padding: 5px 10px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
+                Mostrar Dados Completos
+            </button>
+            <div id="debug-data" style="display: none; margin-top: 10px; padding: 10px; background: #f8f8f8; border-radius: 4px; overflow: auto; max-height: 300px;">
+                <pre>${JSON.stringify(location, null, 2)}</pre>
+            </div>
+        </div>
+    `;
+    
     // If no data is available
     if (html === '') {
         html = '<p>Não foram encontrados dados para esta localização.</p>';
+        console.warn('No displayable data found in:', location);
     }
     
     // Set the HTML content
     locationDataElement.innerHTML = html;
+    
+    // Adicionar event listener para o botão de debug
+    const toggleDebugButton = document.getElementById('toggle-debug');
+    if (toggleDebugButton) {
+        toggleDebugButton.addEventListener('click', function() {
+            const debugData = document.getElementById('debug-data');
+            if (debugData.style.display === 'none') {
+                debugData.style.display = 'block';
+                this.textContent = 'Ocultar Dados Completos';
+            } else {
+                debugData.style.display = 'none';
+                this.textContent = 'Mostrar Dados Completos';
+            }
+        });
+    }
+    
+    // Configure full data link based on location type
+    if (location.distrito) {
+        fullDataLink.href = `location_data.php?type=distrito&id=${encodeURIComponent(location.distrito)}`;
+        panelFooter.style.display = 'block';
+    } else if (location.municipio || location.concelho) {
+        const municipioName = location.municipio || location.concelho;
+        fullDataLink.href = `location_data.php?type=municipio&id=${encodeURIComponent(municipioName)}`;
+        panelFooter.style.display = 'block';
+    } else if (location.freguesia && (location.municipio || location.concelho)) {
+        const municipioName = location.municipio || location.concelho;
+        fullDataLink.href = `location_data.php?type=freguesia&id=${encodeURIComponent(location.freguesia)}&municipio=${encodeURIComponent(municipioName)}`;
+        panelFooter.style.display = 'block';
+    } else if (currentClickedCoordinates) {
+        fullDataLink.href = `location_data.php?type=gps&id=${encodeURIComponent(currentClickedCoordinates.lat)},${encodeURIComponent(currentClickedCoordinates.lng)}`;
+        panelFooter.style.display = 'block';
+    } else {
+        panelFooter.style.display = 'none';
+    }
 
-    // Show the data panel
-    document.querySelector('.location-data-panel').classList.add('visible');
+    // Show the data panel - garantir que a classe "visible" é adicionada corretamente
+    console.log('Panel before adding class:', locationPanel.className);
+    locationPanel.classList.add('visible');
+    console.log('Panel after adding class:', locationPanel.className);
+    
+    // Verificar se o painel está realmente visível
+    setTimeout(() => {
+        const computedStyle = window.getComputedStyle(locationPanel);
+        console.log('Panel computed right value:', computedStyle.right);
+        console.log('Panel is visible:', locationPanel.classList.contains('visible'));
+    }, 100);
+    
+    console.log('Location data panel updated and made visible');
+}
+
+/**
+ * Função auxiliar para extrair valores do censo de forma segura
+ */
+function getCensusValue(censusData, possibleKeys) {
+    if (!censusData) return null;
+    
+    for (const key of possibleKeys) {
+        if (censusData[key] !== undefined) {
+            return censusData[key];
+        }
+    }
+    
+    return null;
 }
 
 /**
@@ -712,9 +896,53 @@ function drawLocationBoundary(geojson) {
         map.removeLayer(locationPolygon);
     }
     
-    // Add new polygon
-    if (geojson && geojson.coordinates) {
-        console.log('Adding new polygon');
+    // Check if we have valid GeoJSON data
+    if (!geojson) {
+        console.warn('No GeoJSON data provided');
+        return;
+    }
+    
+    try {
+        // If geojson is a string, try to parse it
+        if (typeof geojson === 'string') {
+            try {
+                geojson = JSON.parse(geojson);
+            } catch (e) {
+                console.error('Error parsing GeoJSON string:', e);
+                return;
+            }
+        }
+        
+        // Normalize GeoJSON object if needed
+        if (!geojson.type && geojson.coordinates) {
+            // If it's missing the type but has coordinates, assume it's a Polygon or MultiPolygon
+            geojson = {
+                type: Array.isArray(geojson.coordinates[0][0][0]) ? 'MultiPolygon' : 'Polygon',
+                coordinates: geojson.coordinates
+            };
+        }
+        
+        // Create a proper GeoJSON feature if needed
+        if (geojson.coordinates && !geojson.features) {
+            if (!geojson.type || (geojson.type !== 'Feature' && !geojson.geometry)) {
+                geojson = {
+                    type: 'Feature',
+                    properties: {},
+                    geometry: {
+                        type: Array.isArray(geojson.coordinates[0][0][0]) ? 'MultiPolygon' : 'Polygon',
+                        coordinates: geojson.coordinates
+                    }
+                };
+            }
+        }
+        
+        // For feature collections, ensure they have at least one feature
+        if (geojson.type === 'FeatureCollection' && (!geojson.features || geojson.features.length === 0)) {
+            console.warn('Empty GeoJSON FeatureCollection');
+            return;
+        }
+        
+        // Add new polygon
         locationPolygon = L.geoJSON(geojson, {
             style: function (feature) {
                 return {
@@ -725,14 +953,32 @@ function drawLocationBoundary(geojson) {
                 };
             },
             onEachFeature: function (feature, layer) {
-                layer.bindPopup(feature.properties.Nome || 'Localização');
+                let name = 'Localização';
+                
+                // Try to extract name from properties
+                if (feature.properties) {
+                    name = feature.properties.Nome || 
+                           feature.properties.nome || 
+                           feature.properties.NOME || 
+                           feature.properties.name ||
+                           feature.properties.NAME ||
+                           name;
+                }
+                
+                layer.bindPopup(name);
             }
         }).addTo(map);
         
-        // Fit map to polygon bounds
-        map.fitBounds(locationPolygon.getBounds());
-    } else {
-        console.warn('No valid GeoJSON coordinates to draw boundary.', geojson);
+        // Fit map to polygon bounds if the polygon has valid bounds
+        if (locationPolygon && locationPolygon.getBounds && !locationPolygon.getBounds().isValid()) {
+            console.warn('Invalid bounds for the drawn polygon');
+        } else if (locationPolygon && locationPolygon.getBounds) {
+            map.fitBounds(locationPolygon.getBounds());
+        }
+        
+        console.log('Boundary drawn successfully');
+    } catch (error) {
+        console.error('Error drawing boundary:', error);
     }
 }
 
@@ -752,6 +998,9 @@ function clearLocationSelection() {
         locationPolygon = null;
     }
     
+    // Reset clicked coordinates
+    currentClickedCoordinates = null;
+    
     // Reset dropdowns
     document.getElementById('distrito-select').value = '';
     document.getElementById('concelho-select').value = '';
@@ -761,7 +1010,17 @@ function clearLocationSelection() {
     
     // Clear location data panel
     document.getElementById('location-data').innerHTML = '<p>Selecione uma localização para ver os dados</p>';
-    document.querySelector('.location-data-panel').classList.remove('visible');
+    
+    // Esconder o painel de dados e o footer
+    const locationPanel = document.querySelector('.location-data-panel');
+    const panelFooter = document.getElementById('panel-footer');
+    console.log('Closing panel, before removing class:', locationPanel.className);
+    locationPanel.classList.remove('visible');
+    panelFooter.style.display = 'none';
+    console.log('Panel after removing class:', locationPanel.className);
+    
+    // Reset current location data
+    currentLocation = null;
 }
 
 /**
@@ -817,77 +1076,134 @@ function setupEventListeners() {
     // District select change event
     document.getElementById('distrito-select').addEventListener('change', function() {
         const selectedDistrito = this.value;
-        clearLocationSelection(); // Clear existing map features and data
+        
+        // Reset concelho and freguesia
+        const concelhoSelect = document.getElementById('concelho-select');
+        concelhoSelect.value = '';
+        concelhoSelect.innerHTML = '<option value="">Selecione um concelho...</option>';
+        concelhoSelect.disabled = true;
+        
+        const freguesiaSelect = document.getElementById('freguesia-select');
+        freguesiaSelect.value = '';
+        freguesiaSelect.innerHTML = '<option value="">Selecione uma freguesia...</option>';
+        freguesiaSelect.disabled = true;
+        
+        // Remove any map markers or polygons from previous selections
+        if (locationMarker) {
+            map.removeLayer(locationMarker);
+            locationMarker = null;
+        }
+        if (locationPolygon) {
+            map.removeLayer(locationPolygon);
+            locationPolygon = null;
+        }
+        
+        // Reset currentClickedCoordinates
+        currentClickedCoordinates = null;
+        
         if (selectedDistrito) {
             loadConcelhos(selectedDistrito);
-            fetchLocationByDistrito(selectedDistrito); // Fetch and display data for the selected distrito
-        } else {
-            // Reset concelho and freguesia dropdowns if no distrito is selected
-            document.getElementById('concelho-select').disabled = true;
-            document.getElementById('concelho-select').innerHTML = '<option value="">Selecione um concelho...</option>';
-            document.getElementById('freguesia-select').disabled = true;
-            document.getElementById('freguesia-select').innerHTML = '<option value="">Selecione uma freguesia...</option>';
         }
     });
 
     // Concelho select change event
     document.getElementById('concelho-select').addEventListener('change', function() {
         const selectedConcelho = this.value;
-        const selectedDistrito = document.getElementById('distrito-select').value;
-        clearLocationSelection(); // Clear existing map features and data
+        
+        // Reset freguesia
+        const freguesiaSelect = document.getElementById('freguesia-select');
+        freguesiaSelect.value = '';
+        freguesiaSelect.innerHTML = '<option value="">Selecione uma freguesia...</option>';
+        freguesiaSelect.disabled = true;
+        
+        // Remove any map markers or polygons from previous selections
+        if (locationMarker) {
+            map.removeLayer(locationMarker);
+            locationMarker = null;
+        }
+        if (locationPolygon) {
+            map.removeLayer(locationPolygon);
+            locationPolygon = null;
+        }
+        
+        // Reset currentClickedCoordinates
+        currentClickedCoordinates = null;
+        
         if (selectedConcelho) {
             loadFreguesias(selectedConcelho);
-            fetchLocationByMunicipio(selectedConcelho); // Fetch and display data for the selected concelho
-        } else if (selectedDistrito) {
-            // If concelho is deselected but distrito is still selected, load distrito data
-            fetchLocationByDistrito(selectedDistrito);
-        } else {
-            // Reset freguesia dropdown if no concelho is selected
-            document.getElementById('freguesia-select').disabled = true;
-            document.getElementById('freguesia-select').innerHTML = '<option value="">Selecione uma freguesia...</option>';
         }
     });
 
     // Freguesia select change event
     document.getElementById('freguesia-select').addEventListener('change', function() {
-        const selectedFreguesia = this.value;
+        // Remove any map markers or polygons from previous selections
+        if (locationMarker) {
+            map.removeLayer(locationMarker);
+            locationMarker = null;
+        }
+        if (locationPolygon) {
+            map.removeLayer(locationPolygon);
+            locationPolygon = null;
+        }
+        
+        // Reset currentClickedCoordinates
+        currentClickedCoordinates = null;
+    });
+
+    // Calculate button event - now this is the only place where data is fetched
+    document.querySelector('.calculate-button').addEventListener('click', function() {
+        // Get the selected values
+        const selectedDistrito = document.getElementById('distrito-select').value;
         const selectedConcelho = document.getElementById('concelho-select').value;
-        clearLocationSelection(); // Clear existing map features and data
-        if (selectedFreguesia) {
-            // Pass both freguesia and concelho to fetch data
+        const selectedFreguesia = document.getElementById('freguesia-select').value;
+        
+        // Clear any existing location data (but keep the marker if it exists)
+        if (locationPolygon) {
+            map.removeLayer(locationPolygon);
+            locationPolygon = null;
+        }
+        document.querySelector('.location-data-panel').classList.remove('visible');
+        
+        // Update UI to show loading state
+        document.querySelector('.calculate-button').textContent = 'A carregar...';
+        document.querySelector('.calculate-button').disabled = true;
+        
+        // Determine what to fetch based on selection or clicked coordinates
+        if (currentClickedCoordinates) {
+            // If map was clicked, prioritize those coordinates
+            fetchLocationByCoordinates(
+                currentClickedCoordinates.lat, 
+                currentClickedCoordinates.lng
+            );
+        } else if (selectedFreguesia && selectedConcelho) {
+            // If freguesia is selected, fetch freguesia data
             fetchLocationByFreguesia(selectedFreguesia, selectedConcelho);
         } else if (selectedConcelho) {
-            // If freguesia is deselected but concelho is still selected, load concelho data
+            // If only concelho is selected (no freguesia), fetch concelho data
             fetchLocationByMunicipio(selectedConcelho);
+        } else if (selectedDistrito) {
+            // If only distrito is selected (no concelho or freguesia), fetch distrito data
+            fetchLocationByDistrito(selectedDistrito);
+        } else {
+            // Reset UI state
+            document.querySelector('.calculate-button').textContent = 'Carregar Dados';
+            document.querySelector('.calculate-button').disabled = false;
+            alert('Selecione uma localização antes de carregar os dados.');
         }
-    });
-    
-    // Calculate button event
-    document.querySelector('.calculate-button').addEventListener('click', function() {
-        // This button is primarily for triggering map click actions or re-fetching based on dropdowns
-        // The primary fetch logic is now tied to dropdown changes or map clicks.
-        // If no location is currently selected, prompt the user or do nothing.
-        if (!currentLocation) {
-            alert('Selecione uma localização no mapa ou através dos menus suspensos.');
-            return;
-        }
-
-        // If a location is selected, re-display its data (useful if POI checkboxes changed)
-        displayLocationData(currentLocation);
-
-        // Re-draw boundary if exists and current location has geometry
-        if (currentLocation.geometry) {
-            drawLocationBoundary(currentLocation.geometry);
-        } else if (currentLocation.geojson) {
-            drawLocationBoundary(currentLocation.geojson);
-        }
-
-        // Show the panel (ensure it's visible after calculations)
-        document.querySelector('.location-data-panel').classList.add('visible');
     });
 
     // Close location data panel
     document.querySelector('.location-data-panel .close-panel').addEventListener('click', function() {
-        document.querySelector('.location-data-panel').classList.remove('visible');
+        const locationPanel = document.querySelector('.location-data-panel');
+        console.log('Close button clicked, panel before:', locationPanel.className);
+        locationPanel.classList.remove('visible');
+        console.log('Panel after removing class:', locationPanel.className);
+        
+        // Verificar se o painel está realmente oculto
+        setTimeout(() => {
+            const computedStyle = window.getComputedStyle(locationPanel);
+            console.log('Panel computed right value:', computedStyle.right);
+            console.log('Panel is visible:', locationPanel.classList.contains('visible'));
+        }, 100);
     });
 } 
