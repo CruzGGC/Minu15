@@ -1,7 +1,19 @@
 <?php
+require_once __DIR__ . '/api_cache.php';
 
 class LocationFetcher {
     private $baseUrl = "http://json.localhost:8080";
+    private $cache;
+    private $cacheEnabled = true;
+    private $cacheExpiry = 604800; // 7 days in seconds
+
+    public function __construct($cacheEnabled = true, $cacheExpiry = null) {
+        $this->cacheEnabled = $cacheEnabled;
+        if ($cacheExpiry !== null) {
+            $this->cacheExpiry = $cacheExpiry;
+        }
+        $this->cache = new ApiCache(__DIR__ . '/../cache/location_data/', $this->cacheExpiry);
+    }
 
     private function callApi($endpoint, $params = []) {
         $url = $this->baseUrl . $endpoint;
@@ -11,6 +23,15 @@ class LocationFetcher {
 
         // Debug log the URL
         error_log("Calling API URL: " . $url);
+
+        // Check if we have a valid cache for this request
+        if ($this->cacheEnabled) {
+            $cacheKey = $this->cache->generateCacheKey($endpoint, $params);
+            if ($this->cache->hasValidCache($cacheKey)) {
+                error_log("Using cached data for: " . $url);
+                return $this->cache->get($cacheKey);
+            }
+        }
 
         // For URLs with spaces or special characters, first try directly
         $ch = curl_init();
@@ -90,11 +111,21 @@ class LocationFetcher {
 
         if ($httpCode === 200 && $jsonError === JSON_ERROR_NONE) {
             // Ensure consistent response format
+            $result = null;
             if (is_array($decodedResponse)) {
-                return ['success' => true, 'data' => $decodedResponse];
+                $result = ['success' => true, 'data' => $decodedResponse];
             } else {
-                return ['success' => true, 'data' => ['response' => $decodedResponse]];
+                $result = ['success' => true, 'data' => ['response' => $decodedResponse]];
             }
+            
+            // Cache the successful response if caching is enabled
+            if ($this->cacheEnabled) {
+                $cacheKey = $this->cache->generateCacheKey($endpoint, $params);
+                $this->cache->set($cacheKey, $result);
+                error_log("Cached API response for: " . $url);
+            }
+            
+            return $result;
         } else {
             // Handle API errors or invalid JSON response
             $errorMessage = 'API call failed';
@@ -108,6 +139,44 @@ class LocationFetcher {
             error_log("API call failed: " . $url . " - HTTP Code: " . $httpCode . " - Response: " . ($response === false ? 'false' : $response));
             return ['success' => false, 'message' => $errorMessage, 'http_code' => $httpCode, 'response' => $response];
         }
+    }
+    
+    /**
+     * Clear the cache for a specific endpoint
+     * 
+     * @param string $endpoint The API endpoint
+     * @param array $params Additional parameters
+     * @return bool True if cache was cleared, false otherwise
+     */
+    public function clearCache($endpoint, $params = []) {
+        if (!$this->cacheEnabled) {
+            return false;
+        }
+        
+        $cacheKey = $this->cache->generateCacheKey($endpoint, $params);
+        return $this->cache->delete($cacheKey);
+    }
+    
+    /**
+     * Clear all cached data
+     * 
+     * @return bool True if cache was cleared, false otherwise
+     */
+    public function clearAllCache() {
+        if (!$this->cacheEnabled) {
+            return false;
+        }
+        
+        return $this->cache->clearAll();
+    }
+    
+    /**
+     * Enable or disable caching
+     * 
+     * @param bool $enabled True to enable caching, false to disable
+     */
+    public function setCacheEnabled($enabled) {
+        $this->cacheEnabled = $enabled;
     }
 
     public function fetchByGps($latitude, $longitude) {
@@ -180,23 +249,21 @@ class LocationFetcher {
     }
 
     public function fetchByFreguesiaAndMunicipio($freguesia, $municipio) {
-        error_log("fetchByFreguesiaAndMunicipio called with freguesia: " . $freguesia . ", municipio: " . $municipio);
+        error_log("fetchByFreguesiaAndMunicipio called with: " . $freguesia . ", " . $municipio);
         
-        // First, encode the freguesia name for URL path segments - use raw format with spaces preserved
-        // This will keep spaces and special characters as-is, which is what the API expects
-        $rawFreguesia = str_replace('+', ' ', $freguesia); // Replace any + with spaces
-        $rawFreguesia = str_replace('%', '%25', $rawFreguesia); // First encode % to avoid double encoding
+        // Use rawurlencode for special characters in freguesia names
+        $rawFreguesia = rawurlencode($freguesia);
         
-        // First try direct path with raw encoding (spaces remain spaces in URL)
+        // Try the freguesia endpoint first with the raw encoded freguesia
         $endpoint = "/freguesia/" . $rawFreguesia;
         $params = ['municipio' => $municipio, 'json' => 'true'];
         $result = $this->callApi($endpoint, $params);
         
-        // If first attempt fails, try with standard encoding
+        // If that fails, try with standard URL encoding
         if (!$result['success']) {
-            error_log("Raw encoding attempt failed, trying with standard URL encoding");
-            // Use rawurlencode instead of urlencode to avoid converting spaces to +
-            $encodedFreguesia = rawurlencode($freguesia);
+            error_log("Raw URL encoding failed, trying standard encoding");
+            // Use standard urlencode
+            $encodedFreguesia = urlencode($freguesia);
             $endpoint = "/freguesia/" . $encodedFreguesia;
             $params = ['municipio' => $municipio, 'json' => 'true'];
             $result = $this->callApi($endpoint, $params);
@@ -223,27 +290,34 @@ class LocationFetcher {
             
             // Check if geojsons object exists in the response
             if (isset($result['data']['geojsons'])) {
-                // If there's a specific freguesia GeoJSON, use it
+                error_log("Found geojsons object in API response with keys: " . 
+                         (isset($result['data']['geojsons']) ? implode(", ", array_keys($result['data']['geojsons'])) : "none"));
+                
+                // Keep the original geojsons structure but also set geojson for backward compatibility
                 if (isset($result['data']['geojsons']['freguesia'])) {
                     $result['data']['geojson'] = $result['data']['geojsons']['freguesia'];
-                    error_log("Found freguesia boundary in geojsons.freguesia");
+                    error_log("Set geojson from geojsons.freguesia for backward compatibility");
                 }
-                // If there's a freguesias array, find the matching freguesia
+                // If there's a freguesias array, find the matching freguesia for backward compatibility
                 else if (isset($result['data']['geojsons']['freguesias']) && is_array($result['data']['geojsons']['freguesias'])) {
                     foreach ($result['data']['geojsons']['freguesias'] as $freguesiaGeoJson) {
                         if (isset($freguesiaGeoJson['properties']) && 
                             isset($freguesiaGeoJson['properties']['Freguesia']) && 
                             $freguesiaGeoJson['properties']['Freguesia'] === $freguesia) {
                             $result['data']['geojson'] = $freguesiaGeoJson;
-                            error_log("Found freguesia boundary in geojsons.freguesias array");
+                            error_log("Set geojson from matching freguesia in geojsons.freguesias array");
                             break;
                         }
                     }
                 }
+                
+                // Log if we have freguesias in the geojsons
+                if (isset($result['data']['geojsons']['freguesias'])) {
+                    error_log("Found " . count($result['data']['geojsons']['freguesias']) . " freguesias in geojsons.freguesias");
+                }
             }
-            
             // If still no geojson, try to fetch it
-            if (!isset($result['data']['geojson'])) {
+            else if (!isset($result['data']['geojson'])) {
                 error_log("Buscando geometria para a freguesia: " . $freguesia);
                 
                 // Use raw encoding for geometry endpoint
@@ -311,12 +385,23 @@ class LocationFetcher {
                      ", censos2011 presente: " . 
                      (isset($result['data']['censos2011']) ? "SIM" : "NÃO"));
             
-            // Check if geojsons.municipio exists and use it for the boundary
-            if (isset($result['data']['geojsons']) && isset($result['data']['geojsons']['municipio'])) {
-                $result['data']['geojson'] = $result['data']['geojsons']['municipio'];
-                error_log("Found municipality boundary in geojsons.municipio");
+            // Check if geojsons exists in the response
+            if (isset($result['data']['geojsons'])) {
+                error_log("Found geojsons object in API response with keys: " . 
+                         (isset($result['data']['geojsons']) ? implode(", ", array_keys($result['data']['geojsons'])) : "none"));
+                
+                // Keep the original geojsons structure but also set geojson for backward compatibility
+                if (isset($result['data']['geojsons']['municipio'])) {
+                    $result['data']['geojson'] = $result['data']['geojsons']['municipio'];
+                    error_log("Set geojson from geojsons.municipio for backward compatibility");
+                }
+                
+                // Log if we have freguesias in the geojsons
+                if (isset($result['data']['geojsons']['freguesias'])) {
+                    error_log("Found " . count($result['data']['geojsons']['freguesias']) . " freguesias in geojsons.freguesias");
+                }
             }
-            // If not, try to fetch geometry if geojson is not present
+            // If no geojsons, try to fetch geometry if geojson is not present
             else if (!isset($result['data']['geojson'])) {
                 error_log("Buscando geometria para o município: " . $municipio);
                 

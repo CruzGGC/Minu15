@@ -178,6 +178,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             </div>
         </div>
         
+        <div class="panel-section">
+            <div class="panel-header">
+                <span>Opções de Visualização</span>
+            </div>
+            <div class="display-options">
+                <div class="option-item">
+                    <label class="toggle-switch-label">
+                        <span>Mostrar Freguesias</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="show-freguesias-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
         <button class="calculate-button">Carregar Dados</button>
         
         <!-- Added "Página Completa" button to the bottom of the overlay panel -->

@@ -971,7 +971,1124 @@
 }
 
 input:checked + .toggle-slider {
+    background-color: var(--secondary-color);
+}
+
+input:focus + .toggle-slider {
+    box-shadow: 0 0 1px #3498db;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+.census-main-stat {
+    text-align: center;
+    padding: 8px 0;
+}
+
+.mini-chart {
+    height: 90px;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.mini-chart canvas {
+    max-width: 100%;
+}
+
+.stat-change {
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.stat-change.positive {
+    color: #2ecc71;
+}
+
+.stat-change.negative {
+    color: #e74c3c;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.age-bar-group {
+    animation: fadeInUp 0.5s ease-out forwards;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.age-bar-label-text {
+    color: #7f8c8d;
+}
+
+.age-bar-value {
+    color: #2c3e50;
+    font-weight: 500;
+    font-size: 0.7rem;
+}
+
+.age-bar-container {
+    height: 6px;
+    background-color: #ecf0f1;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.age-bar-fill {
+    height: 100%;
+    background: linear-gradient(to right, #3498db, #2980b9);
+    width: 0;
+    border-radius: 3px;
+    animation: growWidth 1.5s ease-out forwards;
+    position: relative;
+}
+
+.census-button:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+}
+
+@keyframes growWidth {
+    from { width: 0; }
+    to { width: var(--width, 0%); }
+}
+
+@media (max-width: 480px) {
+    .census-sidebar {
+        width: 100%;
+        right: -100%;
+    }
+    
+    .census-sidebar.active {
+        transform: translateX(-100%);
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from { 
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInRight {
+    from { 
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes countUp {
+    from { 
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.census-card h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 1rem;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.age-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.age-bar-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 3px;
+    font-size: 0.75rem;
+}
+
+.census-footer {
+    margin-top: 15px;
+    text-align: center;
+    animation: fadeIn 0.5s ease-out 1s forwards;
+    opacity: 0;
+}
+
+.census-button {
+    display: inline-block;
+    padding: 10px 18px;
     background-color: #3498db;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* For density value specifically */
+#density-value {
+    font-size: 1.2rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .census-sidebar {
+        width: 350px;
+        right: -350px;
+    }
+    
+    .census-sidebar.active {
+        transform: translateX(-350px);
+    }
+    
+    .census-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .census-main-stat .stat-value {
+        font-size: 2rem;
+    }
+    
+    .stat-value {
+        font-size: 1.4rem;
+    }
+    
+    /* Reset font size for all cards in mobile view */
+    .census-row .census-card:nth-child(3) .stat-value {
+        font-size: 1.4rem;
+    }
+}
+
+/* Hide the old location-data-panel since we're now using the census sidebar */
+/* Commenting out this rule as it's causing issues with the sidebar display */
+/* .location-data-panel {
+    display: none;
+} */
+
+/* Display Options */
+.display-options {
+    padding: 10px 0;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.toggle-switch-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* Common toggle switch styles used throughout the app */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: var(--secondary-color);
+}
+
+input:focus + .toggle-slider {
+    box-shadow: 0 0 1px #3498db;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(22px);
+}
+
+/* Map Boundary Styles */
+.freguesia-boundary {
+    stroke: var(--primary-color);
+    stroke-width: 2;
+    stroke-opacity: 0.8;
+    fill: var(--primary-color);
+    fill-opacity: 0.1;
+}
+
+.concelho-boundary {
+    stroke: var(--secondary-color);
+    stroke-width: 3;
+    stroke-opacity: 0.7;
+    fill: var(--secondary-color);
+    fill-opacity: 0.05;
+}
+
+.distrito-boundary {
+    stroke: var(--accent-color);
+    stroke-width: 4;
+    stroke-opacity: 0.6;
+    fill: var(--accent-color);
+    fill-opacity: 0.02;
+}
+
+/* Centroid Marker Styles */
+.centroid-marker {
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    background-color: var(--primary-color);
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+/* POI Count Chart Styles */
+.poi-chart-container {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: var(--border-radius);
+}
+
+.poi-bar {
+    height: 25px;
+    margin-bottom: 10px;
+    position: relative;
+    background-color: #eee;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.poi-bar-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 4px;
+    transition: width 0.5s ease-in-out;
+}
+
+.poi-bar-label {
+    position: absolute;
+    top: 0;
+    left: 10px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.poi-bar-value {
+    position: absolute;
+    top: 0;
+    right: 10px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .location-data-panel {
+        width: 320px;
+        right: -340px;
+    }
+    
+    .location-data-panel.visible {
+        right: 0;
+    }
+    
+    .selector-group select {
+        padding: 12px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .poi-chart-container {
+        padding: 10px;
+    }
+    
+    .poi-bar {
+        height: 30px;
+    }
+    
+    .poi-bar-label, .poi-bar-value {
+        font-size: 0.8rem;
+    }
+}
+
+/**
+ * Location page specific styles
+ */
+
+/* Map container */
+#map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+}
+
+/* Overlay panel */
+.overlay-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 320px;
+    background-color: #fff;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+    overflow-y: auto;
+    padding: 20px;
+    transition: transform 0.3s ease;
+}
+
+/* Location data panel */
+.location-data-panel {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    bottom: 0;
+    width: 380px;
+    background-color: #fff;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+    overflow-y: auto;
+    padding: 0;
+    transition: right 0.3s ease;
+}
+
+.location-data-panel.visible {
+    right: 0;
+}
+
+.location-data-panel .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #2980b9;
+    color: #fff;
+}
+
+.location-data-panel .panel-header .close-panel {
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.location-data-panel .panel-content {
+    padding: 20px;
+}
+
+/* Location data styling */
+#location-data h2 {
+    margin-top: 0;
+    color: #2980b9;
+    font-size: 22px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+#location-data h3 {
+    margin-top: 20px;
+    color: #34495e;
+    font-size: 18px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#location-data h4 {
+    margin-top: 15px;
+    color: #34495e;
+    font-size: 16px;
+}
+
+#location-data p {
+    margin: 8px 0;
+    line-height: 1.5;
+}
+
+.location-hierarchy {
+    background-color: #f5f9fc;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border-left: 4px solid #3498db;
+}
+
+.location-hierarchy p {
+    margin: 5px 0;
+}
+
+.location-census {
+    margin-bottom: 15px;
+}
+
+.demographic-highlights {
+    background-color: #f7fbff;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    border: 1px solid #e1ecf4;
+}
+
+.administrative-info {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    border: 1px solid #eee;
+}
+
+/* POI table styling */
+.location-pois {
+    margin-top: 15px;
+}
+
+.poi-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+
+.poi-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.poi-table td:first-child {
+    width: 80%;
+}
+
+.poi-table td:last-child {
+    text-align: right;
+    font-weight: bold;
+    color: #2980b9;
+}
+
+/* Location selector styling */
+.location-selector {
+    margin-bottom: 20px;
+}
+
+.selector-group {
+    margin-bottom: 15px;
+}
+
+.selector-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #34495e;
+}
+
+.selector-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+    font-family: 'Poppins', sans-serif;
+}
+
+.selector-group select:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
+.selector-info {
+    margin-top: 15px;
+    font-size: 13px;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+/* Calculate button */
+.calculate-button {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background-color: #2980b9;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.calculate-button:hover {
+    background-color: #3498db;
+}
+
+.calculate-button:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+}
+
+/* Add this to highlight the button */
+.calculate-button.highlight {
+    animation: pulse 1s infinite alternate;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.8);
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(1.05);
+    }
+}
+
+/* POI category styling */
+.poi-category {
+    margin-bottom: 15px;
+}
+
+.poi-category .category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.poi-category .category-header:hover {
+    background-color: #eee;
+}
+
+.poi-category .category-content {
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.poi-category.collapsed .category-content {
+    display: none;
+}
+
+/* POI section toggle */
+#poi-header {
+    cursor: pointer;
+}
+
+#poi-content.collapsed {
+    display: none;
+}
+
+/* Mobile specific styles */
+@media (max-width: 768px) {
+    .overlay-panel {
+        transform: translateX(-100%);
+        width: 280px;
+    }
+    
+    .overlay-panel.active {
+        transform: translateX(0);
+    }
+    
+    .location-data-panel {
+        width: 320px;
+        right: -340px;
+    }
+    
+    .location-data-panel.visible {
+        right: 0;
+    }
+    
+    .mobile-menu-toggle {
+        display: block;
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        background-color: #fff;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        z-index: 3;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+    }
+    
+    .mobile-panel-close {
+        display: block;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        cursor: pointer;
+        font-size: 18px;
+    }
+    
+    .poi-category .category-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Demographic highlights section */
+.demographic-highlights {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.demographic-highlights h3 {
+    color: #2980b9;
+    font-size: 18px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 8px;
+}
+
+.demographic-highlights p {
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+
+/* Enhance location hierarchy section */
+.location-hierarchy {
+    background-color: #f5f9fc;
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border-left: 4px solid #3498db;
+}
+
+.location-hierarchy p {
+    margin: 5px 0;
+}
+
+/* Improve location census section */
+.location-census {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f0f7fb;
+    border-radius: 8px;
+}
+
+.location-census h3 {
+    color: #2980b9;
+    font-size: 18px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #d1e6f5;
+    padding-bottom: 8px;
+}
+
+.location-census p {
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+/* Animação de fade-in para o conteúdo do painel */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+#location-data {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Ajustes para dispositivos móveis */
+@media (max-width: 768px) {
+    .location-data-panel {
+        width: 320px;
+        right: -340px;
+    }
+    
+    .location-data-panel.visible {
+        right: 0;
+    }
+    
+    #location-data h2 {
+        font-size: 20px;
+    }
+    
+    #location-data h3 {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .location-data-panel {
+        width: 280px;
+        right: -300px;
+    }
+    
+    .location-data-panel .panel-content {
+        padding: 15px;
+    }
+    
+    #location-data h2 {
+        font-size: 18px;
+    }
+}
+
+/* Links rápidos para distritos */
+.quick-links {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.quick-links h4 {
+    color: #34495e;
+    font-size: 15px;
+    margin: 0 0 10px 0;
+}
+
+.district-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.district-link {
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: #f0f7ff;
+    border-radius: 4px;
+    color: #3498db;
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+    border: 1px solid #e1ecf4;
+}
+
+.district-link:hover {
+    background-color: #3498db;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Button styles */
+.full-width-btn {
+    display: block;
+    width: 100%;
+    padding: 10px 15px;
+    text-align: center;
+    border-radius: 4px;
+    background-color: #3498db;
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+.full-width-btn:hover {
+    background-color: #2980b9;
+}
+
+@media (max-width: 768px) {
+    .full-width-btn {
+        padding: 12px 15px;
+        font-size: 1.1em;
+    }
+}
+
+/* Census Sidebar - New implementation with fluid animations */
+.census-sidebar {
+    position: fixed;
+    top: 0;
+    right: -450px;
+    width: 450px;
+    height: 100vh;
+    background-color: #fff;
+    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    overflow-y: auto;
+    transition: right 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+    display: flex;
+    flex-direction: column;
+    font-family: 'Poppins', sans-serif;
+}
+
+.census-sidebar.active {
+    right: 0;
+}
+
+.census-header {
+    padding: 15px;
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.census-title h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    animation: slideInRight 0.5s ease-out forwards;
+    opacity: 0;
+    transform: translateX(20px);
+}
+
+.census-title p {
+    margin: 3px 0 0;
+    font-size: 0.8rem;
+    opacity: 0.8;
+    animation: slideInRight 0.5s ease-out 0.1s forwards;
+    opacity: 0;
+    transform: translateX(20px);
+}
+
+.census-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+}
+
+.census-close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.census-body {
+    padding: 15px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.census-card {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    padding: 12px;
+    margin-bottom: 15px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+    transform: translateY(20px);
+    display: flex;
+    flex-direction: column;
+}
+
+.census-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.census-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.census-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.census-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.census-highlight {
+    background: linear-gradient(135deg, #f5f7fa, #eef2f7);
+    border-left: 4px solid #3498db;
+}
+
+.census-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.census-row .census-card {
+    flex: 1;
+    margin-bottom: 0;
+    min-width: 0;
+    min-height: 90px;
+    justify-content: center;
+}
+
+.card-icon {
+    font-size: 1.2rem;
+    color: #3498db;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.card-content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 3px;
+    transition: color 0.3s ease;
+    line-height: 1.1;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.census-card:hover .stat-value {
+    color: #3498db;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #7f8c8d;
+    margin-bottom: 3px;
+    line-height: 1.2;
+}
+
+.census-main-stat .stat-value {
+    font-size: 2.2rem;
+    margin-bottom: 0;
+    animation: countUp 2s ease-out forwards;
+}
+
+.census-main-stat .stat-label {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.census-year-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+    color: #7f8c8d;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+    margin: 0 8px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 20px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: var(--secondary-color);
 }
 
 input:focus + .toggle-slider {

@@ -815,20 +815,20 @@ function displayAreaStats(stats, latlng) {
                 <h3>Informações Gerais</h3>
                 <p><strong>Tempo:</strong> ${selectedMaxDistance} minutos ${getTransportModeText()}</p>
                 <p><strong>Coordenadas:</strong> ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</p>
-                <p class="freguesia-info">Clique aqui para identificar a freguesia</p>
+                <p class="freguesia-info">Clique aqui para identificar o municipio</p>
             </div>
         `;
         
         // Add click event to the freguesia info element
         document.querySelector('.freguesia-info').addEventListener('click', function() {
-            identifyFreguesia(latlng);
+            identifyMunicipio(latlng);
         });
         
-        // Make the general-info section clickable to identify freguesia
+        // Make the general-info section clickable to identify municipio
         document.querySelector('.general-info').addEventListener('click', function() {
             const lat = parseFloat(this.getAttribute('data-lat'));
             const lng = parseFloat(this.getAttribute('data-lng'));
-            identifyFreguesia({lat, lng});
+            identifyMunicipio({lat, lng});
         });
         
         return; // Exit the function early
@@ -861,7 +861,7 @@ function displayAreaStats(stats, latlng) {
             <p><strong>Tempo:</strong> ${selectedMaxDistance} minutos ${getTransportModeText()}</p>
             <p><strong>Coordenadas:</strong> ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</p>
             ${stats.population_estimate ? `<p><strong>População Estimada:</strong> ${stats.population_estimate.toLocaleString()} habitantes</p>` : ''}
-            <p class="freguesia-info">Clique aqui para identificar a freguesia</p>
+            <p class="freguesia-info">Clique aqui para identificar o municipio</p>
         </div>
     `;
     
@@ -925,197 +925,63 @@ function displayAreaStats(stats, latlng) {
     
     // Add click event to the freguesia info element
     document.querySelector('.freguesia-info').addEventListener('click', function() {
-        identifyFreguesia(latlng);
+        identifyMunicipio(latlng);
     });
     
-    // Make the general-info section clickable to identify freguesia
+    // Make the general-info section clickable to identify municipio
     document.querySelector('.general-info').addEventListener('click', function() {
         const lat = parseFloat(this.getAttribute('data-lat'));
         const lng = parseFloat(this.getAttribute('data-lng'));
-        identifyFreguesia({lat, lng});
+        identifyMunicipio({lat, lng});
     });
 }
 
-/**
- * Identify freguesia at the given coordinates
- */
-function identifyFreguesia(latlng) {
-    // Update the freguesia info text to show loading
+// Add a new function to handle municipio identification only
+function identifyMunicipio(latlng) {
     const freguesiaInfo = document.querySelector('.freguesia-info');
-    freguesiaInfo.textContent = 'A identificar freguesia...';
+    freguesiaInfo.textContent = 'A identificar municipio...';
     freguesiaInfo.classList.add('loading');
-    
-    // Fetch freguesia data from GeoAPI
-    fetch(`includes/geoapi_proxy.php?endpoint=${encodeURIComponent(`gps/${latlng.lat},${latlng.lng}`)}`)
+
+    // Remove any previous municipio button
+    let municipioBtn = document.getElementById('municipio-link-btn');
+    if (municipioBtn) municipioBtn.remove();
+
+    // Fetch municipio data from GeoAPI using the new /base/detalhes endpoint
+    fetch(`includes/geoapi_proxy.php?endpoint=${encodeURIComponent(`gps/${latlng.lat},${latlng.lng}/base/detalhes`)}`)
         .then(response => response.json())
         .then(data => {
-            if (data && data.freguesia) {
-                // Update the freguesia info with the result
-                freguesiaInfo.textContent = `Freguesia: ${data.freguesia.nome}, ${data.concelho.nome}, ${data.distrito.nome}`;
+            // Try to get municipio from 'concelho' or 'detalhesMunicipio.nome'
+            let nomeMunicipio = '';
+            if (data && data.concelho) {
+                nomeMunicipio = data.concelho;
+            } else if (data && data.detalhesMunicipio && data.detalhesMunicipio.nome) {
+                nomeMunicipio = data.detalhesMunicipio.nome;
+            }
+            if (nomeMunicipio) {
+                freguesiaInfo.textContent = `Município: ${nomeMunicipio}`;
                 freguesiaInfo.classList.remove('loading');
                 freguesiaInfo.classList.add('freguesia-found');
-                
-                // Fetch demographic data
-                fetchFreguesiaDemographics(data.freguesia.codigo);
+
+                // Show municipio button if municipio info is available
+                const btn = document.createElement('button');
+                btn.id = 'municipio-link-btn';
+                btn.className = 'municipio-link-btn';
+                btn.textContent = 'Ver dados do município';
+                btn.style.marginLeft = '10px';
+                btn.onclick = function() {
+                    window.open(`location_data.php?municipio=${encodeURIComponent(nomeMunicipio)}`, '_blank');
+                };
+                freguesiaInfo.parentNode.insertBefore(btn, freguesiaInfo.nextSibling);
             } else {
-                freguesiaInfo.textContent = 'Não foi possível identificar a freguesia';
+                freguesiaInfo.textContent = 'Não foi possível identificar o município';
                 freguesiaInfo.classList.remove('loading');
             }
         })
         .catch(error => {
-            console.error('Error identifying freguesia:', error);
-            freguesiaInfo.textContent = 'Erro ao identificar freguesia';
+            console.error('Error identifying municipio:', error);
+            freguesiaInfo.textContent = 'Erro ao identificar município';
             freguesiaInfo.classList.remove('loading');
         });
-}
-
-/**
- * Fetch demographic data for a freguesia
- */
-function fetchFreguesiaDemographics(freguesiaCode) {
-    // Create a new section for demographics if it doesn't exist
-    let demographicsSection = document.querySelector('.demographics-section');
-    if (!demographicsSection) {
-        demographicsSection = document.createElement('div');
-        demographicsSection.className = 'stats-section demographics-section';
-        demographicsSection.innerHTML = '<h3>Dados Demográficos</h3><div class="loading-spinner"></div>';
-        
-        // Insert after general info section
-        const generalInfoSection = document.querySelector('.general-info');
-        generalInfoSection.parentNode.insertBefore(demographicsSection, generalInfoSection.nextSibling);
-    } else {
-        demographicsSection.innerHTML = '<h3>Dados Demográficos</h3><div class="loading-spinner"></div>';
-    }
-    
-    // Fetch freguesia data from GeoAPI
-    fetch(`includes/geoapi_proxy.php?endpoint=${encodeURIComponent(`freguesia/${freguesiaCode}`)}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data) {
-                displayDemographicData(data, demographicsSection);
-            } else {
-                demographicsSection.innerHTML = '<h3>Dados Demográficos</h3><p>Dados não disponíveis</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching freguesia demographics:', error);
-            demographicsSection.innerHTML = '<h3>Dados Demográficos</h3><p>Erro ao obter dados demográficos</p>';
-        });
-}
-
-/**
- * Display demographic data in the statistics panel
- */
-function displayDemographicData(freguesiaData, container) {
-    // Get census data (prefer 2021 over 2011)
-    const census = freguesiaData.censos2021 || freguesiaData.censos2011;
-    
-    if (!census) {
-        container.innerHTML = '<h3>Dados Demográficos</h3><p>Dados censitários não disponíveis</p>';
-        return;
-    }
-    
-    // Create HTML content
-    let html = '<h3>Dados Demográficos</h3>';
-    
-    // Population
-    if (census.N_INDIVIDUOS_RESIDENT) {
-        html += `<p><strong>População:</strong> ${census.N_INDIVIDUOS_RESIDENT.toLocaleString()} habitantes</p>`;
-    }
-    
-    // Buildings and housing
-    if (census.N_EDIFICIOS_CLASSICOS) {
-        html += `<p><strong>Edifícios:</strong> ${census.N_EDIFICIOS_CLASSICOS.toLocaleString()}</p>`;
-    }
-    
-    if (census.N_ALOJAMENTOS) {
-        html += `<p><strong>Alojamentos:</strong> ${census.N_ALOJAMENTOS.toLocaleString()}</p>`;
-    }
-    
-    // Households
-    if (census.N_AGREGADOS || freguesiaData.censos2011?.N_FAMILIAS_CLASSICAS) {
-        const households = census.N_AGREGADOS || freguesiaData.censos2011?.N_FAMILIAS_CLASSICAS;
-        html += `<p><strong>Famílias:</strong> ${households.toLocaleString()}</p>`;
-    }
-    
-    // Area and density if available
-    if (freguesiaData.areaha) {
-        const areaKm2 = parseFloat(freguesiaData.areaha) / 100;
-        html += `<p><strong>Área:</strong> ${areaKm2.toLocaleString()} km²</p>`;
-        
-        if (census.N_INDIVIDUOS_RESIDENT) {
-            const density = Math.round(census.N_INDIVIDUOS_RESIDENT / areaKm2);
-            html += `<p><strong>Densidade Populacional:</strong> ${density.toLocaleString()} hab/km²</p>`;
-        }
-    }
-    
-    // Set the HTML content
-    container.innerHTML = html;
-}
-
-/**
- * Display freguesia demographics data from fetch_statistics.php
- */
-function displayFreguesiaDemographics(freguesiaData) {
-    if (!freguesiaData || !freguesiaData.demographics) return;
-    
-    // Create a new section for demographics if it doesn't exist
-    let demographicsSection = document.querySelector('.demographics-section');
-    if (!demographicsSection) {
-        demographicsSection = document.createElement('div');
-        demographicsSection.className = 'stats-section demographics-section';
-        
-        // Insert after general info section
-        const generalInfoSection = document.querySelector('.general-info');
-        generalInfoSection.parentNode.insertBefore(demographicsSection, generalInfoSection.nextSibling);
-    }
-    
-    // Create HTML content
-    let html = '<h3>Dados Demográficos</h3>';
-    html += `<p><strong>Freguesia:</strong> ${freguesiaData.freguesia}</p>`;
-    
-    if (freguesiaData.concelho) {
-        html += `<p><strong>Concelho:</strong> ${freguesiaData.concelho}</p>`;
-    }
-    
-    if (freguesiaData.distrito) {
-        html += `<p><strong>Distrito:</strong> ${freguesiaData.distrito}</p>`;
-    }
-    
-    const demographics = freguesiaData.demographics;
-    
-    // Population
-    if (demographics.population && demographics.population.total) {
-        html += `<p><strong>População:</strong> ${demographics.population.total.toLocaleString()} habitantes</p>`;
-        
-        if (demographics.population.male && demographics.population.female) {
-            const malePercent = Math.round((demographics.population.male / demographics.population.total) * 100);
-            const femalePercent = 100 - malePercent;
-            html += `<p><strong>Distribuição:</strong> ${malePercent}% homens, ${femalePercent}% mulheres</p>`;
-        }
-        
-        if (demographics.population.density) {
-            html += `<p><strong>Densidade:</strong> ${demographics.population.density.toLocaleString()} hab/km²</p>`;
-        }
-    }
-    
-    // Housing
-    if (demographics.housing) {
-        if (demographics.housing.buildings) {
-            html += `<p><strong>Edifícios:</strong> ${demographics.housing.buildings.toLocaleString()}</p>`;
-        }
-        
-        if (demographics.housing.dwellings) {
-            html += `<p><strong>Alojamentos:</strong> ${demographics.housing.dwellings.toLocaleString()}</p>`;
-        }
-        
-        if (demographics.housing.households) {
-            html += `<p><strong>Famílias:</strong> ${demographics.housing.households.toLocaleString()}</p>`;
-        }
-    }
-    
-    // Set the HTML content
-    demographicsSection.innerHTML = html;
 }
 
 // Calcular o Accessibility Score baseado nos POIs disponíveis

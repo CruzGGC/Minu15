@@ -5,13 +5,16 @@
  * Implements caching to minimize API calls
  * Added rate limit handling with exponential backoff
  * 
- * @version 1.3
+ * @version 1.4
  */
 
 // Enable debugging
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
+// Include the API cache class
+require_once __DIR__ . '/api_cache.php';
 
 // Create a debug log function
 function debug_log($message, $data = null) {
@@ -73,11 +76,8 @@ if (substr($endpoint, 0, 1) === '/') {
     $endpoint = substr($endpoint, 1);
 }
 
-// Define cache directory and ensure it exists
-$cacheDir = __DIR__ . '/../cache/geoapi/';
-if (!is_dir($cacheDir)) {
-    mkdir($cacheDir, 0755, true);
-}
+// Initialize the API cache with a 7-day expiry
+$apiCache = new ApiCache(__DIR__ . '/../cache/geoapi/', 604800);
 
 // Create a cache key based on the endpoint and any additional parameters
 $cacheKey = $endpoint;
@@ -93,35 +93,23 @@ if (!empty($_GET)) {
     }
 }
 
-// Create a filename for the cache file
-$cacheFile = $cacheDir . md5($cacheKey) . '.json';
-debug_log('Cache file', ['key' => $cacheKey, 'file' => $cacheFile]);
+// Generate the cache key using the ApiCache class
+$cacheKey = $apiCache->generateCacheKey($cacheKey, []);
+debug_log('Cache key', ['key' => $cacheKey]);
 
-// Check if we have a valid cache file that's not expired (7 days cache)
-$cacheExpiry = 604800; // 7 days in seconds (increased from 1 day)
-$useCache = false;
-
-if (file_exists($cacheFile)) {
-    $fileAge = time() - filemtime($cacheFile);
-    if ($fileAge < $cacheExpiry) {
-        $useCache = true;
-        debug_log('Using cache file', ['age' => $fileAge, 'expiry' => $cacheExpiry]);
-    } else {
-        debug_log('Cache expired', ['age' => $fileAge, 'expiry' => $cacheExpiry]);
-    }
-} else {
-    debug_log('No cache file exists');
-}
-
-// If we have a valid cache, use it
+// Check if we have a valid cache
+$useCache = $apiCache->hasValidCache($cacheKey);
 if ($useCache) {
-    $response = file_get_contents($cacheFile);
-    echo $response;
+    debug_log('Using cache');
+    $cachedData = $apiCache->get($cacheKey);
+    echo json_encode($cachedData);
     exit;
+} else {
+    debug_log('No valid cache found');
 }
 
 // Rate limit handling
-$rateLimitFile = $cacheDir . 'rate_limit_status.json';
+$rateLimitFile = __DIR__ . '/../cache/geoapi/rate_limit_status.json';
 $maxRetries = 3;
 $retryCount = 0;
 $retryDelay = 1; // Initial delay in seconds
@@ -141,10 +129,10 @@ if (file_exists($rateLimitFile)) {
         ]);
         
         // If we have a cached response for this endpoint, use it even if expired
-        if (file_exists($cacheFile)) {
+        $expiredData = $apiCache->get($cacheKey);
+        if ($expiredData !== null) {
             debug_log('Using expired cache due to rate limit');
-            $response = file_get_contents($cacheFile);
-            echo $response;
+            echo json_encode($expiredData);
             exit;
         }
         
@@ -178,10 +166,9 @@ if (file_exists($rateLimitFile)) {
             debug_log('Returning fallback GPS response');
             
             // Cache this response
-            $fallbackJson = json_encode($fallbackResponse);
-            file_put_contents($cacheFile, $fallbackJson);
+            $apiCache->set($cacheKey, $fallbackResponse);
             
-            echo $fallbackJson;
+            echo json_encode($fallbackResponse);
             exit;
         }
         
@@ -238,7 +225,7 @@ if (file_exists($rateLimitFile)) {
             
             // Cache this response
             $fallbackJson = json_encode(['municipios' => $fallbackMunicipios]); // Wrap in 'municipios' key
-            file_put_contents($cacheFile, $fallbackJson);
+            $apiCache->set($cacheKey, $fallbackJson);
             
             debug_log('Returning fallback municipios response');
             echo $fallbackJson;
@@ -260,7 +247,7 @@ if (file_exists($rateLimitFile)) {
             
             // Cache this response
             $fallbackJson = json_encode(['freguesias' => $fallbackFreguesias]); // Wrap in 'freguesias' key
-            file_put_contents($cacheFile, $fallbackJson);
+            $apiCache->set($cacheKey, $fallbackJson);
             
             debug_log('Returning fallback freguesias response');
             echo $fallbackJson;
@@ -292,7 +279,23 @@ if (file_exists($rateLimitFile)) {
     debug_log('No rate limit file exists');
 }
 
-// Function to make the API request with retry logic
+// Continue with API request if not rate limited or rate limit has expired
+$url = $geoApiBaseUrl . '/' . $endpoint;
+debug_log('Making API request', ['url' => $url]);
+
+// Make the API request with retry logic
+$response = makeApiRequest($url, null, $retryCount, $maxRetries, $retryDelay);
+
+// Cache the response
+if ($response['success']) {
+    $apiCache->set($cacheKey, $response['data']);
+}
+
+// Output the response
+echo json_encode($response['data']);
+exit;
+
+// Function to make API requests with retry logic
 function makeApiRequest($url, $postData = null, $retryCount = 0, $maxRetries = 3, $retryDelay = 1) {
     global $cacheDir, $rateLimitFile;
     
@@ -542,100 +545,4 @@ function makeApiRequest($url, $postData = null, $retryCount = 0, $maxRetries = 3
         'headers' => $headers,
         'verbose' => $verboseLog
     ];
-}
-
-// Build the full API URL
-$apiUrl = rtrim($geoApiBaseUrl, '/') . '/' . ltrim($endpoint, '/');
-
-// For debugging
-debug_log("GeoAPI URL", ['url' => $apiUrl]);
-
-// Make the API request
-$result = makeApiRequest(
-    $apiUrl, 
-    $_SERVER['REQUEST_METHOD'] === 'POST' ? file_get_contents('php://input') : null,
-    $retryCount,
-    $maxRetries,
-    $retryDelay
-);
-
-// If the request was successful, cache the response
-if ($result['success']) {
-    debug_log("Successful API response", ['code' => $result['code']]);
-    
-    // Check if the response is valid JSON
-    $jsonCheck = json_decode($result['response']);
-    if ($jsonCheck !== null) {
-        // Save to cache
-        debug_log("Caching response");
-        file_put_contents($cacheFile, $result['response']);
-    } else {
-        debug_log("Invalid JSON response, not caching");
-    }
-    
-    // Return the API response with the same HTTP code
-    http_response_code($result['code']);
-    echo $result['response'];
-} else {
-    debug_log("Failed API response", ['code' => $result['code'], 'message' => $result['message']]);
-    
-    // If we have a cached response for this endpoint, use it even if expired
-    if (file_exists($cacheFile)) {
-        debug_log("Using cached response despite API failure");
-        $response = file_get_contents($cacheFile);
-        echo $response;
-        exit;
-    }
-    
-    // If this is a GPS coordinate request and it failed, return a fallback response
-    if (strpos($endpoint, 'gps/') === 0) {
-        // Extract coordinates
-        $coords = str_replace('gps/', '', $endpoint);
-        $coords = str_replace('/base', '', $coords);
-        list($lat, $lng) = explode(',', $coords);
-        
-        debug_log("Creating fallback GPS response");
-        
-        // Create a fallback response for Aveiro, Portugal (as an example)
-        $fallbackResponse = [
-            'freguesia' => [
-                'nome' => 'Glória e Vera Cruz',
-                'codigo' => '010105'
-            ],
-            'municipio' => [
-                'nome' => 'Aveiro',
-                'codigo' => '0101'
-            ],
-            'distrito' => [
-                'nome' => 'Aveiro',
-                'codigo' => '01'
-            ],
-            'coordinates' => [
-                'lat' => $lat,
-                'lng' => $lng
-            ]
-        ];
-        
-        // Cache this response
-        $fallbackJson = json_encode($fallbackResponse);
-        file_put_contents($cacheFile, $fallbackJson);
-        
-        echo $fallbackJson;
-        exit;
-    }
-    
-    // Otherwise, return the error with debug information
-    http_response_code($result['code'] > 0 ? $result['code'] : 500);
-    $errorResponse = [
-        'success' => false,
-        'message' => $result['message'],
-        'debug' => [
-            'url' => $apiUrl,
-            'endpoint' => $endpoint,
-            'verbose' => $result['verbose'] ?? null,
-            'headers' => $result['headers'] ?? null
-        ]
-    ];
-    debug_log("Returning error response", $errorResponse);
-    echo json_encode($errorResponse);
 } 

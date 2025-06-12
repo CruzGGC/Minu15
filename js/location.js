@@ -9,11 +9,13 @@
 let map;
 let locationMarker;
 let locationPolygon;
+let freguesiaPolygons = []; // New array to store individual freguesia boundaries
 let currentLocation = null;
 let currentClickedCoordinates;
 let genderChart = null;
 let censusSidebarActive = false;
 let currentCensusYear = 2021; // Default to 2021
+let showFreguesias = false; // Track whether to show freguesias
 
 // Map style providers
 const mapProviders = {
@@ -451,20 +453,19 @@ function fetchLocationByCoordinates(lat, lng) {
 /**
  * Fetch location data by freguesia
  */
-function fetchLocationByFreguesia(freguesia, concelho) {
-    console.log(`Fetching freguesia data: ${freguesia} in concelho ${concelho}`);
+function fetchLocationByFreguesia(freguesia, municipio) {
+    console.log(`Fetching freguesia data: ${freguesia}, ${municipio}`);
     
     // Update UI to show loading state
     document.querySelector('.calculate-button').textContent = 'A carregar...';
     document.querySelector('.calculate-button').disabled = true;
     
-    // Use the freguesia name for the API call, not the code
     fetch('location.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `action=fetchByFreguesiaAndMunicipio&freguesia=${encodeURIComponent(freguesia)}&municipio=${encodeURIComponent(concelho)}`
+        body: `action=fetchByFreguesiaAndMunicipio&freguesia=${encodeURIComponent(freguesia)}&municipio=${encodeURIComponent(municipio)}`
     })
         .then(response => response.json())
         .then(data => {
@@ -479,8 +480,20 @@ function fetchLocationByFreguesia(freguesia, concelho) {
                 // Show the location data panel
                 document.querySelector('.location-data-panel').classList.add('visible');
                 
+                // Log the data structure to help debug
+                console.log('Freguesia data structure:', {
+                    hasGeojson: !!currentLocation.geojson,
+                    hasGeojsons: !!currentLocation.geojsons,
+                    hasFreguesias: currentLocation.geojsons && !!currentLocation.geojsons.freguesias,
+                    freguesiasLength: currentLocation.geojsons && currentLocation.geojsons.freguesias ? currentLocation.geojsons.freguesias.length : 0,
+                    hasFreguesia: currentLocation.geojsons && !!currentLocation.geojsons.freguesia
+                });
+                
                 // Draw the location boundary if geometry is available
-                if (currentLocation.geojson) {
+                if (currentLocation.geojsons) {
+                    // Pass the entire location object to preserve the geojsons structure
+                    drawLocationBoundary(currentLocation);
+                } else if (currentLocation.geojson) {
                     drawLocationBoundary(currentLocation.geojson);
                 } else if (currentLocation.geometry) {
                     drawLocationBoundary(currentLocation.geometry);
@@ -527,8 +540,20 @@ function fetchLocationByMunicipio(municipio) {
                 // Show the location data panel
                 document.querySelector('.location-data-panel').classList.add('visible');
                 
+                // Log the data structure to help debug
+                console.log('Municipality data structure:', {
+                    hasGeojson: !!currentLocation.geojson,
+                    hasGeojsons: !!currentLocation.geojsons,
+                    hasFreguesias: currentLocation.geojsons && !!currentLocation.geojsons.freguesias,
+                    freguesiasLength: currentLocation.geojsons && currentLocation.geojsons.freguesias ? currentLocation.geojsons.freguesias.length : 0,
+                    hasMunicipio: currentLocation.geojsons && !!currentLocation.geojsons.municipio
+                });
+                
                 // Draw the location boundary if geometry is available
-                if (currentLocation.geojson) {
+                if (currentLocation.geojsons) {
+                    // Pass the entire location object to preserve the geojsons structure
+                    drawLocationBoundary(currentLocation);
+                } else if (currentLocation.geojson) {
                     drawLocationBoundary(currentLocation.geojson);
                 } else if (currentLocation.geometry) {
                     drawLocationBoundary(currentLocation.geometry);
@@ -575,8 +600,18 @@ function fetchLocationByDistrito(distrito) {
                 // Show the location data panel
                 document.querySelector('.location-data-panel').classList.add('visible');
                 
+                // Log the data structure to help debug
+                console.log('Distrito data structure:', {
+                    hasGeojson: !!currentLocation.geojson,
+                    hasGeojsons: !!currentLocation.geojsons,
+                    hasDistrito: currentLocation.geojsons && !!currentLocation.geojsons.distrito
+                });
+                
                 // Draw the location boundary if geometry is available
-                if (currentLocation.geojson) {
+                if (currentLocation.geojsons) {
+                    // Pass the entire location object to preserve the geojsons structure
+                    drawLocationBoundary(currentLocation);
+                } else if (currentLocation.geojson) {
                     drawLocationBoundary(currentLocation.geojson);
                 } else if (currentLocation.geometry) {
                     drawLocationBoundary(currentLocation.geometry);
@@ -1068,11 +1103,8 @@ function getCensusValue(censusData, possibleKeys) {
 function drawLocationBoundary(geojson) {
     console.log('Drawing boundary with data:', geojson);
     
-    // Remove existing polygon if it exists
-    if (locationPolygon) {
-        console.log('Removing existing polygon');
-        map.removeLayer(locationPolygon);
-    }
+    // Remove existing polygons
+    clearBoundaries();
     
     // Check if we have valid GeoJSON data
     if (!geojson) {
@@ -1091,11 +1123,104 @@ function drawLocationBoundary(geojson) {
             }
         }
         
+        // Store the original data to handle freguesia toggle
+        const originalData = JSON.parse(JSON.stringify(geojson));
+        
+        // Log the structure of the data to help debug
+        console.log('GeoJSON structure:', {
+            hasGeojsons: !!geojson.geojsons,
+            hasFreguesias: geojson.geojsons && !!geojson.geojsons.freguesias,
+            freguesiasLength: geojson.geojsons && geojson.geojsons.freguesias ? geojson.geojsons.freguesias.length : 0,
+            hasMunicipio: geojson.geojsons && !!geojson.geojsons.municipio,
+            showFreguesias: showFreguesias
+        });
+        
         // Handle the case where we have a geojsons object with multiple geometries
         if (geojson.geojsons) {
-            console.log('Found geojsons object with multiple geometries');
+            // Check if we have freguesias and the toggle is on
+            if (showFreguesias && geojson.geojsons.freguesias && geojson.geojsons.freguesias.length > 0) {
+                console.log('Drawing individual freguesias boundaries, count:', geojson.geojsons.freguesias.length);
+                
+                // Draw each freguesia as a separate layer
+                geojson.geojsons.freguesias.forEach((freguesiaGeoJson, index) => {
+                    console.log(`Drawing freguesia ${index}:`, freguesiaGeoJson.properties ? freguesiaGeoJson.properties.Freguesia || freguesiaGeoJson.properties.freguesia : 'Unknown');
+                    
+                    const freguesiaLayer = L.geoJSON(freguesiaGeoJson, {
+                        style: function () {
+                            return {
+                                color: '#2ecc71', // Green for freguesias
+                                weight: 2,
+                                opacity: 0.7,
+                                fillOpacity: 0.2,
+                                className: 'freguesia-boundary'
+                            };
+                        },
+                        onEachFeature: function (feature, layer) {
+                            let name = 'Freguesia';
+                            
+                            // Try to extract name from properties
+                            if (feature.properties) {
+                                name = feature.properties.Freguesia || 
+                                       feature.properties.freguesia || 
+                                       feature.properties.FREGUESIA || 
+                                       feature.properties.Nome || 
+                                       feature.properties.nome || 
+                                       feature.properties.NOME || 
+                                       name;
+                            }
+                            
+                            layer.bindPopup(name);
+                        }
+                    }).addTo(map);
+                    
+                    freguesiaPolygons.push(freguesiaLayer);
+                });
+                
+                // Try to fit map to all freguesias bounds
+                if (freguesiaPolygons.length > 0) {
+                    const bounds = freguesiaPolygons[0].getBounds();
+                    for (let i = 1; i < freguesiaPolygons.length; i++) {
+                        bounds.extend(freguesiaPolygons[i].getBounds());
+                    }
+                    map.fitBounds(bounds);
+                }
+                
+                // Optionally draw the município boundary as well, with different style
+                if (geojson.geojsons.municipio) {
+                    locationPolygon = L.geoJSON(geojson.geojsons.municipio, {
+                        style: function () {
+                            return {
+                                color: '#3498db', // Blue for município
+                                weight: 3,
+                                opacity: 0.5,
+                                fillOpacity: 0.05,
+                                className: 'concelho-boundary'
+                            };
+                        },
+                        onEachFeature: function (feature, layer) {
+                            let name = 'Município';
+                            
+                            // Try to extract name from properties
+                            if (feature.properties) {
+                                name = feature.properties.Concelho || 
+                                       feature.properties.concelho || 
+                                       feature.properties.Municipio || 
+                                       feature.properties.municipio || 
+                                       feature.properties.Nome || 
+                                       feature.properties.nome || 
+                                       name;
+                            }
+                            
+                            layer.bindPopup(name);
+                        }
+                    }).addTo(map);
+                }
+                
+                console.log('Finished drawing freguesias');
+                return; // Skip the rest of the function
+            }
             
-            // For municipalities, use the municipio geometry
+            // If we're not showing freguesias or don't have freguesia data, show the município
             if (geojson.geojsons.municipio) {
                 console.log('Using municipio geometry');
                 geojson = geojson.geojsons.municipio;
@@ -1105,7 +1230,7 @@ function drawLocationBoundary(geojson) {
                 console.log('Using freguesia geometry');
                 geojson = geojson.geojsons.freguesia;
             }
-            // If we have a freguesias array, use the first one (or find the matching one)
+            // If we have a freguesias array but aren't showing them all, use the first one
             else if (geojson.geojsons.freguesias && geojson.geojsons.freguesias.length > 0) {
                 console.log('Using first freguesia from freguesias array');
                 geojson = geojson.geojsons.freguesias[0];
@@ -1208,9 +1333,42 @@ function drawLocationBoundary(geojson) {
             map.fitBounds(locationPolygon.getBounds());
         }
         
+        // Store the original data in the current location for redrawing
+        if (currentLocation) {
+            if (originalData.geojsons) {
+                currentLocation._originalGeojsons = originalData.geojsons;
+            } else {
+                // If the original data doesn't have geojsons but the current location does
+                currentLocation._originalGeojsons = currentLocation.geojsons;
+            }
+        }
+        
         console.log('Boundary drawn successfully');
     } catch (error) {
         console.error('Error drawing boundary:', error);
+    }
+}
+
+/**
+ * Clear all boundary layers
+ */
+function clearBoundaries() {
+    // Remove existing polygon if it exists
+    if (locationPolygon) {
+        console.log('Removing existing polygon');
+        map.removeLayer(locationPolygon);
+        locationPolygon = null;
+    }
+    
+    // Remove all freguesia polygons
+    if (freguesiaPolygons.length > 0) {
+        console.log('Removing freguesia polygons:', freguesiaPolygons.length);
+        freguesiaPolygons.forEach(polygon => {
+            if (polygon) {
+                map.removeLayer(polygon);
+            }
+        });
+        freguesiaPolygons = [];
     }
 }
 
@@ -1227,12 +1385,8 @@ function clearLocationSelection() {
         locationMarker = null;
     }
     
-    // Remove polygon if it exists
-    if (locationPolygon) {
-        console.log('Removing polygon');
-        map.removeLayer(locationPolygon);
-        locationPolygon = null;
-    }
+    // Remove all boundary polygons
+    clearBoundaries();
     
     // Reset clicked coordinates
     currentClickedCoordinates = null;
@@ -1488,6 +1642,27 @@ function setupEventListeners() {
         if (e.key === 'Escape' && censusSidebarActive) {
             document.getElementById('census-sidebar').classList.remove('active');
             censusSidebarActive = false;
+        }
+    });
+
+    // Freguesia toggle switch
+    document.getElementById('show-freguesias-toggle').addEventListener('change', function() {
+        showFreguesias = this.checked;
+        console.log('Show freguesias toggle changed to:', showFreguesias);
+        
+        // Redraw boundaries if we have current location data with freguesias
+        if (currentLocation) {
+            console.log('Redrawing with freguesias toggle:', showFreguesias);
+            
+            if (currentLocation._originalGeojsons) {
+                console.log('Using stored original geojsons');
+                const tempData = { ...currentLocation };
+                tempData.geojsons = currentLocation._originalGeojsons;
+                drawLocationBoundary(tempData);
+            } else if (currentLocation.geojsons) {
+                console.log('Using current geojsons');
+                drawLocationBoundary(currentLocation);
+            }
         }
     });
 }
