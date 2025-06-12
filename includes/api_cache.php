@@ -8,7 +8,7 @@
 
 class ApiCache {
     private $cacheDir;
-    private $defaultExpiry = 604800; // 7 days in seconds
+    private $defaultExpiry = 31536000; // 365 days in seconds
     
     /**
      * Constructor
