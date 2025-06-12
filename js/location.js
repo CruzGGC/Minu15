@@ -600,8 +600,10 @@ function displayLocationData(location) {
     console.log('Displaying location data:', location);
     currentLocation = location;
     
-    // Show census sidebar and ensure old panel is hidden
+    // Ensure old panel is hidden
     document.querySelector('.location-data-panel').classList.remove('visible');
+    
+    // Show the census sidebar with location data
     showCensusSidebar(location);
 }
 
@@ -610,6 +612,8 @@ function displayLocationData(location) {
  */
 function showCensusSidebar(location) {
     if (!location) return;
+    
+    console.log('Showing census sidebar with location data:', location);
     
     // Set location name and type
     const locationName = document.getElementById('census-location-name');
@@ -645,14 +649,38 @@ function showCensusSidebar(location) {
     locationName.textContent = name;
     locationType.textContent = type;
     
-    // Get census data
-    const census2021 = location.censos2021 || null;
-    const census2011 = location.censos2011 || null;
+    // Get census data - check both direct and nested locations
+    let census2021 = location.censos2021 || null;
+    let census2011 = location.censos2011 || null;
+    
+    // If census data is not directly on the location object, check nested objects
+    if (!census2021) {
+        if (location.detalhesFreguesia && location.detalhesFreguesia.censos2021) {
+            census2021 = location.detalhesFreguesia.censos2021;
+            console.log('Found census 2021 data in detalhesFreguesia');
+        } else if (location.detalhesMunicipio && location.detalhesMunicipio.censos2021) {
+            census2021 = location.detalhesMunicipio.censos2021;
+            console.log('Found census 2021 data in detalhesMunicipio');
+        }
+    }
+    
+    if (!census2011) {
+        if (location.detalhesFreguesia && location.detalhesFreguesia.censos2011) {
+            census2011 = location.detalhesFreguesia.censos2011;
+            console.log('Found census 2011 data in detalhesFreguesia');
+        } else if (location.detalhesMunicipio && location.detalhesMunicipio.censos2011) {
+            census2011 = location.detalhesMunicipio.censos2011;
+            console.log('Found census 2011 data in detalhesMunicipio');
+        }
+    }
     
     // If no census data, show message
     if (!census2021 && !census2011) {
+        console.warn('No census data found for this location');
         const ageContainer = document.getElementById('age-bars');
-        ageContainer.innerHTML = '<p class="no-data">Não existem dados censitários disponíveis para esta localização.</p>';
+        if (ageContainer) {
+            ageContainer.innerHTML = '<p class="no-data">Não existem dados censitários disponíveis para esta localização.</p>';
+        }
         
         // Show sidebar with empty data
         document.getElementById('census-sidebar').classList.add('active');
@@ -663,6 +691,8 @@ function showCensusSidebar(location) {
     // Use 2021 data if available, otherwise use 2011
     const primaryCensus = census2021 || census2011;
     const secondaryCensus = census2021 && census2011 ? census2011 : null;
+    
+    console.log('Using census data:', { primary: primaryCensus, secondary: secondaryCensus });
     
     // Update toggle visibility
     const yearToggle = document.getElementById('census-year-toggle');
@@ -689,7 +719,9 @@ function showCensusSidebar(location) {
     
     // Set "View Full Data" link
     const viewFullData = document.getElementById('census-view-full-data');
-    viewFullData.href = buildFullDataUrl(location);
+    if (viewFullData) {
+        viewFullData.href = buildFullDataUrl(location);
+    }
     
     // Show sidebar with animation
     document.getElementById('census-sidebar').classList.add('active');
@@ -700,14 +732,14 @@ function showCensusSidebar(location) {
  * Update census statistics based on the primary and secondary census data
  */
 function updateCensusStats(primaryCensus, secondaryCensus) {
-        // Population
+    // Population
     const populationValue = document.getElementById('population-value');
     const populationChange = document.getElementById('population-change');
         
     // Get population value
     const population = getCensusValue(primaryCensus, ['N_INDIVIDUOS_RESIDENT', 'N_INDIVIDUOS']);
     
-        if (population) {
+    if (population) {
         // Format with thousands separator
         populationValue.textContent = new Intl.NumberFormat('pt-PT').format(population);
         
@@ -739,17 +771,17 @@ function updateCensusStats(primaryCensus, secondaryCensus) {
     const buildingsValue = document.getElementById('buildings-value');
     const buildings = getCensusValue(primaryCensus, ['N_EDIFICIOS_CLASSICOS', 'N_EDIFICIOS']);
     
-        if (buildings) {
+    if (buildings) {
         buildingsValue.textContent = new Intl.NumberFormat('pt-PT').format(buildings);
     } else {
         buildingsValue.textContent = 'N/A';
-        }
+    }
         
     // Dwellings
     const dwellingsValue = document.getElementById('dwellings-value');
     const dwellings = getCensusValue(primaryCensus, ['N_ALOJAMENTOS_TOTAL', 'N_ALOJAMENTOS']);
     
-        if (dwellings) {
+    if (dwellings) {
         dwellingsValue.textContent = new Intl.NumberFormat('pt-PT').format(dwellings);
     } else {
         dwellingsValue.textContent = 'N/A';
@@ -759,19 +791,40 @@ function updateCensusStats(primaryCensus, secondaryCensus) {
     const densityValue = document.getElementById('density-value');
     let density = null;
     
+    // Check for area in multiple possible locations
+    let areaHa = null;
+    
     // Debug area fields in location
     console.log('Location data for density calculation:', {
-        area_ha: currentLocation.area_ha,
-        areaha: currentLocation.areaha,
-        area: currentLocation.area,
-        full_location: currentLocation
+        location: currentLocation
     });
     
-    // Calculate density if population and area available
-    // Check multiple possible area property names
-    const areaHa = currentLocation.area_ha || currentLocation.areaha || currentLocation.area || 
-                  (currentLocation.data && currentLocation.data.area_ha) || 
-                  (currentLocation.data && currentLocation.data.areaha);
+    // Check for area in multiple possible locations
+    if (currentLocation) {
+        // Direct properties
+        areaHa = currentLocation.area_ha || currentLocation.areaha || currentLocation.area;
+        
+        // Nested in detalhesFreguesia
+        if (!areaHa && currentLocation.detalhesFreguesia) {
+            areaHa = currentLocation.detalhesFreguesia.areaha || 
+                    currentLocation.detalhesFreguesia.area_ha ||
+                    currentLocation.detalhesFreguesia.area;
+        }
+        
+        // Nested in detalhesMunicipio
+        if (!areaHa && currentLocation.detalhesMunicipio) {
+            areaHa = currentLocation.detalhesMunicipio.areaha || 
+                    currentLocation.detalhesMunicipio.area_ha ||
+                    currentLocation.detalhesMunicipio.area;
+        }
+        
+        // Try to parse if it's a string
+        if (typeof areaHa === 'string') {
+            areaHa = parseFloat(areaHa);
+        }
+    }
+    
+    console.log(`Found area: ${areaHa} ha`);
     
     if (population && areaHa) {
         const areaKm2 = areaHa / 100;
@@ -1273,7 +1326,10 @@ function setupEventListeners() {
             map.removeLayer(locationPolygon);
             locationPolygon = null;
         }
-        document.querySelector('.location-data-panel').classList.remove('visible');
+        
+        // Make sure the census sidebar is hidden before fetching new data
+        document.getElementById('census-sidebar').classList.remove('active');
+        censusSidebarActive = false;
         
         // Update UI to show loading state
         document.querySelector('.calculate-button').textContent = 'A carregar...';
