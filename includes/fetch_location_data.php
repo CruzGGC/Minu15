@@ -12,6 +12,7 @@ class LocationFetcher {
         // Debug log the URL
         error_log("Calling API URL: " . $url);
 
+        // For URLs with spaces or special characters, first try directly
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -21,6 +22,54 @@ class LocationFetcher {
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
+        
+        // If the direct call fails (likely due to spaces or special chars), try with proper URL encoding
+        if ($httpCode === 404 && (strpos($url, ' ') !== false || strpos($url, '+') !== false)) {
+            error_log("URL with spaces or special chars failed, trying with encoded URL");
+            curl_close($ch);
+            
+            // Properly encode the URL, maintaining the query string structure
+            $urlParts = parse_url($url);
+            
+            // Split the path by / and encode each segment separately
+            $pathSegments = explode('/', $urlParts['path']);
+            $encodedSegments = [];
+            
+            foreach ($pathSegments as $segment) {
+                if (!empty($segment)) {
+                    // Replace + with space before encoding to avoid double encoding
+                    $segment = str_replace('+', ' ', $segment);
+                    $encodedSegments[] = rawurlencode($segment);
+                } else {
+                    $encodedSegments[] = '';
+                }
+            }
+            
+            $encodedPath = implode('/', $encodedSegments);
+            
+            // Ensure we maintain the leading slash
+            if (substr($urlParts['path'], 0, 1) === '/') {
+                $encodedPath = '/' . ltrim($encodedPath, '/');
+            }
+            
+            $encodedUrl = $urlParts['scheme'] . '://' . $urlParts['host'] . $encodedPath;
+            if (isset($urlParts['query'])) {
+                $encodedUrl .= '?' . $urlParts['query'];
+            }
+            
+            error_log("Encoded URL: " . $encodedUrl);
+            
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $encodedUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+        }
+        
         curl_close($ch);
 
         if ($curlError) {
@@ -133,16 +182,34 @@ class LocationFetcher {
     public function fetchByFreguesiaAndMunicipio($freguesia, $municipio) {
         error_log("fetchByFreguesiaAndMunicipio called with freguesia: " . $freguesia . ", municipio: " . $municipio);
         
-        // Primeiro, busca os dados completos da freguesia (já deve incluir censos2021 e censos2011)
-        $endpoint = "/municipio/" . urlencode($municipio) . "/freguesia/" . urlencode($freguesia);
-        $params = ['json' => 'true'];
+        // First, encode the freguesia name for URL path segments - use raw format with spaces preserved
+        // This will keep spaces and special characters as-is, which is what the API expects
+        $rawFreguesia = str_replace('+', ' ', $freguesia); // Replace any + with spaces
+        $rawFreguesia = str_replace('%', '%25', $rawFreguesia); // First encode % to avoid double encoding
+        
+        // First try direct path with raw encoding (spaces remain spaces in URL)
+        $endpoint = "/freguesia/" . $rawFreguesia;
+        $params = ['municipio' => $municipio, 'json' => 'true'];
         $result = $this->callApi($endpoint, $params);
         
-        // Tenta a outra variante da URL se a primeira falhar
+        // If first attempt fails, try with standard encoding
         if (!$result['success']) {
-            error_log("Primeira tentativa falhou, tentando endpoint alternativo");
-            $endpoint = "/freguesia/" . urlencode($freguesia);
+            error_log("Raw encoding attempt failed, trying with standard URL encoding");
+            // Use rawurlencode instead of urlencode to avoid converting spaces to +
+            $encodedFreguesia = rawurlencode($freguesia);
+            $endpoint = "/freguesia/" . $encodedFreguesia;
             $params = ['municipio' => $municipio, 'json' => 'true'];
+            $result = $this->callApi($endpoint, $params);
+        }
+        
+        // Try the municipality/freguesia endpoint as a last resort
+        if (!$result['success']) {
+            error_log("Standard URL encoding failed, trying municipality/freguesia endpoint");
+            // Use rawurlencode instead of urlencode
+            $encodedMunicipio = rawurlencode($municipio);
+            $encodedFreguesia = rawurlencode($freguesia);
+            $endpoint = "/municipio/" . $encodedMunicipio . "/freguesia/" . $encodedFreguesia;
+            $params = ['json' => 'true'];
             $result = $this->callApi($endpoint, $params);
         }
         
@@ -158,9 +225,16 @@ class LocationFetcher {
             if (!isset($result['data']['geojson'])) {
                 error_log("Buscando geometria para a freguesia: " . $freguesia);
                 
-                $geometryEndpoint = "/freguesia/" . urlencode($freguesia) . "/geometria";
+                // Use raw encoding for geometry endpoint
+                $geometryEndpoint = "/freguesia/" . $rawFreguesia . "/geometria";
                 $geometryParams = ['municipio' => $municipio, 'json' => 'true'];
                 $geometryResult = $this->callApi($geometryEndpoint, $geometryParams);
+                
+                // Try standard encoding if raw fails
+                if (!$geometryResult['success']) {
+                    $geometryEndpoint = "/freguesia/" . rawurlencode($freguesia) . "/geometria";
+                    $geometryResult = $this->callApi($geometryEndpoint, $geometryParams);
+                }
                 
                 if ($geometryResult['success'] && isset($geometryResult['data'])) {
                     $result['data']['geojson'] = $geometryResult['data'];
@@ -179,9 +253,16 @@ class LocationFetcher {
             if (!isset($result['data']['area_ha']) && !isset($result['data']['areaha'])) {
                 error_log("Buscando dados de área para a freguesia: " . $freguesia);
                 
-                $areaEndpoint = "/freguesia/" . urlencode($freguesia) . "/area";
+                // Use raw encoding for area endpoint
+                $areaEndpoint = "/freguesia/" . $rawFreguesia . "/area";
                 $areaParams = ['municipio' => $municipio, 'json' => 'true'];
                 $areaResult = $this->callApi($areaEndpoint, $areaParams);
+                
+                // Try standard encoding if raw fails
+                if (!$areaResult['success']) {
+                    $areaEndpoint = "/freguesia/" . rawurlencode($freguesia) . "/area";
+                    $areaResult = $this->callApi($areaEndpoint, $areaParams);
+                }
                 
                 if ($areaResult['success'] && isset($areaResult['data']) && isset($areaResult['data']['area_ha'])) {
                     $result['data']['area_ha'] = $areaResult['data']['area_ha'];
