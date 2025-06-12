@@ -221,7 +221,28 @@ class LocationFetcher {
                      ", censos2011 presente: " . 
                      (isset($result['data']['censos2011']) ? "SIM" : "NÃO"));
             
-            // Buscar geometria (GeoJSON) se não estiver presente
+            // Check if geojsons object exists in the response
+            if (isset($result['data']['geojsons'])) {
+                // If there's a specific freguesia GeoJSON, use it
+                if (isset($result['data']['geojsons']['freguesia'])) {
+                    $result['data']['geojson'] = $result['data']['geojsons']['freguesia'];
+                    error_log("Found freguesia boundary in geojsons.freguesia");
+                }
+                // If there's a freguesias array, find the matching freguesia
+                else if (isset($result['data']['geojsons']['freguesias']) && is_array($result['data']['geojsons']['freguesias'])) {
+                    foreach ($result['data']['geojsons']['freguesias'] as $freguesiaGeoJson) {
+                        if (isset($freguesiaGeoJson['properties']) && 
+                            isset($freguesiaGeoJson['properties']['Freguesia']) && 
+                            $freguesiaGeoJson['properties']['Freguesia'] === $freguesia) {
+                            $result['data']['geojson'] = $freguesiaGeoJson;
+                            error_log("Found freguesia boundary in geojsons.freguesias array");
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // If still no geojson, try to fetch it
             if (!isset($result['data']['geojson'])) {
                 error_log("Buscando geometria para a freguesia: " . $freguesia);
                 
@@ -290,8 +311,13 @@ class LocationFetcher {
                      ", censos2011 presente: " . 
                      (isset($result['data']['censos2011']) ? "SIM" : "NÃO"));
             
-            // Buscar geometria (GeoJSON) se não estiver presente
-            if (!isset($result['data']['geojson'])) {
+            // Check if geojsons.municipio exists and use it for the boundary
+            if (isset($result['data']['geojsons']) && isset($result['data']['geojsons']['municipio'])) {
+                $result['data']['geojson'] = $result['data']['geojsons']['municipio'];
+                error_log("Found municipality boundary in geojsons.municipio");
+            }
+            // If not, try to fetch geometry if geojson is not present
+            else if (!isset($result['data']['geojson'])) {
                 error_log("Buscando geometria para o município: " . $municipio);
                 
                 $geometryEndpoint = "/municipio/" . urlencode($municipio) . "/geometria";

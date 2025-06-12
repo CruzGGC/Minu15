@@ -1091,6 +1091,27 @@ function drawLocationBoundary(geojson) {
             }
         }
         
+        // Handle the case where we have a geojsons object with multiple geometries
+        if (geojson.geojsons) {
+            console.log('Found geojsons object with multiple geometries');
+            
+            // For municipalities, use the municipio geometry
+            if (geojson.geojsons.municipio) {
+                console.log('Using municipio geometry');
+                geojson = geojson.geojsons.municipio;
+            }
+            // For freguesias, use the freguesia geometry
+            else if (geojson.geojsons.freguesia) {
+                console.log('Using freguesia geometry');
+                geojson = geojson.geojsons.freguesia;
+            }
+            // If we have a freguesias array, use the first one (or find the matching one)
+            else if (geojson.geojsons.freguesias && geojson.geojsons.freguesias.length > 0) {
+                console.log('Using first freguesia from freguesias array');
+                geojson = geojson.geojsons.freguesias[0];
+            }
+        }
+        
         // Normalize GeoJSON object if needed
         if (!geojson.type && geojson.coordinates) {
             // If it's missing the type but has coordinates, assume it's a Polygon or MultiPolygon
@@ -1123,12 +1144,37 @@ function drawLocationBoundary(geojson) {
         // Add new polygon
         locationPolygon = L.geoJSON(geojson, {
             style: function (feature) {
-                return {
-                    color: '#3498db',
+                // Determine the style based on the type of boundary
+                let style = {
                     weight: 3,
                     opacity: 0.7,
                     fillOpacity: 0.2
                 };
+                
+                // Try to determine the boundary type from properties
+                if (feature.properties) {
+                    if (feature.properties.Freguesia || feature.properties.freguesia) {
+                        // Freguesia style
+                        style.color = '#2ecc71'; // Green
+                        style.className = 'freguesia-boundary';
+                    } else if (feature.properties.Concelho || feature.properties.concelho || feature.properties.Municipio || feature.properties.municipio) {
+                        // Concelho/Municipio style
+                        style.color = '#3498db'; // Blue
+                        style.className = 'concelho-boundary';
+                    } else if (feature.properties.Distrito || feature.properties.distrito) {
+                        // Distrito style
+                        style.color = '#9b59b6'; // Purple
+                        style.className = 'distrito-boundary';
+                    } else {
+                        // Default style
+                        style.color = '#3498db';
+                    }
+                } else {
+                    // Default style
+                    style.color = '#3498db';
+                }
+                
+                return style;
             },
             onEachFeature: function (feature, layer) {
                 let name = 'Localização';
@@ -1140,6 +1186,14 @@ function drawLocationBoundary(geojson) {
                            feature.properties.NOME || 
                            feature.properties.name ||
                            feature.properties.NAME ||
+                           feature.properties.Freguesia ||
+                           feature.properties.freguesia ||
+                           feature.properties.Concelho ||
+                           feature.properties.concelho ||
+                           feature.properties.Municipio ||
+                           feature.properties.municipio ||
+                           feature.properties.Distrito ||
+                           feature.properties.distrito ||
                            name;
                 }
                 
