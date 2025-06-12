@@ -967,7 +967,7 @@ function formatDemographicData($data) {
                                 </div>
                             <?php endif; ?>
                         </div>
-
+                        
                         <!-- Distribuição por género -->
                         <?php if ($males && $females): ?>
                             <h3 class="subsection-title">Distribuição por Género</h3>
@@ -1031,7 +1031,7 @@ function formatDemographicData($data) {
                             </div>
                             
                             <div class="age-distribution">
-                                <?php if ($youngPopulation): ?>
+                            <?php if ($youngPopulation): ?>
                                     <div class="age-group">
                                         <div class="age-label">0-14 anos</div>
                                         <div class="age-bar">
@@ -1039,7 +1039,7 @@ function formatDemographicData($data) {
                                         </div>
                                         <div class="age-value">
                                             <?php echo number_format($youngPopulation, 0, ',', '.'); ?> 
-                                            (<?php echo round(($youngPopulation / $population) * 100, 1); ?>%)
+                                    (<?php echo round(($youngPopulation / $population) * 100, 1); ?>%)
                                         </div>
                                     </div>
                                 <?php endif; ?>
@@ -1055,9 +1055,9 @@ function formatDemographicData($data) {
                                             (<?php echo round(($youngAdults / $population) * 100, 1); ?>%)
                                         </div>
                                     </div>
-                                <?php endif; ?>
-                                
-                                <?php if ($workingPopulation): ?>
+                            <?php endif; ?>
+                            
+                            <?php if ($workingPopulation): ?>
                                     <div class="age-group">
                                         <div class="age-label">25-64 anos</div>
                                         <div class="age-bar">
@@ -1065,12 +1065,12 @@ function formatDemographicData($data) {
                                         </div>
                                         <div class="age-value">
                                             <?php echo number_format($workingPopulation, 0, ',', '.'); ?>
-                                            (<?php echo round(($workingPopulation / $population) * 100, 1); ?>%)
+                                    (<?php echo round(($workingPopulation / $population) * 100, 1); ?>%)
                                         </div>
                                     </div>
-                                <?php endif; ?>
-                                
-                                <?php if ($elderlyPopulation): ?>
+                            <?php endif; ?>
+                            
+                            <?php if ($elderlyPopulation): ?>
                                     <div class="age-group">
                                         <div class="age-label">65+ anos</div>
                                         <div class="age-bar">
@@ -1078,7 +1078,7 @@ function formatDemographicData($data) {
                                         </div>
                                         <div class="age-value">
                                             <?php echo number_format($elderlyPopulation, 0, ',', '.'); ?>
-                                            (<?php echo round(($elderlyPopulation / $population) * 100, 1); ?>%)
+                                    (<?php echo round(($elderlyPopulation / $population) * 100, 1); ?>%)
                                         </div>
                                     </div>
                                 <?php endif; ?>
@@ -1116,8 +1116,8 @@ function formatDemographicData($data) {
                                             <?php echo number_format($primaryResidences, 0, ',', '.'); ?>
                                             <?php if ($dwellings): ?>
                                                 (<?php echo round(($primaryResidences / $dwellings) * 100, 1); ?>%)
-                                            <?php endif; ?>
-                                        </div>
+                            <?php endif; ?>
+                        </div>
                                     </div>
                                 <?php endif; ?>
                                 

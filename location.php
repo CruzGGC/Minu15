@@ -206,6 +206,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <!-- Modal overlay for popups -->
     <div class="modal-overlay" id="modal-overlay"></div>
     
+    <!-- Census data sidebar - completely new implementation -->
+    <div class="census-sidebar" id="census-sidebar">
+        <div class="census-header">
+            <div class="census-title">
+                <h2 id="census-location-name">Nome da Localidade</h2>
+                <p id="census-location-type">Distrito / Concelho / Freguesia</p>
+            </div>
+            <button class="census-close-btn" id="census-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="census-body">
+            <div class="census-card census-highlight">
+                <div class="census-year-toggle">
+                    <span>2011</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="census-year-toggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span>2021</span>
+                </div>
+                
+                <div class="census-main-stat">
+                    <div class="stat-value" id="population-value">0</div>
+                    <div class="stat-label">Habitantes</div>
+                    <div class="stat-change" id="population-change"><i class="fas fa-arrow-up"></i> 0%</div>
+                </div>
+            </div>
+            
+            <div class="census-row">
+                <div class="census-card">
+                    <div class="card-icon"><i class="fas fa-male"></i><i class="fas fa-female"></i></div>
+                    <div class="card-content">
+                        <div class="mini-chart" id="gender-chart"></div>
+                        <div class="stat-label">Género</div>
+                    </div>
+                </div>
+                
+                <div class="census-card">
+                    <div class="card-icon"><i class="fas fa-calendar-alt"></i></div>
+                    <div class="card-content">
+                        <div class="stat-value" id="average-age-value">0</div>
+                        <div class="stat-label">Idade Média</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="census-row">
+                <div class="census-card">
+                    <div class="card-icon"><i class="fas fa-building"></i></div>
+                    <div class="card-content">
+                        <div class="stat-value" id="buildings-value">0</div>
+                        <div class="stat-label">Edifícios</div>
+                    </div>
+                </div>
+                
+                <div class="census-card">
+                    <div class="card-icon"><i class="fas fa-home"></i></div>
+                    <div class="card-content">
+                        <div class="stat-value" id="dwellings-value">0</div>
+                        <div class="stat-label">Alojamentos</div>
+                    </div>
+                </div>
+                
+                <div class="census-card">
+                    <div class="card-icon"><i class="fas fa-user-friends"></i></div>
+                    <div class="card-content">
+                        <div class="stat-value" id="density-value">0</div>
+                        <div class="stat-label">Densidade</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="census-card full-width">
+                <h3>Distribuição Etária</h3>
+                <div class="age-bars" id="age-bars">
+                    <!-- Age bars will be added here via JavaScript -->
+                </div>
+            </div>
+            
+            <div class="census-footer">
+                <a href="#" id="census-view-full-data" class="census-button">
+                    <i class="fas fa-external-link-alt"></i> Ver Informação Completa
+                </a>
+            </div>
+        </div>
+    </div>
+    
     <!-- Custom JS -->
     <script src="js/location.js"></script>
 </body>

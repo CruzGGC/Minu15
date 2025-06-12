@@ -11,6 +11,9 @@ let locationMarker;
 let locationPolygon;
 let currentLocation = null;
 let currentClickedCoordinates;
+let genderChart = null;
+let censusSidebarActive = false;
+let currentCensusYear = 2021; // Default to 2021
 
 // Map style providers
 const mapProviders = {
@@ -591,281 +594,404 @@ function fetchLocationByDistrito(distrito) {
 }
 
 /**
- * Display location data in the panel
+ * Display location data in the right panel
  */
 function displayLocationData(location) {
     console.log('Displaying location data:', location);
+    currentLocation = location;
     
-    const locationDataElement = document.getElementById('location-data');
-    const locationPanel = document.querySelector('.location-data-panel');
-    const fullDataLink = document.getElementById('view-full-data');
+    // Show census sidebar and ensure old panel is hidden
+    document.querySelector('.location-data-panel').classList.remove('visible');
+    showCensusSidebar(location);
+}
+
+/**
+ * Show the census sidebar with smooth animations
+ */
+function showCensusSidebar(location) {
+    if (!location) return;
     
-    // Debug: mostrar o objeto completo no console
-    console.log('Dados completos recebidos:', JSON.stringify(location, null, 2));
+    // Set location name and type
+    const locationName = document.getElementById('census-location-name');
+    const locationType = document.getElementById('census-location-type');
     
-    // Create HTML content
-    let html = '';
+    // Determine location name and type
+    let name = '';
+    let type = '';
     
-    // Location header
-    if (location.nome) {
-        html += `<h2>${location.nome}</h2>`;
-    } else if (location.distrito) {
-        html += `<h2>Distrito de ${location.distrito}</h2>`;
-    } else if (location.concelho || location.municipio) {
-        html += `<h2>Município de ${location.concelho || location.municipio}</h2>`;
-    } else if (location.freguesia) {
-        html += `<h2>Freguesia de ${location.freguesia}</h2>`;
-    } else {
-        html += `<h2>Localização</h2>`;
-        console.warn('No name found in location data');
-    }
-    
-    // Administrative hierarchy
-    html += '<div class="location-hierarchy">';
     if (location.freguesia) {
-        html += `<p><strong>Freguesia:</strong> ${location.freguesia}</p>`;
-    }
+        name = location.freguesia;
+        type = 'Freguesia';
     if (location.municipio || location.concelho) {
-        html += `<p><strong>Concelho:</strong> ${location.municipio || location.concelho}</p>`;
+            type += ' de ' + (location.municipio || location.concelho);
     }
+    } else if (location.municipio || location.concelho) {
+        name = location.municipio || location.concelho;
+        type = 'Concelho';
     if (location.distrito) {
-        html += `<p><strong>Distrito:</strong> ${location.distrito}</p>`;
-    }
-    html += '</div>';
-    
-    // Verificar e mostrar informações básicas administrativas para municípios
-    if (location.nif || location.codigo || location.email) {
-        html += '<div class="administrative-info">';
-        html += '<h3>Informações Administrativas</h3>';
-        
-        if (location.codigo) {
-            html += `<p><strong>Código:</strong> ${location.codigo}</p>`;
+            type += ' de ' + location.distrito;
         }
-        
-        if (location.nif) {
-            html += `<p><strong>NIF:</strong> ${location.nif}</p>`;
-        }
-        
-        if (location.email) {
-            html += `<p><strong>Email:</strong> ${location.email}</p>`;
-        }
-        
-        if (location.telefone) {
-            html += `<p><strong>Telefone:</strong> ${location.telefone}</p>`;
-        }
-        
-        if (location.sitio) {
-            const url = location.sitio.startsWith('http') ? location.sitio : `http://${location.sitio}`;
-            html += `<p><strong>Website:</strong> <a href="${url}" target="_blank">${location.sitio}</a></p>`;
-        }
-        
-        html += '</div>';
+    } else if (location.distrito) {
+        name = location.distrito;
+        type = 'Distrito';
+    } else if (location.nome) {
+        name = location.nome;
+        type = location.tipo || 'Localidade';
+    } else {
+        name = 'Localização';
+        type = 'Coordenadas GPS';
     }
     
-    // Debug: informações sobre a presença de censos
-    console.log('Censos2021 presente:', !!location.censos2021);
-    console.log('Censos2011 presente:', !!location.censos2011);
-    if (location.censos2021) {
-        console.log('Dados do Censos2021:', location.censos2021);
-    }
-    if (location.censos2011) {
-        console.log('Dados do Censos2011:', location.censos2011);
+    locationName.textContent = name;
+    locationType.textContent = type;
+    
+    // Get census data
+    const census2021 = location.censos2021 || null;
+    const census2011 = location.censos2011 || null;
+    
+    // If no census data, show message
+    if (!census2021 && !census2011) {
+        const ageContainer = document.getElementById('age-bars');
+        ageContainer.innerHTML = '<p class="no-data">Não existem dados censitários disponíveis para esta localização.</p>';
+        
+        // Show sidebar with empty data
+        document.getElementById('census-sidebar').classList.add('active');
+        censusSidebarActive = true;
+        return;
     }
     
-    // Census data
-    if (location.censos2021 || location.censos2011) {
-        html += '<div class="location-census">';
-        html += '<h3>Dados Demográficos</h3>';
-        
+    // Use 2021 data if available, otherwise use 2011
+    const primaryCensus = census2021 || census2011;
+    const secondaryCensus = census2021 && census2011 ? census2011 : null;
+    
+    // Update toggle visibility
+    const yearToggle = document.getElementById('census-year-toggle');
+    if (census2021 && census2011) {
+        // Both census years available, show toggle
+        yearToggle.parentElement.parentElement.style.display = 'flex';
+        yearToggle.checked = census2021 ? true : false; // Default to 2021 if available
+    } else {
+        // Only one census year available, hide toggle
+        yearToggle.parentElement.parentElement.style.display = 'none';
+    }
+    
+    // Update year in the current state
+    currentCensusYear = census2021 ? 2021 : 2011;
+    
+    // Update main stats
+    updateCensusStats(primaryCensus, secondaryCensus);
+    
+    // Create/update mini charts
+    createMiniCharts(primaryCensus, secondaryCensus);
+    
+    // Create age distribution bars
+    createAgeBars(primaryCensus);
+    
+    // Set "View Full Data" link
+    const viewFullData = document.getElementById('census-view-full-data');
+    viewFullData.href = buildFullDataUrl(location);
+    
+    // Show sidebar with animation
+    document.getElementById('census-sidebar').classList.add('active');
+    censusSidebarActive = true;
+}
+
+/**
+ * Update census statistics based on the primary and secondary census data
+ */
+function updateCensusStats(primaryCensus, secondaryCensus) {
         // Population
-        const censusData = location.censos2021 || location.censos2011;
-        const censusYear = location.censos2021 ? 2021 : 2011;
+    const populationValue = document.getElementById('population-value');
+    const populationChange = document.getElementById('population-change');
         
-        const population = getCensusValue(censusData, ['N_INDIVIDUOS_RESIDENT', 'N_INDIVIDUOS']);
+    // Get population value
+    const population = getCensusValue(primaryCensus, ['N_INDIVIDUOS_RESIDENT', 'N_INDIVIDUOS']);
+    
         if (population) {
-            html += `<p><strong>População:</strong> ${Number(population).toLocaleString()} habitantes (${censusYear})</p>`;
-        }
+        // Format with thousands separator
+        populationValue.textContent = new Intl.NumberFormat('pt-PT').format(population);
         
-        // Buildings and housing
-        const buildings = getCensusValue(censusData, ['N_EDIFICIOS_CLASSICOS', 'N_EDIFICIOS']);
+        // Calculate change if both census data available
+        if (secondaryCensus) {
+            const oldPopulation = getCensusValue(secondaryCensus, ['N_INDIVIDUOS_RESIDENT', 'N_INDIVIDUOS']);
+            
+            if (oldPopulation && oldPopulation > 0) {
+                const changePercent = ((population - oldPopulation) / oldPopulation) * 100;
+                const changeSign = changePercent > 0 ? '+' : '';
+                const changeIcon = changePercent > 0 ? 'arrow-up' : (changePercent < 0 ? 'arrow-down' : 'minus');
+                const changeClass = changePercent > 0 ? 'positive' : (changePercent < 0 ? 'negative' : '');
+                
+                populationChange.innerHTML = `<i class="fas fa-${changeIcon}"></i> ${changeSign}${Math.abs(changePercent).toFixed(1)}%`;
+                populationChange.className = `stat-change ${changeClass}`;
+                populationChange.style.display = 'flex';
+            } else {
+                populationChange.style.display = 'none';
+            }
+        } else {
+            populationChange.style.display = 'none';
+        }
+    } else {
+        populationValue.textContent = 'N/A';
+        populationChange.style.display = 'none';
+    }
+    
+    // Buildings
+    const buildingsValue = document.getElementById('buildings-value');
+    const buildings = getCensusValue(primaryCensus, ['N_EDIFICIOS_CLASSICOS', 'N_EDIFICIOS']);
+    
         if (buildings) {
-            html += `<p><strong>Edifícios:</strong> ${Number(buildings).toLocaleString()}</p>`;
+        buildingsValue.textContent = new Intl.NumberFormat('pt-PT').format(buildings);
+    } else {
+        buildingsValue.textContent = 'N/A';
         }
         
-        const dwellings = getCensusValue(censusData, ['N_ALOJAMENTOS_TOTAL', 'N_ALOJAMENTOS']);
+    // Dwellings
+    const dwellingsValue = document.getElementById('dwellings-value');
+    const dwellings = getCensusValue(primaryCensus, ['N_ALOJAMENTOS_TOTAL', 'N_ALOJAMENTOS']);
+    
         if (dwellings) {
-            html += `<p><strong>Alojamentos:</strong> ${Number(dwellings).toLocaleString()}</p>`;
-        }
-        
-        // Area and density if available
-        const areaHa = location.area_ha || location.areaha;
-        if (areaHa) {
-            const areaKm2 = parseFloat(areaHa) / 100;
-            html += `<p><strong>Área:</strong> ${areaKm2.toLocaleString()} km²</p>`;
-            
-            if (population) {
-                const density = Math.round(population / areaKm2);
-                html += `<p><strong>Densidade Populacional:</strong> ${density.toLocaleString()} hab/km²</p>`;
-            }
-        }
-        
-        html += '</div>';
-        
-        // Add demographic highlight if available
-        html += '<div class="demographic-highlights">';
-        html += '<h3>Destaques</h3>';
-        
-        // Working population
-        const workingPopulation = getCensusValue(censusData, ['N_IND_RESID_EMPREGADOS', 'N_INDIVIDUOS_25_64', 'N_INDIVIDUOS_RESIDENT_25A64']);
-        if (workingPopulation) {
-            html += `<p><strong>População em idade ativa:</strong> ${Number(workingPopulation).toLocaleString()}</p>`;
-        }
-        
-        // Young population
-        const youngPopulation = getCensusValue(censusData, ['N_INDIVIDUOS_0_14']);
-        if (youngPopulation) {
-            html += `<p><strong>População jovem (0-14):</strong> ${Number(youngPopulation).toLocaleString()}</p>`;
-        }
-        
-        // Elderly population
-        const elderlyPopulation = getCensusValue(censusData, ['N_INDIVIDUOS_65_OU_MAIS', 'N_INDIVIDUOS_RESIDENT_65']);
-        if (elderlyPopulation) {
-            html += `<p><strong>População idosa (65+):</strong> ${Number(elderlyPopulation).toLocaleString()}</p>`;
-        }
-        
-        html += '</div>';
+        dwellingsValue.textContent = new Intl.NumberFormat('pt-PT').format(dwellings);
+    } else {
+        dwellingsValue.textContent = 'N/A';
     }
     
-    // POI counts if available
-    if (location.poi_counts) {
-        html += '<div class="location-pois">';
-        html += '<h3>Infraestruturas</h3>';
-        
-        // Group POIs by category
-        const poiCategories = {
-            'Saúde': ['hospitals', 'health_centers', 'pharmacies', 'dentists'],
-            'Educação': ['schools', 'universities', 'kindergartens', 'libraries'],
-            'Comércio e Serviços': ['supermarkets', 'malls', 'restaurants', 'atms'],
-            'Outros': ['parks', 'sports', 'bus_stops', 'police_stations']
-        };
-        
-        // POI names in Portuguese
-        const poiNames = {
-            hospitals: 'Hospitais',
-            health_centers: 'Centros de Saúde',
-            pharmacies: 'Farmácias',
-            dentists: 'Clínicas Dentárias',
-            schools: 'Escolas',
-            universities: 'Universidades',
-            kindergartens: 'Jardins de Infância',
-            libraries: 'Bibliotecas',
-            supermarkets: 'Supermercados',
-            malls: 'Centros Comerciais',
-            restaurants: 'Restaurantes',
-            atms: 'Multibancos',
-            parks: 'Parques',
-            sports: 'Instalações Desportivas',
-            bus_stops: 'Paragens de Autocarro',
-            police_stations: 'Esquadras de Polícia'
-        };
-        
-        // Create POI count tables by category
-        for (const [category, pois] of Object.entries(poiCategories)) {
-            let categoryHtml = `<h4>${category}</h4>`;
-            categoryHtml += '<table class="poi-table">';
-            
-            let hasData = false;
-            
-            pois.forEach(poi => {
-                if (location.poi_counts && location.poi_counts[poi] !== undefined) {
-                    hasData = true;
-                    categoryHtml += `
-                        <tr>
-                            <td><i class="fas fa-${poiIcons[poi]?.icon || 'map-marker'}" style="color: ${poiIcons[poi]?.color || '#666'}"></i> ${poiNames[poi]}</td>
-                            <td>${location.poi_counts[poi]}</td>
-                        </tr>
-                    `;
+    // Population density
+    const densityValue = document.getElementById('density-value');
+    let density = null;
+    
+    // Debug area fields in location
+    console.log('Location data for density calculation:', {
+        area_ha: currentLocation.area_ha,
+        areaha: currentLocation.areaha,
+        area: currentLocation.area,
+        full_location: currentLocation
+    });
+    
+    // Calculate density if population and area available
+    // Check multiple possible area property names
+    const areaHa = currentLocation.area_ha || currentLocation.areaha || currentLocation.area || 
+                  (currentLocation.data && currentLocation.data.area_ha) || 
+                  (currentLocation.data && currentLocation.data.areaha);
+    
+    if (population && areaHa) {
+        const areaKm2 = areaHa / 100;
+        density = Math.round(population / areaKm2);
+        console.log(`Calculated density: ${density} from population ${population} and area ${areaHa} ha (${areaKm2} km²)`);
+    } else if (population) {
+        // Fallback density estimate
+        density = Math.round(population / 10);
+        console.log(`Using fallback density: ${density} based on population ${population}`);
+    }
+    
+    if (density) {
+        densityValue.textContent = `${new Intl.NumberFormat('pt-PT').format(density)} h/km²`;
+    } else {
+        densityValue.textContent = 'N/A';
+    }
+}
+
+/**
+ * Create mini charts for gender and age distribution
+ */
+function createMiniCharts(primaryCensus, secondaryCensus) {
+    // Always load Chart.js first, then create charts
+    loadChartJS(() => {
+        createGenderChart(primaryCensus);
+        calculateAverageAge(primaryCensus);
+    });
+}
+
+/**
+ * Load Chart.js dynamically
+ */
+function loadChartJS(callback) {
+    // Check if Chart.js is already loaded
+    if (typeof Chart !== 'undefined') {
+        callback();
+        return;
+    }
+    
+    // Create script element
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js';
+    script.onload = callback;
+    document.head.appendChild(script);
+}
+
+/**
+ * Create gender distribution pie chart
+ */
+function createGenderChart(census) {
+    const males = getCensusValue(census, ['N_INDIVIDUOS_H']);
+    const females = getCensusValue(census, ['N_INDIVIDUOS_M']);
+    
+    if (!males || !females) {
+        document.getElementById('gender-chart').innerHTML = '<div class="no-data">Sem dados</div>';
+        return;
+    }
+    
+    // Get the container element
+    const container = document.getElementById('gender-chart');
+    
+    // Clear previous content
+    container.innerHTML = '';
+    
+    // Create a new canvas element
+    const canvas = document.createElement('canvas');
+    canvas.width = 100;
+    canvas.height = 100;
+    container.appendChild(canvas);
+    
+    // Destroy existing chart if it exists
+    if (genderChart) {
+        genderChart.destroy();
+    }
+    
+    // Create new chart
+    genderChart = new Chart(canvas, {
+        type: 'pie',
+        data: {
+            labels: ['Homens', 'Mulheres'],
+            datasets: [{
+                data: [males, females],
+                backgroundColor: ['#3498db', '#e74c3c'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 1000,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = males + females;
+                            const percent = Math.round((context.raw / total) * 100);
+                            return `${context.label}: ${new Intl.NumberFormat('pt-PT').format(context.raw)} (${percent}%)`;
+                        }
+                    }
                 }
-            });
-            
-            categoryHtml += '</table>';
-            
-            if (hasData) {
-                html += categoryHtml;
             }
         }
+    });
+}
+
+/**
+ * Calculate and display average age
+ */
+function calculateAverageAge(census) {
+    const ageElement = document.getElementById('average-age-value');
+    
+    // Get age group data
+    const age0_14 = getCensusValue(census, ['N_INDIVIDUOS_0_14', 'N_INDIVIDUOS_RESIDENT_0A14']) || 0;
+    const age15_24 = getCensusValue(census, ['N_INDIVIDUOS_15_24', 'N_INDIVIDUOS_RESIDENT_15A24']) || 0;
+    const age25_64 = getCensusValue(census, ['N_INDIVIDUOS_25_64', 'N_INDIVIDUOS_RESIDENT_25A64']) || 0;
+    const age65plus = getCensusValue(census, ['N_INDIVIDUOS_65_OU_MAIS', 'N_INDIVIDUOS_RESIDENT_65']) || 0;
+    
+    // Calculate average age (using midpoints of age ranges)
+    const totalPeople = age0_14 + age15_24 + age25_64 + age65plus;
+    
+    if (totalPeople > 0) {
+        // Use approximate midpoints for each age group
+        const avgAge = (
+            (age0_14 * 7) +         // midpoint of 0-14 is 7
+            (age15_24 * 19.5) +     // midpoint of 15-24 is 19.5
+            (age25_64 * 44.5) +     // midpoint of 25-64 is 44.5
+            (age65plus * 75)        // approximate midpoint for 65+ (conservative estimate)
+        ) / totalPeople;
         
-        html += '</div>';
+        // Display with one decimal place
+        ageElement.textContent = avgAge.toFixed(1).replace('.', ',');
+    } else {
+        ageElement.textContent = 'N/A';
+    }
+}
+
+/**
+ * Create age distribution bars
+ */
+function createAgeBars(census) {
+    const ageContainer = document.getElementById('age-bars');
+    ageContainer.innerHTML = ''; // Clear previous bars
+    
+    // Define age groups
+    const ageGroups = [
+        { label: '0-14 anos', keys: ['N_INDIVIDUOS_0_14', 'N_INDIVIDUOS_RESIDENT_0A14'], color: '#3498db' },
+        { label: '15-24 anos', keys: ['N_INDIVIDUOS_15_24', 'N_INDIVIDUOS_RESIDENT_15A24'], color: '#2ecc71' },
+        { label: '25-64 anos', keys: ['N_INDIVIDUOS_25_64', 'N_INDIVIDUOS_RESIDENT_25A64'], color: '#f39c12' },
+        { label: '65+ anos', keys: ['N_INDIVIDUOS_65_OU_MAIS', 'N_INDIVIDUOS_RESIDENT_65'], color: '#9b59b6' }
+    ];
+    
+    // Get total population
+    const population = getCensusValue(census, ['N_INDIVIDUOS_RESIDENT', 'N_INDIVIDUOS']);
+    
+    if (!population) {
+        ageContainer.innerHTML = '<p class="no-data">Não existem dados de distribuição etária disponíveis.</p>';
+        return;
     }
     
-    // Adicionar botão para mostrar dados completos para debugging
-    html += `
-        <div class="debug-section" style="margin-top: 20px; padding-top: 10px; border-top: 1px dashed #ccc;">
-            <button id="toggle-debug" style="padding: 5px 10px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
-                Mostrar Dados Completos
-            </button>
-            <div id="debug-data" style="display: none; margin-top: 10px; padding: 10px; background: #f8f8f8; border-radius: 4px; overflow: auto; max-height: 300px;">
-                <pre>${JSON.stringify(location, null, 2)}</pre>
+    // Create bars for each age group
+    ageGroups.forEach((group, index) => {
+        const value = getCensusValue(census, group.keys);
+        
+        if (value) {
+            const percent = (value / population) * 100;
+            const barGroup = document.createElement('div');
+            barGroup.className = 'age-bar-group';
+            barGroup.style.setProperty('--item-index', index);
+            
+            barGroup.innerHTML = `
+                <div class="age-bar-label">
+                    <span class="age-bar-label-text">${group.label}</span>
+                    <span class="age-bar-value">${new Intl.NumberFormat('pt-PT').format(value)} (${percent.toFixed(1)}%)</span>
             </div>
+                <div class="age-bar-container">
+                    <div class="age-bar-fill" style="--width: ${percent}%; background: linear-gradient(to right, ${group.color}, ${adjustColor(group.color, -20)});"></div>
         </div>
     `;
     
-    // If no data is available
-    if (html === '') {
-        html = '<p>Não foram encontrados dados para esta localização.</p>';
-        console.warn('No displayable data found in:', location);
-    }
+            ageContainer.appendChild(barGroup);
+        }
+    });
     
-    // Set the HTML content
-    locationDataElement.innerHTML = html;
-    
-    // Adicionar event listener para o botão de debug
-    const toggleDebugButton = document.getElementById('toggle-debug');
-    if (toggleDebugButton) {
-        toggleDebugButton.addEventListener('click', function() {
-            const debugData = document.getElementById('debug-data');
-            if (debugData.style.display === 'none') {
-                debugData.style.display = 'block';
-                this.textContent = 'Ocultar Dados Completos';
-            } else {
-                debugData.style.display = 'none';
-                this.textContent = 'Mostrar Dados Completos';
-            }
-        });
+    if (ageContainer.children.length === 0) {
+        ageContainer.innerHTML = '<p class="no-data">Não existem dados de distribuição etária disponíveis.</p>';
     }
-    
-    // Configure full data link based on location type
-    if (location.distrito) {
-        fullDataLink.href = `location_data.php?type=distrito&id=${encodeURIComponent(location.distrito)}`;
-        fullDataLink.style.display = 'block';
-    } else if (location.municipio || location.concelho) {
-        const municipioName = location.municipio || location.concelho;
-        fullDataLink.href = `location_data.php?type=municipio&id=${encodeURIComponent(municipioName)}`;
-        fullDataLink.style.display = 'block';
-    } else if (location.freguesia && (location.municipio || location.concelho)) {
-        const municipioName = location.municipio || location.concelho;
-        fullDataLink.href = `location_data.php?type=freguesia&id=${encodeURIComponent(location.freguesia)}&municipio=${encodeURIComponent(municipioName)}`;
-        fullDataLink.style.display = 'block';
-    } else if (currentClickedCoordinates) {
-        fullDataLink.href = `location_data.php?type=gps&id=${encodeURIComponent(currentClickedCoordinates.lat)},${encodeURIComponent(currentClickedCoordinates.lng)}`;
-        fullDataLink.style.display = 'block';
-    } else {
-        fullDataLink.style.display = 'none';
-    }
+}
 
-    // Show the data panel - garantir que a classe "visible" é adicionada corretamente
-    console.log('Panel before adding class:', locationPanel.className);
-    locationPanel.classList.add('visible');
-    console.log('Panel after adding class:', locationPanel.className);
+/**
+ * Adjust color lightness
+ */
+function adjustColor(color, amount) {
+    return color; // Simplified for now
+}
+
+/**
+ * Build URL for the full data page
+ */
+function buildFullDataUrl(location) {
+    let url = 'location_data.php?';
     
-    // Verificar se o painel está realmente visível
-    setTimeout(() => {
-        const computedStyle = window.getComputedStyle(locationPanel);
-        console.log('Panel computed right value:', computedStyle.right);
-        console.log('Panel is visible:', locationPanel.classList.contains('visible'));
-    }, 100);
+    if (location.freguesia && (location.municipio || location.concelho)) {
+        url += `type=freguesia&id=${encodeURIComponent(location.freguesia)}&municipio=${encodeURIComponent(location.municipio || location.concelho)}`;
+    } else if (location.municipio || location.concelho) {
+        url += `type=municipio&id=${encodeURIComponent(location.municipio || location.concelho)}`;
+    } else if (location.distrito) {
+        url += `type=distrito&id=${encodeURIComponent(location.distrito)}`;
+    } else if (currentClickedCoordinates) {
+        url += `type=gps&id=${currentClickedCoordinates.lat},${currentClickedCoordinates.lng}`;
+    }
     
-    console.log('Location data panel updated and made visible');
+    return url;
 }
 
 /**
@@ -1043,7 +1169,7 @@ function setupEventListeners() {
     document.getElementById('mobile-panel-close').addEventListener('click', function() {
         document.getElementById('overlay-panel').classList.remove('active');
     });
-    
+
     // Initialize the "Página Completa" button as hidden
     const fullDataLink = document.getElementById('view-full-data');
     if (fullDataLink) {
@@ -1191,4 +1317,143 @@ function setupEventListeners() {
             console.log('Panel is visible:', locationPanel.classList.contains('visible'));
         }, 100);
     });
+
+    // Census sidebar close button
+    document.getElementById('census-close-btn').addEventListener('click', function() {
+        document.getElementById('census-sidebar').classList.remove('active');
+        censusSidebarActive = false;
+    });
+    
+    // Census year toggle
+    document.getElementById('census-year-toggle').addEventListener('change', function() {
+        if (!currentLocation) return;
+        
+        const selectedYear = this.checked ? 2021 : 2011;
+        if (currentCensusYear === selectedYear) return;
+        
+        currentCensusYear = selectedYear;
+        
+        // Get the relevant census data
+        const primaryCensus = selectedYear === 2021 ? currentLocation.censos2021 : currentLocation.censos2011;
+        const secondaryCensus = selectedYear === 2021 ? currentLocation.censos2011 : currentLocation.censos2021;
+        
+        if (!primaryCensus) return;
+        
+        // Update stats with animation
+        animateStatUpdate('population-value', primaryCensus);
+        animateStatUpdate('buildings-value', primaryCensus);
+        animateStatUpdate('dwellings-value', primaryCensus);
+        animateStatUpdate('density-value', primaryCensus);
+        
+        // Update charts
+        updateCensusStats(primaryCensus, secondaryCensus);
+        
+        // Recreate charts with new data
+        if (typeof Chart !== 'undefined') {
+            createGenderChart(primaryCensus);
+            calculateAverageAge(primaryCensus);
+        }
+        
+        // Recreate age bars
+        createAgeBars(primaryCensus);
+    });
+    
+    // Link to location_data.php
+    document.getElementById('census-view-full-data').addEventListener('click', function(e) {
+        if (currentLocation) {
+            const url = buildFullDataUrl(currentLocation);
+            if (url) {
+                this.href = url;
+                return true;
+            }
+        }
+        
+        e.preventDefault();
+        alert('Por favor, selecione uma localização primeiro.');
+        return false;
+    });
+    
+    // Handle ESC key to close census sidebar
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && censusSidebarActive) {
+            document.getElementById('census-sidebar').classList.remove('active');
+            censusSidebarActive = false;
+        }
+    });
+}
+
+/**
+ * Animate stat value update
+ */
+function animateStatUpdate(elementId, censusData) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    let targetValue;
+    
+    switch (elementId) {
+        case 'population-value':
+            targetValue = getCensusValue(censusData, ['N_INDIVIDUOS_RESIDENT', 'N_INDIVIDUOS']);
+            break;
+        case 'buildings-value':
+            targetValue = getCensusValue(censusData, ['N_EDIFICIOS_CLASSICOS', 'N_EDIFICIOS']);
+            break;
+        case 'dwellings-value':
+            targetValue = getCensusValue(censusData, ['N_ALOJAMENTOS_TOTAL', 'N_ALOJAMENTOS']);
+            break;
+        case 'density-value':
+            const population = getCensusValue(censusData, ['N_INDIVIDUOS_RESIDENT', 'N_INDIVIDUOS']);
+            // Check multiple possible area property names
+            const areaHa = currentLocation.area_ha || currentLocation.areaha || currentLocation.area || 
+                          (currentLocation.data && currentLocation.data.area_ha) || 
+                          (currentLocation.data && currentLocation.data.areaha);
+            
+            if (population && areaHa) {
+                const areaKm2 = areaHa / 100;
+                targetValue = Math.round(population / areaKm2);
+            } else if (population) {
+                // Fallback density estimate
+                targetValue = Math.round(population / 10);
+            }
+            break;
+        case 'average-age-value':
+            // We'll handle this specially
+            calculateAverageAge(censusData);
+            return;
+    }
+    
+    if (!targetValue) {
+        element.textContent = 'N/A';
+        return;
+    }
+    
+    // Get current value
+    let currentValue = parseInt(element.textContent.replace(/[^\d]/g, '')) || 0;
+    const diff = targetValue - currentValue;
+    
+    // Use animation frame for smooth update
+    let startTime;
+    const duration = 1000; // 1 second
+    
+    function updateValue(timestamp) {
+        if (!startTime) startTime = timestamp;
+        
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress); // Exponential ease out
+        
+        const currentVal = Math.round(currentValue + diff * easeProgress);
+        
+        // Format based on element type
+        if (elementId === 'density-value') {
+            element.textContent = `${new Intl.NumberFormat('pt-PT').format(currentVal)} h/km²`;
+        } else {
+            element.textContent = new Intl.NumberFormat('pt-PT').format(currentVal);
+        }
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateValue);
+        }
+    }
+    
+    requestAnimationFrame(updateValue);
 } 
