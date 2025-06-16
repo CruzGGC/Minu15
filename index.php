@@ -36,7 +36,7 @@
         <div class="hero-overlay"></div>
         <div class="hero-content">
             <h1 class="zoom-in">Minu15 - Cidade em 15 Minutos</h1>
-            <p class="zoom-in">Descubra tudo o que está acessível a 15 minutos de onde você está</p>
+            <p class="zoom-in">Descubra tudo o que está acessível a 15 minutos de onde se encontra</p>
             <div class="cta-buttons zoom-in">
                 <a href="app.php" class="cta-button">
                     <i class="fas fa-map"></i>
@@ -47,8 +47,8 @@
                     Localizador Ideal <span class="button-indicator">(Conceito)</span>
                 </a>
                 <a href="location.php" class="cta-button cta-tertiary">
-                    <i class="fas fa-location-arrow"></i>
-                    Dados do INE
+                    <i class="fas fa-info-circle"></i>
+                    Dados Demográficos
                 </a>
             </div>
         </div>
@@ -61,42 +61,9 @@
                 <h2 class="fade-in">Sobre o Minu15</h2>
             </div>
             <div class="fade-in">
-                <p>O Minu15 é uma aplicação web que permite visualizar e analisar a acessibilidade urbana baseada no conceito de "Cidade de 15 Minutos" - um modelo de desenvolvimento urbano onde os cidadãos podem aceder a todas as suas necessidades básicas dentro de um raio de 15 minutos a pé ou de bicicleta da sua residência.</p>
-                <p>Através do uso de dados geoespaciais e análise de proximidade, o Minu15 ajuda a identificar áreas bem servidas e áreas com potencial para melhoria, promovendo cidades mais sustentáveis, acessíveis e habitáveis.</p>
+                <p>O Minu15 é uma aplicação web que permite visualizar e analisar a acessibilidade urbana baseada no conceito de "Cidade de 15 Minutos" - um modelo de desenvolvimento urbano onde os cidadãos podem aceder a todas as suas necessidades básicas num raio de 15 minutos a pé ou de bicicleta da sua residência.</p>
+                <p>Através da utilização de dados geoespaciais e análise de proximidade, o Minu15 ajuda a identificar áreas bem servidas e áreas com potencial para melhoria, promovendo cidades mais sustentáveis, acessíveis e habitáveis.</p>
             </div>
-        </div>
-    </section>
-    
-    <!-- Stats Counter Section -->
-    <section class="counter-section">
-        <div class="container">
-            <div class="counter-grid">
-                <div class="counter-item">
-                    <div class="counter-value"><span class="count" data-target="15">0</span>+</div>
-                    <div class="counter-label">Cidades Analisadas</div>
-                </div>
-                <div class="counter-item">
-                    <div class="counter-value"><span class="count" data-target="10000">0</span>+</div>
-                    <div class="counter-label">Usuários Ativos</div>
-                </div>
-                <div class="counter-item">
-                    <div class="counter-value"><span class="count" data-target="500000">0</span>+</div>
-                    <div class="counter-label">Pesquisas Realizadas</div>
-                </div>
-                <div class="counter-item">
-                    <div class="counter-value"><span class="count" data-target="25000">0</span>+</div>
-                    <div class="counter-label">POIs Mapeados</div>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <!-- Parallax Section 1 -->
-    <section class="parallax">
-        <div class="parallax-overlay"></div>
-        <div class="parallax-content">
-            <h2 class="fade-in">Cidades mais Vivíveis e Sustentáveis</h2>
-            <p class="fade-in">Promovendo mobilidade ativa, reduzindo deslocações desnecessárias e melhorando a qualidade de vida</p>
         </div>
     </section>
     
@@ -109,36 +76,101 @@
             <div class="feature-grid">
                 <div class="feature-card fade-in">
                     <div class="feature-img">
-                        <img src="images/landing/mapa_interativo.png" alt="Mapeamento Interativo" 
-                             onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#4361ee';" 
-                             style="width: 100%; height: 200px; object-fit: cover;">
+                        <i class="fas fa-map-marked-alt"></i>
                     </div>
                     <div class="feature-content">
                         <h3>Mapeamento Interativo</h3>
-                        <p>Visualize todas as amenidades e serviços num mapa interativo e personalizável.</p>
+                        <p>Visualize todas as comodidades e serviços num mapa interativo e personalizável. Selecione um ponto no mapa e veja automaticamente a área acessível a 15 minutos.</p>
                     </div>
                 </div>
                 <div class="feature-card fade-in">
                     <div class="feature-img">
-                        <img src="images/landing/acessibilidade.png" alt="Análise de Acessibilidade" 
-                             onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#3a0ca3';" 
-                             style="width: 100%; height: 200px; object-fit: cover;">
+                        <i class="fas fa-route"></i>
                     </div>
                     <div class="feature-content">
                         <h3>Análise de Acessibilidade</h3>
-                        <p>Calcule e visualize áreas acessíveis a pé, de bicicleta ou de carro em diferentes intervalos de tempo.</p>
+                        <p>Calcule e visualize áreas acessíveis a pé, de bicicleta ou de automóvel em diferentes intervalos de tempo, desde 5 até 30 minutos.</p>
                     </div>
                 </div>
                 <div class="feature-card fade-in">
                     <div class="feature-img">
-                        <img src="images/landing/estatisticas.png" alt="Estatísticas Detalhadas" 
-                             onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#4cc9f0';" 
-                             style="width: 100%; height: 200px; object-fit: cover;">
+                        <i class="fas fa-chart-bar"></i>
                     </div>
                     <div class="feature-content">
                         <h3>Estatísticas Detalhadas</h3>
-                        <p>Obtenha estatísticas sobre serviços públicos, transporte, comércio e áreas verdes na sua vizinhança.</p>
+                        <p>Obtenha estatísticas sobre serviços públicos, transportes, comércio e áreas verdes na sua vizinhança, com pontuação de acessibilidade para cada local.</p>
                     </div>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-img">
+                        <i class="fas fa-search-location"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h3>Localizador Ideal</h3>
+                        <p>Especifique os serviços e comodidades que são importantes para si, e descubra as áreas ideais para viver com base nas suas necessidades específicas.</p>
+                    </div>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-img">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h3>Dados Demográficos</h3>
+                        <p>Explore dados demográficos detalhados de qualquer freguesia, concelho ou distrito em Portugal, com informações dos Censos 2011 e 2021.</p>
+                    </div>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-img">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h3>Visualização Personalizada</h3>
+                        <p>Personalize a visualização do mapa com diferentes estilos e filtros de pontos de interesse, adaptando a experiência às suas necessidades.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Parallax Section -->
+    <section class="parallax">
+        <div class="parallax-overlay"></div>
+        <div class="parallax-content">
+            <h2 class="fade-in">Cidades mais Habitáveis e Sustentáveis</h2>
+            <p class="fade-in">Promovendo mobilidade ativa, reduzindo deslocações desnecessárias e melhorando a qualidade de vida</p>
+        </div>
+    </section>
+    
+    <!-- Tools Section -->
+    <section id="tools" class="section">
+        <div class="container">
+            <div class="section-title">
+                <h2 class="fade-in">Ferramentas Disponíveis</h2>
+            </div>
+            <div class="tools-grid">
+                <div class="tool-card fade-in">
+                    <div class="tool-icon">
+                        <i class="fas fa-map"></i>
+                    </div>
+                    <h3>Mapa Interativo</h3>
+                    <p>Explore a cidade com um mapa interativo que mostra todos os serviços e comodidades disponíveis. Clique em qualquer ponto para ver o que está acessível em 15 minutos.</p>
+                    <a href="app.php" class="tool-link">Explorar <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="tool-card fade-in">
+                    <div class="tool-icon">
+                        <i class="fas fa-search-location"></i>
+                    </div>
+                    <h3>Localizador Ideal <span class="concept-tag">(Conceito)</span></h3>
+                    <p>Encontre o local perfeito para viver com base nas suas necessidades específicas. Selecione os serviços importantes para si e descubra as áreas mais adequadas.</p>
+                    <a href="ideal_finder.php" class="tool-link">Experimentar <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="tool-card fade-in">
+                    <div class="tool-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <h3>Explorador de Dados</h3>
+                    <p>Aceda a dados demográficos detalhados de qualquer localidade em Portugal. Compare dados dos Censos 2011 e 2021, e veja estatísticas sobre infraestruturas.</p>
+                    <a href="location.php" class="tool-link">Analisar <i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
         </div>
@@ -156,21 +188,59 @@
                         <i class="fas fa-map-marker-alt"></i>
                     </div>
                     <h3>Selecione um Local</h3>
-                    <p>Pesquise um endereço ou clique no mapa para selecionar um ponto de partida.</p>
+                    <p>Pesquise um endereço ou clique no mapa para selecionar um ponto de partida. O sistema calcula automaticamente a área acessível.</p>
                 </div>
                 <div class="step fade-in">
                     <div class="step-icon">
                         <i class="fas fa-walking"></i>
                     </div>
                     <h3>Escolha o Modo de Transporte</h3>
-                    <p>Defina se pretende deslocar-se a pé, de bicicleta ou de carro.</p>
+                    <p>Defina se pretende deslocar-se a pé, de bicicleta ou de automóvel, e ajuste o tempo de deslocação de 5 a 30 minutos.</p>
                 </div>
                 <div class="step fade-in">
                     <div class="step-icon">
-                        <i class="fas fa-calculator"></i>
+                        <i class="fas fa-chart-pie"></i>
                     </div>
-                    <h3>Calcule e Explore</h3>
-                    <p>Visualize a área acessível e todos os serviços disponíveis no tempo definido.</p>
+                    <h3>Analise os Resultados</h3>
+                    <p>Visualize a área acessível, todos os serviços disponíveis e estatísticas detalhadas sobre a acessibilidade do local selecionado.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Tech Section -->
+    <section id="tech" class="section tech-section">
+        <div class="container">
+            <div class="section-title">
+                <h2 class="fade-in">Tecnologia</h2>
+            </div>
+            <div class="tech-content fade-in">
+                <p>O Minu15 utiliza tecnologias avançadas de mapeamento e análise geoespacial para fornecer informações precisas sobre acessibilidade urbana:</p>
+                <div class="tech-grid">
+                    <div class="tech-item">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Leaflet</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="fas fa-route"></i>
+                        <span>OpenRouteService</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="fas fa-database"></i>
+                        <span>GeoAPI.pt</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="fas fa-layer-group"></i>
+                        <span>OpenStreetMap</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="fas fa-chart-area"></i>
+                        <span>Turf.js</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="fas fa-table"></i>
+                        <span>Dados INE</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -185,43 +255,59 @@
             <div class="carousel-container fade-in">
                 <div class="carousel">
                     <div class="carousel-item">
-                        <img src="images/landing/1.png" alt="Captura de Ecrã 1" class="carousel-img"
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="carousel-img fallback-content" style="display: none; background-color: #4361ee; justify-content: center; align-items: center; color: white;">
-                            <div>
-                                <i class="fas fa-map-marked-alt" style="font-size: 5rem; margin-bottom: 20px;"></i>
-                                <h3>Vista do Mapa</h3>
-                            </div>
+                        <img src="images/landing/1.png" alt="Mapa interativo com isócrona" class="carousel-img">
+                        <div class="carousel-caption">
+                            <h3>Mapa Interativo</h3>
+                            <p>Visualização de áreas acessíveis em 15 minutos</p>
                         </div>
                     </div>
                     <div class="carousel-item">
-                        <img src="images/landing/2.png" alt="Captura de Ecrã 2" class="carousel-img"
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="carousel-img fallback-content" style="display: none; background-color: #3a0ca3; justify-content: center; align-items: center; color: white;">
-                            <div>
-                                <i class="fas fa-chart-pie" style="font-size: 5rem; margin-bottom: 20px;"></i>
-                                <h3>Análise de Dados</h3>
-                            </div>
+                        <img src="images/landing/2.png" alt="Análise de pontos de interesse" class="carousel-img">
+                        <div class="carousel-caption">
+                            <h3>Análise de POIs</h3>
+                            <p>Pontos de interesse dentro da área acessível</p>
                         </div>
                     </div>
                     <div class="carousel-item">
-                        <img src="images/landing/3.png" alt="Captura de Ecrã 3" class="carousel-img"
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="carousel-img fallback-content" style="display: none; background-color: #4cc9f0; justify-content: center; align-items: center; color: white;">
-                            <div>
-                                <i class="fas fa-ruler-combined" style="font-size: 5rem; margin-bottom: 20px;"></i>
-                                <h3>Medição de Distâncias</h3>
-                            </div>
+                        <img src="images/landing/3.png" alt="Estatísticas de acessibilidade" class="carousel-img">
+                        <div class="carousel-caption">
+                            <h3>Estatísticas</h3>
+                            <p>Análise detalhada de acessibilidade</p>
                         </div>
                     </div>
                     <div class="carousel-item">
-                        <img src="images/landing/4.png" alt="Captura de Ecrã 4" class="carousel-img"
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="carousel-img fallback-content" style="display: none; background-color: #7209b7; justify-content: center; align-items: center; color: white;">
-                            <div>
-                                <i class="fas fa-search-location" style="font-size: 5rem; margin-bottom: 20px;"></i>
-                                <h3>Pesquisa de Locais</h3>
-                            </div>
+                        <img src="images/landing/4.png" alt="Localizador ideal" class="carousel-img">
+                        <div class="carousel-caption">
+                            <h3>Localizador Ideal</h3>
+                            <p>Encontre o local perfeito para as suas necessidades</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <img src="images/landing/5.png" alt="Resultados do localizador ideal" class="carousel-img">
+                        <div class="carousel-caption">
+                            <h3>Resultados do localizador ideal</h3>
+                            <p>Top 5 das áreas mais adequadas para viver</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <img src="images/landing/6.png" alt="Mapa com diferentes modos de transporte" class="carousel-img">
+                        <div class="carousel-caption">
+                            <h3>Dados demográficos</h3>
+                            <p>Informações detalhadas sobre a população</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <img src="images/landing/7.png" alt="Filtros de pontos de interesse" class="carousel-img">
+                        <div class="carousel-caption">
+                            <h3>Dados demográficos com bordas de freguesias</h3>
+                            <p>Opção para ver as bordas das freguesias</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <img src="images/landing/8.png" alt="Vista de detalhe de localidade" class="carousel-img">
+                        <div class="carousel-caption">
+                            <h3>Detalhes de Localidade</h3>
+                            <p>Informações detalhadas sobre cada área</p>
                         </div>
                     </div>
                 </div>
@@ -238,6 +324,10 @@
                     <div class="carousel-indicator" data-index="1"></div>
                     <div class="carousel-indicator" data-index="2"></div>
                     <div class="carousel-indicator" data-index="3"></div>
+                    <div class="carousel-indicator" data-index="4"></div>
+                    <div class="carousel-indicator" data-index="5"></div>
+                    <div class="carousel-indicator" data-index="6"></div>
+                    <div class="carousel-indicator" data-index="7"></div>
                 </div>
             </div>
         </div>
@@ -262,23 +352,32 @@
                     <div class="accordion-header">Como o Minu15 calcula as áreas acessíveis?</div>
                     <div class="accordion-content">
                         <p>O Minu15 utiliza a API OpenRouteService para gerar isócronas - áreas que podem ser alcançadas dentro de um determinado período de tempo a partir de um ponto específico.</p>
-                        <p>Para cada modo de transporte (a pé, de bicicleta ou de carro), a aplicação considera diferentes velocidades médias e restrições de circulação nas vias, garantindo cálculos precisos baseados em rotas reais.</p>
+                        <p>Para cada modo de transporte (a pé, de bicicleta ou de automóvel), a aplicação considera diferentes velocidades médias e restrições de circulação nas vias, garantindo cálculos precisos baseados em rotas reais.</p>
                     </div>
                 </div>
                 
                 <div class="accordion">
-                    <div class="accordion-header">De onde vêm os dados sobre serviços e amenidades?</div>
+                    <div class="accordion-header">De onde vêm os dados sobre serviços e comodidades?</div>
                     <div class="accordion-content">
                         <p>Os dados de pontos de interesse (POIs) são obtidos principalmente do OpenStreetMap (OSM), uma base de dados geográficos colaborativa e de código aberto.</p>
                         <p>Periodicamente, importamos e processamos os dados mais recentes da Geofabrik, garantindo informações atualizadas sobre escolas, hospitais, supermercados e outros serviços essenciais.</p>
+                        <p>Os dados demográficos são fornecidos pela GeoAPI.pt, que disponibiliza informações oficiais do Instituto Nacional de Estatística (INE) de Portugal.</p>
                     </div>
                 </div>
                 
                 <div class="accordion">
-                    <div class="accordion-header">O Minu15 funciona em qualquer cidade?</div>
+                    <div class="accordion-header">Como é calculada a pontuação de acessibilidade?</div>
                     <div class="accordion-content">
-                        <p>Sim, o Minu15 pode funcionar em qualquer cidade onde existam dados disponíveis no OpenStreetMap. A qualidade e precisão dos resultados dependem da completude dos dados para cada região.</p>
-                        <p>Atualmente, focamo-nos nas cidades portuguesas, mas a plataforma está preparada para ser expandida para outras regiões.</p>
+                        <p>A pontuação de acessibilidade é um cálculo ponderado baseado no número e variedade de pontos de interesse essenciais (supermercados, centros de saúde, escolas, etc.) alcançáveis no tempo selecionado pelo utilizador.</p>
+                        <p>Cada tipo de serviço tem um peso diferente na pontuação final, e o utilizador pode personalizar estes pesos nas configurações da aplicação para refletir as suas prioridades pessoais.</p>
+                    </div>
+                </div>
+                
+                <div class="accordion">
+                    <div class="accordion-header">O Minu15 funciona em qualquer cidade de Portugal?</div>
+                    <div class="accordion-content">
+                        <p>Sim, o Minu15 funciona em qualquer localidade de Portugal continental e ilhas, onde existam dados disponíveis no OpenStreetMap e na GeoAPI.pt.</p>
+                        <p>A qualidade e precisão dos resultados dependem da completude dos dados para cada região, sendo geralmente mais detalhados em áreas urbanas de maior dimensão.</p>
                     </div>
                 </div>
             </div>
@@ -289,16 +388,38 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
-                <img src="images/Minu15.png" alt="Minu15 Logo" class="logo" style="height: 80px; filter: brightness(0) invert(1);">
-                <div class="social-links">
-                    <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+                <div class="footer-logo">
+                    <img src="images/Minu15.png" alt="Minu15 Logo" class="logo" style="height: 80px; filter: brightness(0) invert(1);">
+                    <p>Descubra a sua cidade em 15 minutos</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-links-column">
+                        <h4>Ferramentas</h4>
+                        <ul>
+                            <li><a href="app.php">Mapa Interativo</a></li>
+                            <li><a href="ideal_finder.php">Localizador Ideal</a></li>
+                            <li><a href="location.php">Dados Demográficos</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-column">
+                        <h4>Recursos</h4>
+                        <ul>
+                            <li><a href="#about">Sobre o Projeto</a></li>
+                            <li><a href="#features">Funcionalidades</a></li>
+                            <li><a href="#faq">Perguntas Frequentes</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-social">
+                    <h4>Siga-nos</h4>
+                    <div class="social-links">
+                        <a href="https://github.com/CruzGGC/Minu15" target="_blank" class="social-link"><i class="fab fa-github"></i></a>
+                    </div>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; <?php echo date('Y'); ?> Minu15 | Guilherme Cruz | Pedro Sousa | Alexandra Dias | Rodrigo Ferreira</a></p>
+                <p>&copy; <?php echo date('Y'); ?> Minu15 | Desenvolvido por Guilherme Cruz, Pedro Sousa, Alexandra Dias e Rodrigo Ferreira</p>
+                <p>Dados fornecidos por <a href="https://geoapi.pt" target="_blank">GeoAPI.pt</a> e <a href="https://www.geofabrik.de/" target="_blank">Geofabrik</a></p>
             </div>
         </div>
     </footer>
@@ -387,42 +508,6 @@
             cursorEffect.style.opacity = '0';
         });
         
-        // Animated counters
-        function animateCounter() {
-            const counters = document.querySelectorAll('.count');
-            const speed = 200;  // Lower is faster
-            
-            counters.forEach(counter => {
-                const target = +counter.getAttribute('data-target');
-                const increment = Math.ceil(target / speed);
-                let currentValue = 0;
-                
-                const updateCounter = () => {
-                    if (currentValue < target) {
-                        currentValue += increment;
-                        if (currentValue > target) currentValue = target;
-                        counter.innerText = new Intl.NumberFormat().format(currentValue);
-                        setTimeout(updateCounter, 1);
-                    }
-                };
-                
-                updateCounter();
-            });
-        }
-        
-        // Start counter animation when the section is in view
-        const counterSection = document.querySelector('.counter-section');
-        const counterObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    animateCounter();
-                    counterObserver.unobserve(entry.target);
-                }
-            });
-        });
-        
-        counterObserver.observe(counterSection);
-        
         // FAQ Accordion
         const accordions = document.querySelectorAll('.accordion');
         
@@ -442,20 +527,26 @@
             });
         });
         
-        // Image Carousel
+        // Screenshots Carousel functionality
         const carousel = document.querySelector('.carousel');
         const carouselItems = document.querySelectorAll('.carousel-item');
-        const indicators = document.querySelectorAll('.carousel-indicator');
-        const prevButton = document.querySelector('.prev-button');
-        const nextButton = document.querySelector('.next-button');
+        const carouselNav = document.querySelector('.carousel-nav');
+        const carouselIndicators = document.querySelectorAll('.carousel-indicator');
         let currentIndex = 0;
-        const totalItems = carouselItems.length;
         
+        // Show the first item by default
+        carouselItems[currentIndex].classList.add('active');
+        
+        // Function to update carousel
         function updateCarousel() {
-            carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
+            // Remove active class from all items
+            carouselItems.forEach(item => item.classList.remove('active'));
+            
+            // Add active class to the current item
+            carouselItems[currentIndex].classList.add('active');
             
             // Update indicators
-            indicators.forEach((indicator, index) => {
+            carouselIndicators.forEach((indicator, index) => {
                 if (index === currentIndex) {
                     indicator.classList.add('active');
                 } else {
@@ -464,30 +555,45 @@
             });
         }
         
-        // Set up indicator clicks
-        indicators.forEach((indicator, index) => {
+        // Next button functionality
+        carouselNav.querySelector('.next-button').addEventListener('click', () => {
+            currentIndex = (currentIndex + 1) % carouselItems.length;
+            updateCarousel();
+        });
+        
+        // Previous button functionality
+        carouselNav.querySelector('.prev-button').addEventListener('click', () => {
+            currentIndex = (currentIndex - 1 + carouselItems.length) % carouselItems.length;
+            updateCarousel();
+        });
+        
+        // Indicator functionality
+        carouselIndicators.forEach((indicator, index) => {
             indicator.addEventListener('click', () => {
                 currentIndex = index;
                 updateCarousel();
             });
         });
         
-        // Set up prev/next buttons
-        prevButton.addEventListener('click', () => {
-            currentIndex = (currentIndex - 1 + totalItems) % totalItems;
-            updateCarousel();
-        });
-        
-        nextButton.addEventListener('click', () => {
-            currentIndex = (currentIndex + 1) % totalItems;
-            updateCarousel();
-        });
-        
-        // Automatic slideshow
-        setInterval(() => {
-            currentIndex = (currentIndex + 1) % totalItems;
+        // Auto slideshow
+        let slideInterval = setInterval(() => {
+            currentIndex = (currentIndex + 1) % carouselItems.length;
             updateCarousel();
         }, 5000);
+        
+        // Pause slideshow when hovering over carousel
+        const carouselContainer = document.querySelector('.carousel-container');
+        carouselContainer.addEventListener('mouseenter', () => {
+            clearInterval(slideInterval);
+        });
+        
+        // Resume slideshow when mouse leaves carousel
+        carouselContainer.addEventListener('mouseleave', () => {
+            slideInterval = setInterval(() => {
+                currentIndex = (currentIndex + 1) % carouselItems.length;
+                updateCarousel();
+            }, 5000);
+        });
     </script>
 </body>
 </html>
