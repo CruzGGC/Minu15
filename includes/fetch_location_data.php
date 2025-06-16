@@ -2,7 +2,7 @@
 require_once __DIR__ . '/api_cache.php';
 
 class LocationFetcher {
-    private $baseUrl = "http://json.localhost:8080";
+    private $baseUrl = "http://json.localhost:9090";
     private $cache;
     private $cacheEnabled = true;
     private $cacheExpiry = 604800; // 7 days in seconds

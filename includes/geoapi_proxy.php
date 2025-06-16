@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== 'POST
 }
 
 // Define GeoAPI.pt base URL
-$geoApiBaseUrl = 'http://json.localhost:8080';
+$geoApiBaseUrl = 'http://json.localhost:9090';
 
 // Get the endpoint from the request
 $endpoint = isset($_GET['endpoint']) ? $_GET['endpoint'] : '';

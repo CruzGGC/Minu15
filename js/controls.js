@@ -44,6 +44,18 @@ function initMobileMenu() {
     const closeButton = document.getElementById('mobile-panel-close');
     const panel = document.getElementById('overlay-panel');
     
+    // Track if tutorial is active
+    let tutorialActive = false;
+    
+    // Listen for tutorial events
+    document.addEventListener('tutorialShown', function() {
+        tutorialActive = true;
+    });
+    
+    document.addEventListener('tutorialClosed', function() {
+        tutorialActive = false;
+    });
+    
     if (menuToggle && closeButton && panel) {
         // Show menu when toggle is clicked
         menuToggle.addEventListener('click', function() {
@@ -57,7 +69,17 @@ function initMobileMenu() {
         
         // Hide menu when clicking on map (mobile only)
         document.getElementById('map').addEventListener('click', function() {
-            // Check if we're on mobile view by checking window width
+            // Never hide the panel on desktop, regardless of tutorial state
+            if (window.innerWidth > 768) {
+                // Instead of hiding, make sure it's visible
+                panel.style.display = 'block';
+                panel.style.transform = 'none';
+                panel.style.visibility = 'visible';
+                panel.style.opacity = '1';
+                return;
+            }
+            
+            // Only hide on mobile
             if (window.innerWidth <= 768) {
                 panel.classList.remove('mobile-active');
             }
@@ -65,6 +87,17 @@ function initMobileMenu() {
         
         // Hide menu when clicking calculate button (mobile only)
         document.querySelector('.calculate-button').addEventListener('click', function() {
+            // Never hide the panel on desktop, regardless of tutorial state
+            if (window.innerWidth > 768) {
+                // Instead of hiding, make sure it's visible
+                panel.style.display = 'block';
+                panel.style.transform = 'none';
+                panel.style.visibility = 'visible';
+                panel.style.opacity = '1';
+                return;
+            }
+            
+            // Only hide on mobile
             if (window.innerWidth <= 768) {
                 panel.classList.remove('mobile-active');
             }
@@ -278,6 +311,10 @@ function calculateRadiusFromIsochrone(isochroneData) {
 function initCalculateButton() {
     const calculateButton = document.querySelector('.calculate-button');
     if (calculateButton) {
+        // Hide the calculate button since we're automating the process
+        calculateButton.style.display = 'none';
+        
+        // Keep the event listener for backwards compatibility with other code
         calculateButton.addEventListener('click', function() {
             if (currentMarker) {
                 // Show loading indicator
@@ -399,10 +436,8 @@ function performSearch(searchTerm) {
                 }
                 currentMarker = L.marker(latlng).addTo(map);
                 
-                // Don't generate isochrone automatically - wait for Calculate button
-                
-                // Guide the user to click Calculate
-                alert('Localização encontrada! Clique em "Calcular" para gerar a isócrona.');
+                // Automatically generate isochrone instead of waiting for Calculate button
+                generateIsochrone(latlng);
                 
                 // On mobile, close the panel after search
                 if (window.innerWidth <= 768) {

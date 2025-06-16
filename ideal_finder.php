@@ -562,5 +562,68 @@
 
     <!-- Custom JavaScript -->
     <script src="js/ideal_finder.js"></script>
+    
+    <!-- Fix for the sidebar disappearing issue -->
+    <script>
+        $(document).ready(function() {
+            // Ensure the sidebar is always visible on desktop
+            function fixSidebar() {
+                if (window.innerWidth > 768) {
+                    const panel = document.getElementById('overlay-panel');
+                    if (panel) {
+                        panel.style.display = 'block';
+                        panel.style.transform = 'none';
+                        panel.style.visibility = 'visible';
+                        panel.style.opacity = '1';
+                        panel.style.left = '20px';
+                    }
+                }
+            }
+            
+            // Apply fix on page load
+            fixSidebar();
+            
+            // Listen for tutorial events
+            document.addEventListener('tutorialClosed', fixSidebar);
+            
+            // Apply fix when map is clicked
+            $('#map').on('click', function() {
+                setTimeout(fixSidebar, 100);
+            });
+            
+            // Watch for any changes to the sidebar visibility
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && 
+                        (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
+                        fixSidebar();
+                    }
+                });
+            });
+            
+            // Start observing the sidebar for changes
+            const panel = document.getElementById('overlay-panel');
+            if (panel) {
+                observer.observe(panel, { attributes: true });
+            }
+            
+            // Add direct CSS rule to force sidebar visibility on desktop
+            const styleElement = document.createElement('style');
+            styleElement.textContent = `
+                @media (min-width: 769px) {
+                    #overlay-panel {
+                        display: block !important;
+                        transform: none !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        left: 20px !important;
+                        z-index: 999 !important;
+                        position: absolute !important;
+                    }
+                }
+            `;
+            document.head.appendChild(styleElement);
+        });
+    </script>
 </body>
 </html>

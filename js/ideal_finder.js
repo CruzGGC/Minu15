@@ -18,6 +18,11 @@ class IdealLocationFinder {
         this.initEventListeners();
         this.initAutocomplete();
         this.setupPOIControls();
+        
+        // Show the tutorial after a short delay
+        setTimeout(() => {
+            this.showIdealFinderTutorial();
+        }, 800);
     }
 
     initMap() {
@@ -724,6 +729,173 @@ class IdealLocationFinder {
             } else {
                 button.classList.remove('active');
             }
+        });
+    }
+
+    /**
+     * Shows a tutorial explaining the concept and functionality of the Ideal Location Finder
+     */
+    showIdealFinderTutorial() {
+        // Check if the user has seen the tutorial before
+        if (localStorage.getItem('minu15_ideal_finder_tutorial_seen') === 'true') {
+            return;
+        }
+        
+        // Create the tutorial container
+        const tutorialBox = document.createElement('div');
+        tutorialBox.id = 'ideal-finder-tutorial-box';
+        tutorialBox.style.position = 'absolute';
+        tutorialBox.style.top = '50%';
+        tutorialBox.style.left = '50%';
+        tutorialBox.style.transform = 'translate(-50%, -50%) scale(0.9)';
+        tutorialBox.style.background = 'rgba(255, 255, 255, 0.97)';
+        tutorialBox.style.padding = '30px';
+        tutorialBox.style.borderRadius = '16px';
+        tutorialBox.style.boxShadow = '0 10px 40px rgba(0, 0, 0, 0.15)';
+        tutorialBox.style.zIndex = '1500';
+        tutorialBox.style.maxWidth = '550px';
+        tutorialBox.style.width = '90%';
+        tutorialBox.style.opacity = '0';
+        tutorialBox.style.transition = 'all 0.3s ease-out';
+        
+        // Create tutorial content
+        tutorialBox.innerHTML = `
+            <div style="position: relative;">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <div style="width: 70px; height: 70px; background-color: #3498db; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 15px;">
+                        <i class="fas fa-map-pin" style="font-size: 32px; color: white;"></i>
+                    </div>
+                    <h2 style="font-size: 24px; color: #2c3e50; margin-bottom: 5px; font-weight: 600;">Localizador Ideal</h2>
+                    <p style="color: #7f8c8d; font-size: 15px;">Encontre os melhores locais para viver com base nas suas necessidades</p>
+                </div>
+                
+                <div style="margin-bottom: 25px;">
+                    <div style="background-color: #f0f7ff; border-left: 4px solid #3498db; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <i class="fas fa-info-circle" style="color: #3498db; margin-right: 10px; font-size: 18px;"></i>
+                            <strong style="font-weight: 600; color: #2c3e50;">Conceito</strong>
+                        </div>
+                        <p style="margin: 0; color: #555; font-size: 14px;">
+                            O Localizador Ideal é uma ferramenta conceitual que permite descobrir as áreas que melhor satisfazem suas necessidades de acessibilidade a serviços e pontos de interesse. A ferramenta utiliza análises espaciais e algoritmos para gerar um mapa de calor mostrando as áreas mais adequadas.
+                        </p>
+                    </div>
+                
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; margin-bottom: 15px; align-items: flex-start;">
+                            <div style="background: #3498db; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; margin-right: 15px; flex-shrink: 0;">
+                                <span style="font-weight: bold;">1</span>
+                            </div>
+                            <div>
+                                <strong style="font-weight: 600; color: #2c3e50;">Defina um ponto de referência</strong> 
+                                <p style="margin-top: 5px; color: #555;">Selecione um ponto no mapa ou utilize a barra de pesquisa para definir uma área de referência para sua busca.</p>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; margin-bottom: 15px; align-items: flex-start;">
+                            <div style="background: #3498db; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; margin-right: 15px; flex-shrink: 0;">
+                                <span style="font-weight: bold;">2</span>
+                            </div>
+                            <div>
+                                <strong style="font-weight: 600; color: #2c3e50;">Selecione suas necessidades</strong> 
+                                <p style="margin-top: 5px; color: #555;">Marque os serviços e pontos de interesse que são importantes para você e defina seu nível de importância (baixa, média, alta ou muito alta).</p>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; margin-bottom: 15px; align-items: flex-start;">
+                            <div style="background: #3498db; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; margin-right: 15px; flex-shrink: 0;">
+                                <span style="font-weight: bold;">3</span>
+                            </div>
+                            <div>
+                                <strong style="font-weight: 600; color: #2c3e50;">Configure os parâmetros</strong> 
+                                <p style="margin-top: 5px; color: #555;">Escolha o modo de transporte (a pé, bicicleta ou carro) e defina o tempo máximo de deslocamento que considera aceitável.</p>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; margin-bottom: 15px; align-items: flex-start;">
+                            <div style="background: #3498db; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; margin-right: 15px; flex-shrink: 0;">
+                                <span style="font-weight: bold;">4</span>
+                            </div>
+                            <div>
+                                <strong style="font-weight: 600; color: #2c3e50;">Analise os resultados</strong> 
+                                <p style="margin-top: 5px; color: #555;">O <span style="color: #3498db; font-weight: 500;">mapa de calor</span> mostrará as áreas mais adequadas, com marcadores indicando os melhores locais encontrados com base nos seus critérios.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background-color: #fff8e6; border-left: 4px solid #f39c12; padding: 15px; border-radius: 5px; margin-top: 20px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <i class="fas fa-lightbulb" style="color: #f39c12; margin-right: 10px; font-size: 18px;"></i>
+                            <strong style="font-weight: 600; color: #2c3e50;">Dica</strong>
+                        </div>
+                        <p style="margin: 0; color: #555; font-size: 14px;">
+                            Este é um modelo conceitual para demonstração. Em uma implementação completa, a análise utilizaria dados reais de POIs, transportes e acessibilidade para encontrar locais ideais com base nos seus critérios específicos.
+                        </p>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <div style="margin-bottom: 20px;">
+                        <button id="ideal-finder-tutorial-btn" style="background-color: #3498db; color: white; border: none; padding: 12px 25px; border-radius: 30px; font-weight: 600; font-size: 16px; cursor: pointer; width: 100%; transition: all 0.2s ease;">Começar a explorar</button>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: center; font-size: 14px; color: #7f8c8d;">
+                        <input type="checkbox" id="dont-show-ideal-finder-tutorial" style="margin-right: 8px;">
+                        <label for="dont-show-ideal-finder-tutorial">Não mostrar novamente</label>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add to document
+        document.body.appendChild(tutorialBox);
+        
+        // Add entrance animation
+        setTimeout(() => {
+            tutorialBox.style.opacity = '1';
+            tutorialBox.style.transform = 'translate(-50%, -50%) scale(1)';
+            
+            // Dispatch event that tutorial is shown
+            document.dispatchEvent(new Event('tutorialShown'));
+        }, 100);
+        
+        // Prevent clicks on the tutorial from propagating to the map
+        tutorialBox.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+        
+        // Add hover effect to the button
+        const tutorialBtn = document.getElementById('ideal-finder-tutorial-btn');
+        tutorialBtn.addEventListener('mouseover', function() {
+            this.style.backgroundColor = '#2980b9';
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 5px 15px rgba(52, 152, 219, 0.4)';
+        });
+        
+        tutorialBtn.addEventListener('mouseout', function() {
+            this.style.backgroundColor = '#3498db';
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+        });
+        
+        // Close button event
+        tutorialBtn.addEventListener('click', function(event) {
+            event.stopPropagation();
+            
+            // Add exit animation
+            tutorialBox.style.opacity = '0';
+            tutorialBox.style.transform = 'translate(-50%, -50%) scale(0.9)';
+            
+            // Save preference if checkbox is checked
+            if (document.getElementById('dont-show-ideal-finder-tutorial').checked) {
+                localStorage.setItem('minu15_ideal_finder_tutorial_seen', 'true');
+            }
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                document.getElementById('ideal-finder-tutorial-box').remove();
+                
+                // Dispatch event that tutorial is closed
+                document.dispatchEvent(new Event('tutorialClosed'));
+            }, 300);
         });
     }
 }

@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeMap();
     loadDistritos();
     setupEventListeners();
+    showLocationTutorial(); // Show tutorial on first visit
 });
 
 /**
@@ -1741,4 +1742,303 @@ function animateStatUpdate(elementId, censusData) {
     }
     
     requestAnimationFrame(updateValue);
+}
+
+/**
+ * Shows a modern tutorial for first-time users explaining how to use the location page
+ */
+function showLocationTutorial() {
+    // Check if the user has seen the tutorial before
+    if (localStorage.getItem('minu15_location_tutorial_seen') === 'true') {
+        return;
+    }
+    
+    // Create the tutorial container
+    const tutorialBox = document.createElement('div');
+    tutorialBox.id = 'location-tutorial-box';
+    tutorialBox.style.position = 'absolute';
+    tutorialBox.style.top = '50%';
+    tutorialBox.style.left = '50%';
+    tutorialBox.style.transform = 'translate(-50%, -50%)';
+    tutorialBox.style.background = 'rgba(255, 255, 255, 0.97)';
+    tutorialBox.style.padding = '30px';
+    tutorialBox.style.borderRadius = '16px';
+    tutorialBox.style.boxShadow = '0 10px 40px rgba(0, 0, 0, 0.2)';
+    tutorialBox.style.zIndex = '1000';
+    tutorialBox.style.maxWidth = '550px';
+    tutorialBox.style.textAlign = 'left';
+    tutorialBox.style.color = '#333';
+    tutorialBox.style.fontFamily = "'Poppins', sans-serif";
+    
+    // Tutorial content
+    tutorialBox.innerHTML = `
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <div style="background: #3498db; width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-right: 15px;">
+                <i class="fas fa-map-marked-alt" style="color: white; font-size: 24px;"></i>
+            </div>
+            <h2 style="margin: 0; color: #2c3e50; font-size: 24px; font-weight: 600;">Explorador de Localização</h2>
+        </div>
+        
+        <p style="margin-bottom: 20px; line-height: 1.6; color: #555;">
+            Bem-vindo ao Explorador de Localização! Esta ferramenta permite-lhe visualizar dados demográficos e estatísticos de qualquer localidade em Portugal.
+        </p>
+        
+        <div style="margin-bottom: 25px;">
+            <h3 style="color: #3498db; font-size: 18px; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 5px; display: inline-block;">
+                Como utilizar:
+            </h3>
+            
+            <div style="display: flex; margin-bottom: 15px; align-items: flex-start;">
+                <div style="background: #3498db; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; margin-right: 15px; flex-shrink: 0;">
+                    <span>1</span>
+                </div>
+                <div>
+                    <strong style="font-weight: 600; color: #2c3e50;">Selecione uma localidade</strong> 
+                    <p style="margin-top: 5px; color: #555;">Utilize os menus dropdown no painel lateral para escolher um distrito, concelho e freguesia, ou <span style="background: #f1f8fe; color: #3498db; padding: 0 5px; font-weight: 500;">simplesmente clique diretamente no mapa</span> para selecionar uma localização exata.</p>
+                </div>
+            </div>
+            
+            <div style="display: flex; margin-bottom: 15px; align-items: flex-start;">
+                <div style="background: #3498db; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; margin-right: 15px; flex-shrink: 0;">
+                    <span>2</span>
+                </div>
+                <div>
+                    <strong style="font-weight: 600; color: #2c3e50;">Carregue os dados</strong> 
+                    <p style="margin-top: 5px; color: #555;">Após selecionar uma localidade, clique no botão <span style="background: #f1f8fe; color: #3498db; padding: 0 5px; font-weight: 500;">"Carregar Dados"</span> para obter as informações estatísticas da área.</p>
+                </div>
+            </div>
+            
+            <div style="display: flex; margin-bottom: 15px; align-items: flex-start;">
+                <div style="background: #3498db; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; margin-right: 15px; flex-shrink: 0;">
+                    <span>3</span>
+                </div>
+                <div>
+                    <strong style="font-weight: 600; color: #2c3e50;">Explore os dados</strong> 
+                    <p style="margin-top: 5px; color: #555;">Visualize os dados demográficos, compare informações entre os Censos de 2011 e 2021, e veja os limites geográficos da localidade.</p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 12px 15px; background: #f8f9fa; border-left: 4px solid #3498db; border-radius: 4px;">
+                <div style="display: flex; align-items: center;">
+                    <i class="fas fa-lightbulb" style="color: #f39c12; margin-right: 10px; font-size: 18px;"></i>
+                    <strong style="color: #2c3e50;">Dica:</strong>
+                </div>
+                <p style="margin-top: 8px; color: #555; font-size: 14px;">
+                    Ao clicar no mapa, um marcador será colocado e o botão "Carregar Dados" ficará destacado. Clique nele para visualizar os dados dessa localização específica.
+                </p>
+             </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label style="display: flex; align-items: center; color: #7f8c8d; cursor: pointer;">
+                <input type="checkbox" id="dont-show-location-tutorial" style="margin-right: 8px;">
+                <span>Não mostrar novamente</span>
+            </label>
+            
+            <button id="location-tutorial-btn" style="background: #3498db; color: white; border: none; border-radius: 30px; padding: 12px 30px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.3s ease;">
+                Começar a explorar
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(tutorialBox);
+    
+    // Add entrance animation for the tutorial box
+    tutorialBox.style.opacity = '0';
+    tutorialBox.style.transform = 'translate(-50%, -50%) scale(0.9)';
+    tutorialBox.style.transition = 'all 0.3s ease-out';
+    
+    // Trigger the animation after a small delay
+    setTimeout(() => {
+        tutorialBox.style.opacity = '1';
+        tutorialBox.style.transform = 'translate(-50%, -50%) scale(1)';
+        
+        // Show a visual hint of map click after tutorial appears
+        setTimeout(() => {
+            showMapClickAnimation();
+        }, 1000);
+    }, 100);
+    
+    // Prevent clicks on the tutorial from propagating to the map
+    tutorialBox.addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
+    
+    // Add hover effect to the button
+    const tutorialBtn = document.getElementById('location-tutorial-btn');
+    tutorialBtn.addEventListener('mouseover', function() {
+        this.style.background = '#2980b9';
+        this.style.transform = 'translateY(-2px)';
+        this.style.boxShadow = '0 5px 15px rgba(52, 152, 219, 0.4)';
+    });
+    
+    tutorialBtn.addEventListener('mouseout', function() {
+        this.style.background = '#3498db';
+        this.style.transform = 'translateY(0)';
+        this.style.boxShadow = 'none';
+    });
+    
+    // Close button event
+    tutorialBtn.addEventListener('click', function(event) {
+        event.stopPropagation();
+        
+        // Add exit animation
+        tutorialBox.style.opacity = '0';
+        tutorialBox.style.transform = 'translate(-50%, -50%) scale(0.9)';
+        
+        // Save preference if checkbox is checked
+        if (document.getElementById('dont-show-location-tutorial').checked) {
+            localStorage.setItem('minu15_location_tutorial_seen', 'true');
+        }
+        
+        // Remove after animation completes
+        setTimeout(() => {
+            document.getElementById('location-tutorial-box').remove();
+            
+            // Highlight key UI elements after tutorial closes
+            highlightKeyElements();
+        }, 300);
+    });
+    
+    // "Don't show again" checkbox
+    document.getElementById('dont-show-location-tutorial').addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
+}
+
+/**
+ * Highlights key UI elements to guide users where to start
+ */
+function highlightKeyElements() {
+    // Highlight the sidebar panel
+    const panel = document.getElementById('overlay-panel');
+    const calculateButton = document.querySelector('.calculate-button');
+    
+    // Create highlight effect elements
+    const panelHighlight = document.createElement('div');
+    panelHighlight.style.position = 'absolute';
+    panelHighlight.style.top = '0';
+    panelHighlight.style.left = '0';
+    panelHighlight.style.width = '100%';
+    panelHighlight.style.height = '100%';
+    panelHighlight.style.boxShadow = '0 0 0 4px rgba(52, 152, 219, 0.7)';
+    panelHighlight.style.borderRadius = 'inherit';
+    panelHighlight.style.pointerEvents = 'none';
+    panelHighlight.style.zIndex = '1000';
+    panelHighlight.style.opacity = '0';
+    panelHighlight.style.transition = 'opacity 0.5s ease-in-out';
+    
+    // Add the highlight to the panel
+    panel.style.position = 'relative';
+    panel.appendChild(panelHighlight);
+    
+    // Animate the highlight for the panel
+    setTimeout(() => {
+        panelHighlight.style.opacity = '1';
+        
+        // Add a pulsing animation to the calculate button
+        calculateButton.classList.add('pulse-highlight');
+        
+        // Remove the highlights after 3 seconds
+        setTimeout(() => {
+            panelHighlight.style.opacity = '0';
+            calculateButton.classList.remove('pulse-highlight');
+            
+            // Remove the highlight elements after fade out
+            setTimeout(() => {
+                panelHighlight.remove();
+            }, 500);
+        }, 3000);
+    }, 500);
+    
+    // Add the pulse animation class if it doesn't exist
+    if (!document.getElementById('pulse-animation-style')) {
+        const style = document.createElement('style');
+        style.id = 'pulse-animation-style';
+        style.textContent = `
+            @keyframes pulse-animation {
+                0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); }
+                70% { box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
+            }
+            .pulse-highlight {
+                animation: pulse-animation 1.5s infinite;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+/**
+ * Shows a visual animation suggesting to click on the map
+ */
+function showMapClickAnimation() {
+    // Create the cursor element
+    const cursor = document.createElement('div');
+    cursor.style.position = 'absolute';
+    cursor.style.width = '24px';
+    cursor.style.height = '24px';
+    cursor.style.background = 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3E%3Cpath fill=\'%23ffffff\' stroke=\'%23000000\' stroke-width=\'1\' d=\'M1 1 L15 8 L8 10 L10 15 L7 7 Z\'/%3E%3C/svg%3E") no-repeat';
+    cursor.style.backgroundSize = 'contain';
+    cursor.style.zIndex = '1001';
+    cursor.style.pointerEvents = 'none';
+    cursor.style.transition = 'transform 0.2s ease-out';
+    cursor.style.transform = 'scale(1.2)';
+    cursor.style.opacity = '0.9';
+    document.body.appendChild(cursor);
+    
+    // Create the click effect element
+    const clickEffect = document.createElement('div');
+    clickEffect.style.position = 'absolute';
+    clickEffect.style.width = '40px';
+    clickEffect.style.height = '40px';
+    clickEffect.style.borderRadius = '50%';
+    clickEffect.style.background = 'rgba(52, 152, 219, 0.4)';
+    clickEffect.style.transform = 'translate(-50%, -50%) scale(0)';
+    clickEffect.style.zIndex = '1000';
+    clickEffect.style.pointerEvents = 'none';
+    document.body.appendChild(clickEffect);
+    
+    // Get a point in the center-right area of the map
+    const mapElement = document.getElementById('map');
+    const mapRect = mapElement.getBoundingClientRect();
+    const startX = mapRect.left + mapRect.width * 0.65;
+    const startY = mapRect.top + mapRect.height * 0.4;
+    const targetX = startX + 50;
+    const targetY = startY + 30;
+    
+    // Position the cursor at starting point
+    cursor.style.left = startX + 'px';
+    cursor.style.top = startY + 'px';
+    
+    // Animate cursor to target position
+    setTimeout(() => {
+        cursor.style.transition = 'all 1s ease-in-out';
+        cursor.style.left = targetX + 'px';
+        cursor.style.top = targetY + 'px';
+        
+        // Show click effect at target position
+        setTimeout(() => {
+            cursor.style.transform = 'scale(0.8)';
+            
+            // Position and animate the click effect
+            clickEffect.style.left = targetX + 'px';
+            clickEffect.style.top = targetY + 'px';
+            clickEffect.style.transition = 'all 0.5s ease-out';
+            clickEffect.style.transform = 'translate(-50%, -50%) scale(1)';
+            clickEffect.style.opacity = '1';
+            
+            // Fade out click effect
+            setTimeout(() => {
+                clickEffect.style.transform = 'translate(-50%, -50%) scale(1.5)';
+                clickEffect.style.opacity = '0';
+                
+                // Clean up after animation
+                setTimeout(() => {
+                    cursor.remove();
+                    clickEffect.remove();
+                }, 500);
+            }, 500);
+        }, 1000);
+    }, 500);
 } 

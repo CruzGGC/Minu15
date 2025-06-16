@@ -528,5 +528,118 @@
             });
         });
     </script>
+    
+    <!-- Fix for the sidebar disappearing issue -->
+    <script>
+        $(document).ready(function() {
+            // Ensure the sidebar is always visible on desktop
+            function fixSidebar() {
+                if (window.innerWidth > 768) {
+                    const panel = document.getElementById('overlay-panel');
+                    if (panel) {
+                        panel.style.display = 'block';
+                        panel.style.transform = 'none';
+                        panel.style.visibility = 'visible';
+                        panel.style.opacity = '1';
+                        panel.style.left = '20px';
+                    }
+                }
+            }
+            
+            // Apply fix on page load
+            fixSidebar();
+            
+            // Listen for tutorial events
+            document.addEventListener('tutorialClosed', fixSidebar);
+            
+            // Apply fix when map is clicked
+            $('#map').on('click', function() {
+                setTimeout(fixSidebar, 100); // Small delay to let other event handlers execute
+            });
+            
+            // Watch for any changes to the sidebar visibility
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && 
+                        (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
+                        fixSidebar();
+                    }
+                });
+            });
+            
+            // Start observing the sidebar for changes
+            const panel = document.getElementById('overlay-panel');
+            if (panel) {
+                observer.observe(panel, { attributes: true });
+            }
+            
+            // Fix any issues when window is resized
+            $(window).on('resize', fixSidebar);
+            
+            // Intercept all click events on the page to ensure sidebar stays visible
+            $(document).on('click', function(e) {
+                if (window.innerWidth > 768) {
+                    setTimeout(fixSidebar, 10);
+                    setTimeout(fixSidebar, 100);
+                    setTimeout(fixSidebar, 300);
+                }
+            });
+            
+            // Add event handler to the got-it-btn when it's created
+            $(document).on('click', '#got-it-btn', function(e) {
+                if (window.innerWidth > 768) {
+                    // Apply multiple delayed fixes to catch any timing issues
+                    for (let i = 1; i <= 10; i++) {
+                        setTimeout(fixSidebar, i * 100);
+                    }
+                }
+            });
+            
+            // Override the default map click behavior that might be hiding the panel
+            try {
+                // Wait for map to be fully initialized
+                setTimeout(function() {
+                    if (typeof map !== 'undefined' && map.getEvents && map.getEvents().click) {
+                        const originalMapClick = map.getEvents().click;
+                        if (originalMapClick && originalMapClick.length > 0) {
+                            map.off('click');
+                            map.on('click', function(e) {
+                                // Call the original handler
+                                originalMapClick[0].fn(e);
+                                
+                                // Fix the sidebar after a delay
+                                if (window.innerWidth > 768) {
+                                    setTimeout(fixSidebar, 50);
+                                    setTimeout(fixSidebar, 200);
+                                }
+                            });
+                        }
+                    }
+                }, 1000); // Wait 1 second for map to initialize
+            } catch (e) {
+                console.log('Error overriding map click:', e);
+            }
+            
+            // Set an interval to periodically check and fix the sidebar
+            setInterval(fixSidebar, 500);
+            
+            // Add direct CSS rule to force sidebar visibility on desktop
+            const styleElement = document.createElement('style');
+            styleElement.textContent = `
+                @media (min-width: 769px) {
+                    #overlay-panel {
+                        display: block !important;
+                        transform: none !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        left: 20px !important;
+                        z-index: 999 !important;
+                        position: absolute !important;
+                    }
+                }
+            `;
+            document.head.appendChild(styleElement);
+        });
+    </script>
 </body>
 </html>

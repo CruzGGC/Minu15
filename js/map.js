@@ -207,6 +207,7 @@ const poiTypes = {
 document.addEventListener('DOMContentLoaded', function() {
     initMap();
     initControls();
+    showInitialInstructions();
 });
 
 // Initialize the Leaflet map
@@ -227,10 +228,8 @@ function initMap() {
         poiLayers[type] = L.layerGroup().addTo(map);
     });
     
-    // Add click event handler to the map
-    map.on('click', function(e) {
-        handleMapClick(e.latlng);
-    });
+    // Set up map click event
+    setupMapClickEvents();
     
     // Add the POI legend
     addLegend();
@@ -271,18 +270,42 @@ function updateMapStyleSelector() {
     });
 }
 
-// Handle map click by placing a marker
-function handleMapClick(latlng) {
-    // Clear existing marker if present
-    if (currentMarker) {
-        map.removeLayer(currentMarker);
-    }
+// Set up map click event
+function setupMapClickEvents() {
+    // Variable to track if tutorial is active
+    let tutorialActive = false;
     
-    // Add a new marker at clicked location
-    currentMarker = L.marker(latlng).addTo(map);
+    // Set tutorial active state when showing instructions
+    document.addEventListener('tutorialShown', function() {
+        tutorialActive = true;
+    });
     
-    // Automatically generate isochrone without waiting for Calculate button
-    generateIsochrone(latlng);
+    // Set tutorial inactive when instructions are closed
+    document.addEventListener('tutorialClosed', function() {
+        tutorialActive = false;
+    });
+    
+    // Add click handler to map
+    map.on('click', function(e) {
+        // If tutorial is active, don't process the map click for sidebar hiding
+        if (tutorialActive && window.innerWidth > 768) {
+            return;
+        }
+        
+        // Get click coordinates
+        const latlng = e.latlng;
+        
+        // Remove existing marker if any
+        if (currentMarker) {
+            map.removeLayer(currentMarker);
+        }
+        
+        // Add new marker at click location
+        currentMarker = L.marker(latlng).addTo(map);
+        
+        // Generate isochrone for the clicked location
+        generateIsochrone(latlng);
+    });
 }
 
 // Generate isochrone for the selected location
@@ -1356,8 +1379,15 @@ function showLoading() {
     const spinner = document.createElement('div');
     spinner.className = 'spinner';
     
-    // Adicionar spinner ao overlay
+    // Adicionar texto de carregamento
+    const loadingText = document.createElement('div');
+    loadingText.style.marginTop = '15px';
+    loadingText.style.fontWeight = 'bold';
+    loadingText.textContent = 'A calcular a isócrona...';
+    
+    // Adicionar spinner e texto ao overlay
     overlay.appendChild(spinner);
+    overlay.appendChild(loadingText);
     
     // Adicionar overlay ao contêiner do mapa
     document.getElementById('map').appendChild(overlay);
@@ -1384,5 +1414,374 @@ function hideStatisticsPanel() {
     const statsPanel = document.querySelector('.statistics-panel');
     if (statsPanel) {
         statsPanel.classList.remove('visible');
+    }
+}
+
+// Shows initial instructions to help new users
+function showInitialInstructions() {
+    // Check if the user has seen the tutorial before
+    if (localStorage.getItem('minu15_instructions_seen') === 'true') {
+        return;
+    }
+    
+    // Create the tutorial container
+    const tutorialBox = document.createElement('div');
+    tutorialBox.id = 'instruction-box';
+    tutorialBox.style.position = 'absolute';
+    tutorialBox.style.top = '50%';
+    tutorialBox.style.left = '50%';
+    tutorialBox.style.transform = 'translate(-50%, -50%) scale(0.9)';
+    tutorialBox.style.background = 'rgba(255, 255, 255, 0.97)';
+    tutorialBox.style.padding = '30px';
+    tutorialBox.style.borderRadius = '16px';
+    tutorialBox.style.boxShadow = '0 10px 40px rgba(0, 0, 0, 0.15)';
+    tutorialBox.style.zIndex = '1500';
+    tutorialBox.style.maxWidth = '550px';
+    tutorialBox.style.width = '90%';
+    tutorialBox.style.opacity = '0';
+    tutorialBox.style.transition = 'all 0.3s ease-out';
+    
+    // Create tutorial content
+    tutorialBox.innerHTML = `
+        <div style="position: relative;">
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="width: 70px; height: 70px; background-color: #3498db; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 15px;">
+                    <i class="fas fa-map-marked-alt" style="font-size: 32px; color: white;"></i>
+                </div>
+                <h2 style="font-size: 24px; color: #2c3e50; margin-bottom: 5px; font-weight: 600;">Bem-vindo ao Minu15</h2>
+                <p style="color: #7f8c8d; font-size: 15px;">Explore áreas acessíveis em 15 minutos a pé, bicicleta ou carro</p>
+            </div>
+            
+            <div style="margin-bottom: 25px;">
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; margin-bottom: 15px; align-items: flex-start;">
+                        <div style="background: #3498db; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; margin-right: 15px; flex-shrink: 0;">
+                            <span style="font-weight: bold;">1</span>
+                        </div>
+                        <div>
+                            <strong style="font-weight: 600; color: #2c3e50;">Selecione um ponto no mapa</strong> 
+                            <p style="margin-top: 5px; color: #555;">Clique em qualquer lugar no mapa para definir um ponto de partida, ou utilize a barra de pesquisa para encontrar um endereço específico.</p>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; margin-bottom: 15px; align-items: flex-start;">
+                        <div style="background: #3498db; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; margin-right: 15px; flex-shrink: 0;">
+                            <span style="font-weight: bold;">2</span>
+                        </div>
+                        <div>
+                            <strong style="font-weight: 600; color: #2c3e50;">Configure suas preferências</strong> 
+                            <p style="margin-top: 5px; color: #555;">Escolha o modo de transporte (a pé, bicicleta ou carro) e ajuste o tempo máximo de deslocamento utilizando o painel lateral.</p>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; margin-bottom: 15px; align-items: flex-start;">
+                        <div style="background: #3498db; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; margin-right: 15px; flex-shrink: 0;">
+                            <span style="font-weight: bold;">3</span>
+                        </div>
+                        <div>
+                            <strong style="font-weight: 600; color: #2c3e50;">Visualize a área de cobertura</strong> 
+                            <p style="margin-top: 5px; color: #555;">A <span style="color: #3498db; font-weight: 500;">isócrona</span> (área colorida) mostrará até onde você pode chegar no tempo definido, e os pontos de interesse disponíveis nessa região.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background-color: #f0f7ff; border-left: 4px solid #3498db; padding: 15px; border-radius: 5px; margin-top: 20px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <i class="fas fa-lightbulb" style="color: #3498db; margin-right: 10px; font-size: 18px;"></i>
+                        <strong style="font-weight: 600; color: #2c3e50;">Dica</strong>
+                    </div>
+                    <p style="margin: 0; color: #555; font-size: 14px;">Use o painel de configurações para personalizar os pesos de cada tipo de serviço no cálculo de pontuação de acessibilidade.</p>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <div style="margin-bottom: 20px;">
+                    <button id="got-it-btn" style="background-color: #3498db; color: white; border: none; padding: 12px 25px; border-radius: 30px; font-weight: 600; font-size: 16px; cursor: pointer; width: 100%; transition: all 0.2s ease;">Começar a explorar</button>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: center; font-size: 14px; color: #7f8c8d;">
+                    <input type="checkbox" id="dont-show-again" style="margin-right: 8px;">
+                    <label for="dont-show-again">Não mostrar novamente</label>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add to document
+    document.body.appendChild(tutorialBox);
+    
+    // Add entrance animation
+    setTimeout(() => {
+        tutorialBox.style.opacity = '1';
+        tutorialBox.style.transform = 'translate(-50%, -50%) scale(1)';
+        
+        // Show a visual hint of map click after tutorial appears
+        setTimeout(() => {
+            showMapClickAnimation();
+        }, 1000);
+        
+        // Dispatch event that tutorial is shown
+        document.dispatchEvent(new Event('tutorialShown'));
+    }, 100);
+    
+    // Prevent clicks on the tutorial from propagating to the map
+    tutorialBox.addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
+    
+    // Add hover effect to the button
+    const tutorialBtn = document.getElementById('got-it-btn');
+    tutorialBtn.addEventListener('mouseover', function() {
+        this.style.backgroundColor = '#2980b9';
+        this.style.transform = 'translateY(-2px)';
+        this.style.boxShadow = '0 5px 15px rgba(52, 152, 219, 0.4)';
+    });
+    
+    tutorialBtn.addEventListener('mouseout', function() {
+        this.style.backgroundColor = '#3498db';
+        this.style.transform = 'translateY(0)';
+        this.style.boxShadow = 'none';
+    });
+    
+    // Close button event
+    tutorialBtn.addEventListener('click', function(event) {
+        event.stopPropagation();
+        
+        // Add exit animation
+        tutorialBox.style.opacity = '0';
+        tutorialBox.style.transform = 'translate(-50%, -50%) scale(0.9)';
+        
+        // Save preference if checkbox is checked
+        if (document.getElementById('dont-show-again').checked) {
+            localStorage.setItem('minu15_instructions_seen', 'true');
+        }
+        
+        // Remove after animation completes
+        setTimeout(() => {
+            document.getElementById('instruction-box').remove();
+            
+            // Critical fix for sidebar disappearing issue
+            // Force the sidebar to be visible on desktop
+            if (window.innerWidth > 768) {
+                const panel = document.getElementById('overlay-panel');
+                if (panel) {
+                    // First remove any problematic class or style that might be hiding it
+                    panel.classList.remove('mobile-active');
+                    
+                    // Apply direct styles to ensure visibility
+                    panel.style.display = 'block';
+                    panel.style.transform = 'none';
+                    panel.style.visibility = 'visible';
+                    panel.style.opacity = '1';
+                    panel.style.left = '20px';
+                    panel.style.zIndex = '999';
+                    panel.style.position = 'absolute';
+                    
+                    // Apply additional override styles through a CSS rule
+                    const styleElement = document.createElement('style');
+                    styleElement.id = 'sidebar-fix-style';
+                    styleElement.textContent = `
+                        @media (min-width: 769px) {
+                            #overlay-panel {
+                                display: block !important;
+                                transform: none !important;
+                                visibility: visible !important;
+                                opacity: 1 !important;
+                                left: 20px !important;
+                                z-index: 999 !important;
+                                position: absolute !important;
+                                top: 20px !important;
+                                overflow-y: auto !important;
+                                max-height: calc(100vh - 40px) !important;
+                            }
+                        }
+                    `;
+                    
+                    // Add the style element if it doesn't exist yet
+                    if (!document.getElementById('sidebar-fix-style')) {
+                        document.head.appendChild(styleElement);
+                    }
+                    
+                    // Set multiple delayed fixes to catch any race conditions
+                    for (let i = 1; i <= 5; i++) {
+                        setTimeout(() => {
+                            panel.style.display = 'block';
+                            panel.style.transform = 'none';
+                            panel.style.visibility = 'visible';
+                            panel.style.opacity = '1';
+                        }, i * 100);
+                    }
+                }
+            }
+            
+            // Dispatch event that tutorial is closed
+            document.dispatchEvent(new Event('tutorialClosed'));
+            
+            // Highlight key UI elements after tutorial closes
+            highlightKeyElements();
+        }, 300);
+    });
+    
+    // "Don't show again" event
+    document.getElementById('dont-show-again').addEventListener('click', function(event) {
+        // Stop event propagation to prevent triggering map click
+        event.stopPropagation();
+    });
+}
+
+/**
+ * Shows a visual animation suggesting to click on the map
+ */
+function showMapClickAnimation() {
+    // Create the cursor element
+    const cursor = document.createElement('div');
+    cursor.style.position = 'absolute';
+    cursor.style.width = '24px';
+    cursor.style.height = '24px';
+    cursor.style.background = 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3E%3Cpath fill=\'%23ffffff\' stroke=\'%23000000\' stroke-width=\'1\' d=\'M1 1 L15 8 L8 10 L10 15 L7 7 Z\'/%3E%3C/svg%3E") no-repeat';
+    cursor.style.backgroundSize = 'contain';
+    cursor.style.zIndex = '1001';
+    cursor.style.pointerEvents = 'none';
+    cursor.style.transition = 'transform 0.2s ease-out';
+    cursor.style.transform = 'scale(1.2)';
+    cursor.style.opacity = '0.9';
+    document.body.appendChild(cursor);
+    
+    // Create the click effect element
+    const clickEffect = document.createElement('div');
+    clickEffect.style.position = 'absolute';
+    clickEffect.style.width = '40px';
+    clickEffect.style.height = '40px';
+    clickEffect.style.borderRadius = '50%';
+    clickEffect.style.background = 'rgba(52, 152, 219, 0.4)';
+    clickEffect.style.transform = 'translate(-50%, -50%) scale(0)';
+    clickEffect.style.zIndex = '1000';
+    clickEffect.style.pointerEvents = 'none';
+    document.body.appendChild(clickEffect);
+    
+    // Get a point in the center-right area of the map
+    const mapElement = document.getElementById('map');
+    const mapRect = mapElement.getBoundingClientRect();
+    const startX = mapRect.left + mapRect.width * 0.65;
+    const startY = mapRect.top + mapRect.height * 0.4;
+    const targetX = startX + 50;
+    const targetY = startY + 30;
+    
+    // Position the cursor at starting point
+    cursor.style.left = startX + 'px';
+    cursor.style.top = startY + 'px';
+    
+    // Animate cursor to target position
+    setTimeout(() => {
+        cursor.style.transition = 'all 1s ease-in-out';
+        cursor.style.left = targetX + 'px';
+        cursor.style.top = targetY + 'px';
+        
+        // Show click effect at target position
+        setTimeout(() => {
+            cursor.style.transform = 'scale(0.8)';
+            
+            // Position and animate the click effect
+            clickEffect.style.left = targetX + 'px';
+            clickEffect.style.top = targetY + 'px';
+            clickEffect.style.transition = 'all 0.5s ease-out';
+            clickEffect.style.transform = 'translate(-50%, -50%) scale(1)';
+            clickEffect.style.opacity = '1';
+            
+            // Fade out click effect
+            setTimeout(() => {
+                clickEffect.style.transform = 'translate(-50%, -50%) scale(1.5)';
+                clickEffect.style.opacity = '0';
+                
+                // Clean up after animation
+                setTimeout(() => {
+                    cursor.remove();
+                    clickEffect.remove();
+                }, 500);
+            }, 500);
+        }, 1000);
+    }, 500);
+}
+
+/**
+ * Highlights key UI elements to guide users where to start
+ */
+function highlightKeyElements() {
+    // Highlight the sidebar panel
+    const panel = document.querySelector('.overlay-panel');
+    const transportOptions = document.querySelector('.transport-mode');
+    
+    // Create highlight effect elements
+    const panelHighlight = document.createElement('div');
+    panelHighlight.style.position = 'absolute';
+    panelHighlight.style.top = '0';
+    panelHighlight.style.left = '0';
+    panelHighlight.style.width = '100%';
+    panelHighlight.style.height = '100%';
+    panelHighlight.style.boxShadow = '0 0 0 4px rgba(52, 152, 219, 0.7)';
+    panelHighlight.style.borderRadius = 'inherit';
+    panelHighlight.style.pointerEvents = 'none';
+    panelHighlight.style.zIndex = '1000';
+    panelHighlight.style.opacity = '0';
+    panelHighlight.style.transition = 'opacity 0.5s ease-in-out';
+    
+    // Add the highlight to the panel
+    panel.style.position = 'relative';
+    panel.appendChild(panelHighlight);
+    
+    // Create a highlight for the transport mode options
+    const transportHighlight = document.createElement('div');
+    transportHighlight.style.position = 'absolute';
+    transportHighlight.style.top = '0';
+    transportHighlight.style.left = '0';
+    transportHighlight.style.width = '100%';
+    transportHighlight.style.height = '100%';
+    transportHighlight.style.boxShadow = '0 0 0 4px rgba(52, 152, 219, 0.7)';
+    transportHighlight.style.borderRadius = 'inherit';
+    transportHighlight.style.pointerEvents = 'none';
+    transportHighlight.style.zIndex = '1000';
+    transportHighlight.style.opacity = '0';
+    transportHighlight.style.transition = 'opacity 0.5s ease-in-out';
+    
+    // Add the highlight to the transport options
+    transportOptions.style.position = 'relative';
+    transportOptions.appendChild(transportHighlight);
+    
+    // Animate the highlight for the panel
+    setTimeout(() => {
+        panelHighlight.style.opacity = '1';
+        
+        // Highlight transport options after the panel
+        setTimeout(() => {
+            panelHighlight.style.opacity = '0';
+            transportHighlight.style.opacity = '1';
+            
+            // Remove the highlights after 2 seconds
+            setTimeout(() => {
+                transportHighlight.style.opacity = '0';
+                
+                // Remove the highlight elements after fade out
+                setTimeout(() => {
+                    panelHighlight.remove();
+                    transportHighlight.remove();
+                }, 500);
+            }, 2000);
+        }, 2000);
+    }, 500);
+    
+    // Add the pulse animation class if it doesn't exist
+    if (!document.getElementById('pulse-animation-style')) {
+        const style = document.createElement('style');
+        style.id = 'pulse-animation-style';
+        style.textContent = `
+            @keyframes pulse-animation {
+                0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); }
+                70% { box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
+            }
+            .pulse-highlight {
+                animation: pulse-animation 1.5s infinite;
+            }
+        `;
+        document.head.appendChild(style);
     }
 }

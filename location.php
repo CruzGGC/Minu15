@@ -122,7 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         </div>
         
         <div class="logo-header">
-            <img src="images/Minu15.png" alt="Minu15 Logo" class="app-logo">
+            <a href="index.php">
+                <img src="images/Minu15.png" alt="Minu15 Logo" class="app-logo">
+            </a>
         </div>
         
         <div class="panel-section">
