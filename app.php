@@ -181,47 +181,199 @@
         <button class="calculate-button">Calcular</button>
         
         <div class="panel-section">
-            <div class="panel-header" id="map-style-header">
-                <span>Estilo do Mapa</span>
+            <div class="panel-header js-custom-handled" id="settings-header">
+                <span><i class="fas fa-cog"></i> Configurações</span>
                 <span class="dropdown-arrow">▼</span>
             </div>
-            <div class="panel-content" id="map-style-content">
-                <div class="map-style-selector">
-                    <div class="map-style-option" data-provider="osm">
-                        <div class="map-style-icon"><i class="fas fa-map"></i></div>
-                        <span>OSM</span>
+            <div class="panel-content" id="settings-content">
+                <!-- Location Data Settings -->
+                <div class="settings-group">
+                    <h4>Dados de Localização</h4>
+                    <div class="setting-row">
+                        <label>Nível de Detalhe:</label>
+                        <select id="location-detail-level">
+                            <option value="freguesia">Freguesia</option>
+                            <option value="municipio" selected>Município</option>
+                            <option value="distrito">Distrito</option>
+                        </select>
                     </div>
-                    <div class="map-style-option active" data-provider="positron">
-                        <div class="map-style-icon"><i class="fas fa-sun"></i></div>
-                        <span>Carto Light</span>
+                </div>
+                
+                <!-- Accessibility Score Settings -->
+                <div class="settings-group">
+                    <h4>Pontuação de Acessibilidade</h4>
+                    
+                    <!-- Saúde -->
+                    <div class="weight-category">
+                        <div class="weight-header">
+                            <span>Saúde</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                        <div class="weight-content expanded">
+                            <div class="weight-item">
+                                <label for="weight-hospitals">Hospitais:</label>
+                                <input type="number" id="weight-hospitals" min="1" max="10" value="10" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-health_centers">Centros de Saúde:</label>
+                                <input type="number" id="weight-health_centers" min="1" max="10" value="8" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-pharmacies">Farmácias:</label>
+                                <input type="number" id="weight-pharmacies" min="1" max="10" value="7" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-dentists">Clínicas Dentárias:</label>
+                                <input type="number" id="weight-dentists" min="1" max="10" value="5" class="weight-input">
+                            </div>
+                        </div>
                     </div>
-                    <div class="map-style-option" data-provider="dark_matter">
-                        <div class="map-style-icon"><i class="fas fa-moon"></i></div>
-                        <span>Carto Dark</span>
+                    
+                    <!-- Educação -->
+                    <div class="weight-category">
+                        <div class="weight-header">
+                            <span>Educação</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                        <div class="weight-content expanded">
+                            <div class="weight-item">
+                                <label for="weight-schools">Escolas:</label>
+                                <input type="number" id="weight-schools" min="1" max="10" value="9" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-universities">Universidades:</label>
+                                <input type="number" id="weight-universities" min="1" max="10" value="6" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-kindergartens">Jardins de Infância:</label>
+                                <input type="number" id="weight-kindergartens" min="1" max="10" value="7" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-libraries">Bibliotecas:</label>
+                                <input type="number" id="weight-libraries" min="1" max="10" value="5" class="weight-input">
+                            </div>
+                        </div>
                     </div>
-                    <div class="map-style-option" data-provider="topo">
-                        <div class="map-style-icon"><i class="fas fa-mountain"></i></div>
-                        <span>Topo</span>
+                    
+                    <!-- Comércio -->
+                    <div class="weight-category">
+                        <div class="weight-header">
+                            <span>Comércio e Serviços</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                        <div class="weight-content expanded">
+                            <div class="weight-item">
+                                <label for="weight-supermarkets">Supermercados:</label>
+                                <input type="number" id="weight-supermarkets" min="1" max="10" value="10" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-malls">Centros Comerciais:</label>
+                                <input type="number" id="weight-malls" min="1" max="10" value="6" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-restaurants">Restaurantes:</label>
+                                <input type="number" id="weight-restaurants" min="1" max="10" value="7" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-atms">Multibancos:</label>
+                                <input type="number" id="weight-atms" min="1" max="10" value="6" class="weight-input">
+                            </div>
+                        </div>
                     </div>
-                    <div class="map-style-option" data-provider="satellite">
-                        <div class="map-style-icon"><i class="fas fa-satellite"></i></div>
-                        <span>Satélite</span>
+                    
+                    <!-- Segurança -->
+                    <div class="weight-category">
+                        <div class="weight-header">
+                            <span>Segurança e Serviços Públicos</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                        <div class="weight-content expanded">
+                            <div class="weight-item">
+                                <label for="weight-police_stations">Esquadras de Polícia:</label>
+                                <input type="number" id="weight-police_stations" min="1" max="10" value="8" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-fire_stations">Bombeiros:</label>
+                                <input type="number" id="weight-fire_stations" min="1" max="10" value="7" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-civil_protection">Serviços Públicos:</label>
+                                <input type="number" id="weight-civil_protection" min="1" max="10" value="5" class="weight-input">
+                            </div>
+                        </div>
                     </div>
-                    <div class="map-style-option" data-provider="esri_gray">
-                        <div class="map-style-icon"><i class="fas fa-pencil-alt"></i></div>
-                        <span>ESRI Cinza</span>
+                    
+                    <!-- Cultura e Lazer -->
+                    <div class="weight-category">
+                        <div class="weight-header">
+                            <span>Cultura e Lazer</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                        <div class="weight-content expanded">
+                            <div class="weight-item">
+                                <label for="weight-parks">Parques:</label>
+                                <input type="number" id="weight-parks" min="1" max="10" value="8" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-sports">Ginásios:</label>
+                                <input type="number" id="weight-sports" min="1" max="10" value="6" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-museums">Museus:</label>
+                                <input type="number" id="weight-museums" min="1" max="10" value="3" class="weight-input">
+                            </div>
+                            <div class="weight-item">
+                                <label for="weight-theaters">Teatros:</label>
+                                <input type="number" id="weight-theaters" min="1" max="10" value="3" class="weight-input">
+                            </div>
+                        </div>
                     </div>
-                    <div class="map-style-option" data-provider="osm_hot">
-                        <div class="map-style-icon"><i class="fas fa-hands-helping"></i></div>
-                        <span>OSM HOT</span>
-                    </div>
-                    <div class="map-style-option" data-provider="voyager">
-                        <div class="map-style-icon"><i class="fas fa-compass"></i></div>
-                        <span>Voyager</span>
-                    </div>
-                    <div class="map-style-option" data-provider="esri_streets">
-                        <div class="map-style-icon"><i class="fas fa-road"></i></div>
-                        <span>ESRI Ruas</span>
+                    
+                    <button id="reset-weights" class="reset-btn">
+                        <i class="fas fa-undo"></i> Restaurar valores padrão
+                    </button>
+                </div>
+                
+                <!-- Map Style Settings -->
+                <div class="settings-group">
+                    <h4>Estilo do Mapa</h4>
+                    <div class="map-style-selector">
+                        <div class="map-style-option" data-provider="osm">
+                            <div class="map-style-icon"><i class="fas fa-map"></i></div>
+                            <span>OSM</span>
+                        </div>
+                        <div class="map-style-option active" data-provider="positron">
+                            <div class="map-style-icon"><i class="fas fa-sun"></i></div>
+                            <span>Carto Light</span>
+                        </div>
+                        <div class="map-style-option" data-provider="dark_matter">
+                            <div class="map-style-icon"><i class="fas fa-moon"></i></div>
+                            <span>Carto Dark</span>
+                        </div>
+                        <div class="map-style-option" data-provider="topo">
+                            <div class="map-style-icon"><i class="fas fa-mountain"></i></div>
+                            <span>Topo</span>
+                        </div>
+                        <div class="map-style-option" data-provider="satellite">
+                            <div class="map-style-icon"><i class="fas fa-satellite"></i></div>
+                            <span>Satélite</span>
+                        </div>
+                        <div class="map-style-option" data-provider="esri_gray">
+                            <div class="map-style-icon"><i class="fas fa-pencil-alt"></i></div>
+                            <span>ESRI Cinza</span>
+                        </div>
+                        <div class="map-style-option" data-provider="osm_hot">
+                            <div class="map-style-icon"><i class="fas fa-hands-helping"></i></div>
+                            <span>OSM HOT</span>
+                        </div>
+                        <div class="map-style-option" data-provider="voyager">
+                            <div class="map-style-icon"><i class="fas fa-compass"></i></div>
+                            <span>Voyager</span>
+                        </div>
+                        <div class="map-style-option" data-provider="esri_streets">
+                            <div class="map-style-icon"><i class="fas fa-road"></i></div>
+                            <span>ESRI Ruas</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -258,5 +410,123 @@
     <!-- Custom JS -->
     <script src="js/map.js"></script>
     <script src="js/controls.js"></script>
+    
+    <!-- jQuery-based direct fix for settings dropdown -->
+    <script>
+        $(document).ready(function() {
+            console.log('jQuery settings fix applied');
+
+            // Default weights from map.js - used when localStorage values don't exist
+            const defaultWeights = {
+                // Saúde (maior peso - essencial)
+                hospitals: 10,
+                health_centers: 8,
+                pharmacies: 7,
+                dentists: 5,
+                
+                // Educação
+                schools: 9,
+                universities: 6,
+                kindergartens: 7,
+                libraries: 5,
+                
+                // Comércio e Serviços
+                supermarkets: 10,
+                malls: 6,
+                restaurants: 7,
+                atms: 6,
+                
+                // Segurança e Serviços Públicos
+                police: 8,
+                police_stations: 8,
+                fire_stations: 7,
+                civil_protection: 5,
+                
+                // Cultura e Lazer
+                museums: 3,
+                theaters: 3,
+                sports: 6,
+                parks: 8
+            };
+            
+            // Initialize weight inputs from localStorage or use defaults
+            $('.weight-input').each(function() {
+                const inputId = $(this).attr('id');
+                const weightKey = inputId.replace('weight-', '');
+                const savedWeight = localStorage.getItem('weight-' + weightKey);
+                
+                if (savedWeight !== null) {
+                    $(this).val(savedWeight);
+                } else if (defaultWeights[weightKey]) {
+                    $(this).val(defaultWeights[weightKey]);
+                }
+            });
+
+            // Initialize settings panel to collapsed and all weight categories to expanded
+            $('#settings-content').hide(); // Hide initially so slideToggle works correctly
+            $('#settings-header').find('.dropdown-arrow').removeClass('up');
+            $('.weight-content').slideDown().addClass('expanded'); // Ensure all weight categories are expanded and visible
+            $('.weight-header').find('.dropdown-arrow').addClass('up');
+            
+            // Settings panel toggle
+            $('#settings-header').on('click', function() {
+                console.log('Settings header clicked (jQuery)');
+                const $settingsContent = $('#settings-content');
+                const $arrow = $(this).find('.dropdown-arrow');
+
+                if ($settingsContent.is(':hidden')) {
+                    // Expanding
+                    $settingsContent.addClass('expanded');
+                    $arrow.addClass('up');
+                    $settingsContent.slideDown(300);
+                } else {
+                    // Collapsing
+                    $settingsContent.slideUp(300, function() {
+                        $settingsContent.removeClass('expanded');
+                        $arrow.removeClass('up');
+                    });
+                }
+            });
+            
+            // Weight category toggles
+            $('.weight-header').on('click', function(e) {
+                e.stopPropagation(); // Prevent event propagation to parent
+                console.log('Weight header clicked (jQuery)');
+                $(this).next('.weight-content').toggleClass('expanded');
+                $(this).find('.dropdown-arrow').toggleClass('up');
+            });
+            
+            // Save weights to localStorage when changed
+            $('.weight-input').on('change', function() {
+                const inputId = $(this).attr('id');
+                const weightKey = inputId.replace('weight-', '');
+                const value = parseInt($(this).val());
+                
+                // Validate value is between 1-10
+                if (value < 1) {
+                    $(this).val(1);
+                    localStorage.setItem('weight-' + weightKey, 1);
+                } else if (value > 10) {
+                    $(this).val(10);
+                    localStorage.setItem('weight-' + weightKey, 10);
+                } else {
+                    localStorage.setItem('weight-' + weightKey, value);
+                }
+            });
+            
+            // Reset weights button
+            $('#reset-weights').on('click', function() {
+                // Apply default values
+                $.each(defaultWeights, function(key, value) {
+                    $('#weight-' + key).val(value);
+                    
+                    // Also clear localStorage for this weight to ensure it uses default on next load
+                    localStorage.removeItem('weight-' + key);
+                });
+                
+                alert('Pontuações restauradas para valores padrão.');
+            });
+        });
+    </script>
 </body>
 </html>

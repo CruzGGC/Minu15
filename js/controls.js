@@ -33,6 +33,9 @@ function initControls() {
     
     // Initialize panel close buttons
     initPanelCloseButtons();
+    
+    // Initialize settings controls
+    initSettingsControls();
 }
 
 // Initialize mobile menu functionality
@@ -86,11 +89,26 @@ function initMapStyleSelector() {
 
 // Initialize collapsible panels
 function initCollapsiblePanels() {
-    // Initialize main panel headers
+    // Log all panel headers for debugging
+    console.log('Found panel headers:', document.querySelectorAll('.panel-header').length);
+    
+    // Initialize panel headers (excluding settings which is handled separately)
     document.querySelectorAll('.panel-header').forEach(header => {
+        // Skip headers with 'js-custom-handled' class (e.g., settings header) as they are handled by other scripts
+        if (header.classList.contains('js-custom-handled')) {
+            console.log('Skipping panel header with js-custom-handled class:', header.id);
+            return;
+        }
+        
+        console.log('Initializing panel header:', header.id);
+        
         header.addEventListener('click', function() {
+            console.log('Panel header clicked:', this.id);
             const content = this.nextElementSibling;
+            console.log('Next element:', content?.id);
+            
             if (content && content.classList.contains('panel-content')) {
+                console.log('Toggling expanded class on', content.id);
                 content.classList.toggle('expanded');
                 const arrow = this.querySelector('.dropdown-arrow');
                 if (arrow) {
@@ -127,14 +145,13 @@ function initCollapsiblePanels() {
         }
     }
     
-    // Start with map style panel collapsed
-    const mapStyleContent = document.getElementById('map-style-content');
-    if (mapStyleContent) {
-        // Initially collapsed, so no need to add 'expanded' class
-        const arrow = document.querySelector('#map-style-header .dropdown-arrow');
-        if (arrow) {
-            // Keep arrow pointing down (collapsed state)
-        }
+    // Make sure settings panel has correct class
+    const settingsContent = document.getElementById('settings-content');
+    if (settingsContent) {
+        // Make sure it has panel-content class
+        settingsContent.classList.add('panel-content');
+        // Ensure it's initially collapsed
+        settingsContent.classList.remove('expanded');
     }
     
     // Start with first category expanded (Health)
@@ -459,4 +476,54 @@ function hideStatisticsPanel() {
     } else {
         console.error('Statistics panel not found');
     }
+}
+
+// Initialize settings controls
+function initSettingsControls() {
+    console.log('Settings controls initialization bypassed - using jQuery instead');
+    
+    // Just handle localStorage functionality, all UI interactions are in jQuery
+    
+    // Initialize location detail level selector - just localStorage loading
+    const locationDetailLevel = document.getElementById('location-detail-level');
+    if (locationDetailLevel) {
+        // Set initial value from localStorage if available
+        const savedLevel = localStorage.getItem('locationDetailLevel');
+        if (savedLevel) {
+            locationDetailLevel.value = savedLevel;
+        }
+        
+        // Add change event handler to store in localStorage
+        locationDetailLevel.addEventListener('change', function() {
+            localStorage.setItem('locationDetailLevel', this.value);
+            console.log(`Location detail level changed to: ${this.value}`);
+        });
+    }
+    
+    // Initialize weight inputs to load from localStorage
+    document.querySelectorAll('.weight-input').forEach(input => {
+        // Set initial value from localStorage if available
+        const poiType = input.id.replace('weight-', '');
+        const savedWeight = localStorage.getItem(`weight-${poiType}`);
+        if (savedWeight) {
+            input.value = savedWeight;
+        }
+        
+        // Add change event handler to store in localStorage
+        input.addEventListener('change', function() {
+            // Validate input value (between 1-10)
+            let value = parseInt(this.value);
+            if (isNaN(value) || value < 1) {
+                value = 1;
+                this.value = 1;
+            } else if (value > 10) {
+                value = 10;
+                this.value = 10;
+            }
+            
+            // Store the weight in localStorage
+            const poiType = this.id.replace('weight-', '');
+            localStorage.setItem(`weight-${poiType}`, value);
+        });
+    });
 }

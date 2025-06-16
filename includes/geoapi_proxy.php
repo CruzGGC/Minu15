@@ -292,7 +292,35 @@ if ($response['success']) {
 }
 
 // Output the response
-echo json_encode($response['data']);
+if (isset($response['data']) && is_array($response['data'])) {
+    // Valid data array, output as JSON
+    echo json_encode($response['data']);
+} else if (isset($response['response']) && !empty($response['response'])) {
+    // If response is already JSON, output directly
+    $contentType = $response['headers'] ?? '';
+    if (strpos($contentType, 'application/json') !== false) {
+        echo $response['response'];
+    } else {
+        // Try to decode and re-encode to ensure valid JSON
+        $data = json_decode($response['response'], true);
+        if ($data !== null) {
+            echo json_encode($data);
+        } else {
+            // Fallback if response is not valid JSON
+            echo json_encode([
+                'success' => false,
+                'message' => 'Invalid response from API',
+                'error' => json_last_error_msg()
+            ]);
+        }
+    }
+} else {
+    // Fallback with error message
+    echo json_encode([
+        'success' => false,
+        'message' => 'No data received from API'
+    ]);
+}
 exit;
 
 // Function to make API requests with retry logic
@@ -537,12 +565,27 @@ function makeApiRequest($url, $postData = null, $retryCount = 0, $maxRetries = 3
         debug_log("Normalized Municipios Response", ['normalized_body_sample' => substr($body, 0, 200) . '...']);
     }
 
+    // Prepare the data for the response
+    $data = null;
+    if (!empty($body)) {
+        $data = json_decode($body, true);
+        
+        // Log any JSON parsing errors
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            debug_log("JSON parse error", [
+                'error' => json_last_error_msg(),
+                'body_sample' => substr($body, 0, 200)
+            ]);
+        }
+    }
+    
     return [
         'success' => $httpCode >= 200 && $httpCode < 300,
         'code' => $httpCode,
         'message' => 'HTTP Code: ' . $httpCode,
         'response' => $body,
         'headers' => $headers,
-        'verbose' => $verboseLog
+        'verbose' => $verboseLog,
+        'data' => $data
     ];
 } 

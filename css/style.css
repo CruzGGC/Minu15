@@ -112,15 +112,21 @@ body:has(.top-nav) #map {
 
 .panel-content {
     margin-top: 10px;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
+    transition: opacity 0.5s ease; /* Only opacity transition */
+    opacity: 0;
 }
 
 .panel-content.expanded {
-    max-height: 500px;
-    overflow-y: auto;
+    opacity: 1;
 }
+
+/* Special case for settings panel which has more content */
+#settings-content.expanded {
+    /* No specific styles needed here, slideToggle handles display and height */
+    display: block !important; /* Kept for strong override */
+}
+
+/* Direct toggle for settings content removed as jQuery will handle animation */
 
 .dropdown-arrow {
     transition: transform 0.3s ease;
@@ -2276,7 +2282,7 @@ body:has(.top-nav) #map {
     }
 }
 
-/* Freguesia identification in statistics panel */
+/* Municipio identification in statistics panel */
 .freguesia-info {
     cursor: pointer;
     color: #2980b9;
@@ -2318,10 +2324,174 @@ body:has(.top-nav) #map {
 }
 
 .freguesia-info.freguesia-found {
-    background-color: #eafaf1;
-    color: #27ae60;
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+    width: 100%;
     text-decoration: none;
     cursor: default;
+}
+
+/* Modern municipality button */
+.municipio-link-btn.modern-button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 5px 0;
+    width: 100%;
+}
+
+.municipio-link-btn.modern-button i {
+    margin-right: 8px;
+}
+
+.municipio-link-btn.modern-button:hover {
+    background-color: #2980b9;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Settings Tab Styles */
+.settings-group {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.settings-group h4 {
+    font-size: 15px;
+    margin-bottom: 12px;
+    color: #2c3e50;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+
+.setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 5px 0;
+}
+
+.setting-row label {
+    font-size: 14px;
+    color: #555;
+    flex: 1;
+}
+
+.setting-row select {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 14px;
+    color: #333;
+    width: 45%;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+}
+
+.setting-row select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* Weight Categories Styles */
+.weight-category {
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.weight-category:last-child {
+    border-bottom: none;
+}
+
+.weight-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 6px 0;
+    font-weight: 500;
+    color: #333;
+    transition: all 0.2s ease;
+}
+
+.weight-header:hover {
+    color: #3498db;
+}
+
+.weight-content {
+    margin-top: 8px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.weight-content.expanded {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.weight-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.weight-item label {
+    font-size: 13px;
+    color: #555;
+    flex: 1;
+}
+
+.weight-input {
+    width: 60px;
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 13px;
+}
+
+.show-more-btn, .reset-btn {
+    background-color: transparent;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 6px 12px;
+    margin: 10px 0;
+    width: 100%;
+    text-align: center;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.show-more-btn:hover, .reset-btn:hover {
+    background-color: #f2f2f2;
+    color: #333;
+}
+
+.show-more-btn i, .reset-btn i {
+    margin-right: 6px;
 }
 
 .demographics-section {

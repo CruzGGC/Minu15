@@ -27,7 +27,7 @@ if ($locationType && $locationId) {
                 if ($municipio) {
                     $result = $fetcher->fetchByFreguesiaAndMunicipio($locationId, $municipio);
                 } else {
-                    $error = "Para visualizar dados de uma freguesia, é necessário especificar o município.";
+                    $error = "Para visualizar dados de uma freguesia, é necessário especificar o município. <br><br>Exemplo: <code>location_data.php?type=freguesia&id=" . urlencode($locationId) . "&municipio=NOME_DO_MUNICÍPIO</code>";
                 }
                 break;
             case 'gps':
@@ -266,10 +266,41 @@ function formatDemographicData($data) {
         .error-message {
             background-color: #f8d7da;
             color: #721c24;
-            padding: 20px;
+            padding: 25px 30px;
             border-radius: var(--border-radius);
-            margin-bottom: 25px;
+            margin-bottom: 30px;
             animation: shake 0.5s ease-out;
+            box-shadow: var(--box-shadow);
+            border-left: 5px solid #dc3545;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .error-message i {
+            font-size: 24px;
+            margin-right: 10px;
+            color: #dc3545;
+        }
+        
+        .error-message h3 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            font-size: 1.3rem;
+        }
+        
+        .error-message p {
+            margin: 0;
+            line-height: 1.5;
+        }
+        
+        .error-message code {
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.95em;
         }
         
         .navigation {
@@ -824,7 +855,12 @@ function formatDemographicData($data) {
             </div>
         <?php elseif ($error): ?>
             <div class="error-message">
-                <i class="fas fa-exclamation-triangle"></i> <?php echo $error; ?>
+                <h3><i class="fas fa-exclamation-triangle"></i> Erro na Solicitação</h3>
+                <p><?php echo $error; ?></p>
+                <?php if (strpos($error, 'freguesia') !== false): ?>
+                <p>Use o formato correto: <code>location_data.php?type=freguesia&id=NOME_DA_FREGUESIA&municipio=NOME_DO_MUNICIPIO</code></p>
+                <p>Voltar para o <a href="location.php">Explorador de Localização</a> para selecionar uma localidade no mapa.</p>
+                <?php endif; ?>
             </div>
         <?php elseif ($locationData): ?>
             <div class="location-card">

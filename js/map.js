@@ -860,8 +860,7 @@ function displayAreaStats(stats, latlng) {
             <p><strong>Área:</strong> ${stats.area_km2.toFixed(2)} km²</p>
             <p><strong>Tempo:</strong> ${selectedMaxDistance} minutos ${getTransportModeText()}</p>
             <p><strong>Coordenadas:</strong> ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</p>
-            ${stats.population_estimate ? `<p><strong>População Estimada:</strong> ${stats.population_estimate.toLocaleString()} habitantes</p>` : ''}
-            <p class="freguesia-info">Clique aqui para identificar o municipio</p>
+            <p class="freguesia-info">Carregando informações do município...</p>
         </div>
     `;
     
@@ -923,64 +922,201 @@ function displayAreaStats(stats, latlng) {
     // Set the HTML content
     statsContent.innerHTML = html;
     
-    // Add click event to the freguesia info element
-    document.querySelector('.freguesia-info').addEventListener('click', function() {
-        identifyMunicipio(latlng);
-    });
-    
-    // Make the general-info section clickable to identify municipio
-    document.querySelector('.general-info').addEventListener('click', function() {
-        const lat = parseFloat(this.getAttribute('data-lat'));
-        const lng = parseFloat(this.getAttribute('data-lng'));
-        identifyMunicipio({lat, lng});
-    });
+    // Automatically fetch municipality information
+    identifyMunicipio(latlng);
 }
 
 // Add a new function to handle municipio identification only
 function identifyMunicipio(latlng) {
-    const freguesiaInfo = document.querySelector('.freguesia-info');
-    freguesiaInfo.textContent = 'A identificar municipio...';
-    freguesiaInfo.classList.add('loading');
+    const municipioInfo = document.querySelector('.freguesia-info');
+    municipioInfo.textContent = 'A identificar municipio...';
+    municipioInfo.classList.add('loading');
 
     // Remove any previous municipio button
     let municipioBtn = document.getElementById('municipio-link-btn');
     if (municipioBtn) municipioBtn.remove();
 
-    // Fetch municipio data from GeoAPI using the new /base/detalhes endpoint
-    fetch(`includes/geoapi_proxy.php?endpoint=${encodeURIComponent(`gps/${latlng.lat},${latlng.lng}/base/detalhes`)}`)
-        .then(response => response.json())
-        .then(data => {
-            // Try to get municipio from 'concelho' or 'detalhesMunicipio.nome'
-            let nomeMunicipio = '';
-            if (data && data.concelho) {
-                nomeMunicipio = data.concelho;
-            } else if (data && data.detalhesMunicipio && data.detalhesMunicipio.nome) {
-                nomeMunicipio = data.detalhesMunicipio.nome;
-            }
-            if (nomeMunicipio) {
-                freguesiaInfo.textContent = `Município: ${nomeMunicipio}`;
-                freguesiaInfo.classList.remove('loading');
-                freguesiaInfo.classList.add('freguesia-found');
+    // Function to display location data based on detail level
+    function displayMunicipioData(locationData) {
+        // Get the detail level from settings or use default (municipio)
+        const detailLevel = localStorage.getItem('locationDetailLevel') || 'municipio';
+        
+        // Make sure any previous button is removed
+        let existingBtn = document.getElementById('municipio-link-btn');
+        if (existingBtn) existingBtn.remove();
+        
+        // Clear the loading text and make it just the button
+        municipioInfo.textContent = '';
+        municipioInfo.classList.remove('loading');
+        municipioInfo.classList.add('freguesia-found'); // Keep freguesia-found class for CSS compatibility
 
-                // Show municipio button if municipio info is available
-                const btn = document.createElement('button');
-                btn.id = 'municipio-link-btn';
-                btn.className = 'municipio-link-btn';
-                btn.textContent = 'Ver dados do município';
-                btn.style.marginLeft = '10px';
-                btn.onclick = function() {
-                    window.open(`location_data.php?municipio=${encodeURIComponent(nomeMunicipio)}`, '_blank');
-                };
-                freguesiaInfo.parentNode.insertBefore(btn, freguesiaInfo.nextSibling);
+        // Get the appropriate name and type based on the detail level
+        let locationName = '';
+        let locationType = detailLevel;
+        let locationIcon = 'fa-info-circle';
+        
+        // Set the location name and icon based on the detail level
+        if (detailLevel === 'freguesia') {
+            // Use freguesia data if available
+            locationName = locationData.freguesia || locationData.nomeMunicipio || locationData;
+            locationIcon = 'fa-map-marker-alt';
+        } else if (detailLevel === 'distrito') {
+            // Use distrito data if available
+            locationName = locationData.distrito || locationData.nomeMunicipio || locationData;
+            locationIcon = 'fa-map';
+        } else {
+            // Default to municipio
+            locationName = locationData.nomeMunicipio || locationData;
+            locationIcon = 'fa-city';
+        }
+        
+        // Create button to view location data with modern styling
+        const btn = document.createElement('button');
+        btn.id = 'municipio-link-btn';
+        btn.className = 'municipio-link-btn modern-button';
+        
+        // Add an icon and the location name to the button
+        btn.innerHTML = `<i class="fas ${locationIcon}"></i> ${locationName}`;
+        
+        // Add modern styling directly to the button
+        btn.style.backgroundColor = '#3498db';
+        btn.style.color = 'white';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '4px';
+        btn.style.padding = '8px 16px';
+        btn.style.fontSize = '14px';
+        btn.style.fontWeight = '500';
+        btn.style.cursor = 'pointer';
+        btn.style.transition = 'all 0.2s ease';
+        btn.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+        btn.style.display = 'inline-flex';
+        btn.style.alignItems = 'center';
+        btn.style.justifyContent = 'center';
+        btn.style.margin = '5px 0';
+        btn.style.width = '100%';
+        
+        // Add hover effect with JavaScript
+        btn.onmouseover = function() {
+            this.style.backgroundColor = '#2980b9';
+            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+        };
+        btn.onmouseout = function() {
+            this.style.backgroundColor = '#3498db';
+            this.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+        };
+        
+        btn.onclick = function() {
+            if (locationType === 'freguesia') {
+                const municipio = locationData.nomeMunicipio || '';
+                if (!municipio) {
+                    alert('Erro: Para visualizar dados de uma freguesia, é necessário especificar o município.');
+                    return;
+                }
+                window.open(`location_data.php?type=${locationType}&id=${encodeURIComponent(locationName)}&municipio=${encodeURIComponent(municipio)}`, '_blank');
             } else {
-                freguesiaInfo.textContent = 'Não foi possível identificar o município';
-                freguesiaInfo.classList.remove('loading');
+                window.open(`location_data.php?type=${locationType}&id=${encodeURIComponent(locationName)}`, '_blank');
+            }
+        };
+        
+        municipioInfo.appendChild(btn);
+    }
+
+    // Get the detail level from settings or use default (municipio)
+    const detailLevel = localStorage.getItem('locationDetailLevel') || 'municipio';
+    
+    // Update loading text based on selected detail level
+    let loadingText = 'A identificar município...';
+    if (detailLevel === 'freguesia') {
+        loadingText = 'A identificar freguesia...';
+    } else if (detailLevel === 'distrito') {
+        loadingText = 'A identificar distrito...';
+    }
+    municipioInfo.textContent = loadingText;
+    
+    // First try with the proxy
+    fetch(`includes/geoapi_proxy.php?endpoint=${encodeURIComponent(`gps/${latlng.lat},${latlng.lng}/base/detalhes`)}`)
+        .then(response => {
+            // Check if the response is valid JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                // Not a JSON response, read text and log it
+                return response.text().then(text => {
+                    console.error('Non-JSON response:', text);
+                    throw new Error('Invalid response format - not JSON');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('API response data:', data);
+            
+            // Create a location data object
+            const locationData = {
+                nomeMunicipio: data.concelho || (data.detalhesMunicipio ? data.detalhesMunicipio.nome : ''),
+                freguesia: data.freguesia || (data.detalhesFreguesia ? data.detalhesFreguesia.nome : ''),
+                distrito: data.distrito || (data.detalhesMunicipio ? data.detalhesMunicipio.distrito : '')
+            };
+            
+            // Check if we have the data for the selected detail level
+            let hasRequiredData = false;
+            if (detailLevel === 'freguesia' && locationData.freguesia) {
+                hasRequiredData = true;
+            } else if (detailLevel === 'distrito' && locationData.distrito) {
+                hasRequiredData = true;
+            } else if (locationData.nomeMunicipio) {
+                hasRequiredData = true;
+            }
+            
+            if (hasRequiredData) {
+                displayMunicipioData(locationData);
+            } else {
+                let errorMsg = 'Não foi possível identificar a localização';
+                municipioInfo.textContent = errorMsg;
+                municipioInfo.classList.remove('loading');
             }
         })
         .catch(error => {
-            console.error('Error identifying municipio:', error);
-            freguesiaInfo.textContent = 'Erro ao identificar município';
-            freguesiaInfo.classList.remove('loading');
+            console.error('Error identifying location:', error);
+            
+            // Attempt to fetch directly from the API
+            console.log('Attempting direct API fetch...');
+            
+            // Try direct API as fallback
+            fetch(`http://json.localhost:8080/gps/${latlng.lat},${latlng.lng}/base/detalhes`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Direct API response:', data);
+                    
+                    // Create a location data object
+                    const locationData = {
+                        nomeMunicipio: data.concelho || (data.detalhesMunicipio ? data.detalhesMunicipio.nome : ''),
+                        freguesia: data.freguesia || (data.detalhesFreguesia ? data.detalhesFreguesia.nome : ''),
+                        distrito: data.distrito || (data.detalhesMunicipio ? data.detalhesMunicipio.distrito : '')
+                    };
+                    
+                    // Check if we have the data for the selected detail level
+                    let hasRequiredData = false;
+                    if (detailLevel === 'freguesia' && locationData.freguesia) {
+                        hasRequiredData = true;
+                    } else if (detailLevel === 'distrito' && locationData.distrito) {
+                        hasRequiredData = true;
+                    } else if (locationData.nomeMunicipio) {
+                        hasRequiredData = true;
+                    }
+                    
+                    if (hasRequiredData) {
+                        displayMunicipioData(locationData);
+                    } else {
+                        let errorMsg = 'Não foi possível identificar a localização';
+                        municipioInfo.textContent = errorMsg;
+                        municipioInfo.classList.remove('loading');
+                    }
+                })
+                .catch(directError => {
+                    console.error('Error with direct API call:', directError);
+                    municipioInfo.textContent = 'Erro ao identificar localização';
+                    municipioInfo.classList.remove('loading');
+                });
         });
 }
 
@@ -996,7 +1132,8 @@ function calculateAccessibilityScore(stats) {
     }
     
     // Definir pesos para diferentes categorias de POIs
-    const weights = {
+    // Valor padrão
+    const defaultWeights = {
         // Saúde (maior peso - essencial)
         hospitals: 10,
         health_centers: 8,
@@ -1037,6 +1174,17 @@ function calculateAccessibilityScore(stats) {
         sports: 6,
         parks: 8
     };
+    
+    // Get custom weights from settings panel if available
+    const weights = { ...defaultWeights };
+    
+    // Update weights from user settings
+    Object.keys(weights).forEach(key => {
+        const savedWeight = localStorage.getItem(`weight-${key}`);
+        if (savedWeight) {
+            weights[key] = parseInt(savedWeight);
+        }
+    });
     
     // Contadores para o cálculo
     let totalScore = 0;
