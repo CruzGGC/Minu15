@@ -76,11 +76,6 @@ function initializeMap() {
         attributionControl: false
     });
     
-    // Add zoom control to the top-right
-    L.control.zoom({
-        position: 'topright'
-    }).addTo(map);
-    
     // Add attribution control to the bottom-right
     L.control.attribution({
         position: 'bottomright'

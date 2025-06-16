@@ -718,7 +718,6 @@ function addPOIsToMap(type, pois) {
         let popupContent = `
             <div class="popup-content">
                 <h4>${poi.name || poiInfo.name}</h4>
-                <p><strong>Tipo:</strong> ${poi.type}</p>
                 <button class="popup-directions-btn" onclick="openDirections(${poi.latitude}, ${poi.longitude})">
                     <i class="fas fa-directions"></i> Obter Direções
                 </button>

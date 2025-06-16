@@ -28,7 +28,10 @@ class IdealLocationFinder {
     initMap() {
         // Initialize map centered on Aveiro, Portugal
         const aveiroCenter = [40.6405, -8.6538];
-        this.map = L.map('map').setView(aveiroCenter, 13);
+        this.map = L.map('map', { zoomControl: false }).setView(aveiroCenter, 13);
+        
+        // You can add custom zoom controls if needed:
+        // L.control.zoom({ position: 'topright' }).addTo(this.map);
         
         // Add tile layer using map configuration
         this.currentTileLayer = null;
@@ -65,11 +68,6 @@ class IdealLocationFinder {
                 intensityValue.textContent = intensitySlider.value;
             });
         }
-
-        // My location button
-        document.getElementById('my-location-btn').addEventListener('click', () => {
-            this.getCurrentLocation();
-        });
 
         // Map style selector
         document.querySelectorAll('.map-style-option').forEach(option => {
@@ -120,87 +118,81 @@ class IdealLocationFinder {
     }
 
     initCollapsibleSections() {
-        console.log('Initializing collapsible sections...'); // Debug log
+        // Initialize all collapsible contents and set up their toggles using jQuery slideToggle
         
-        // POI section toggle
-        const poiHeader = document.getElementById('poi-header');
-        const poiContent = document.getElementById('poi-content');
-        
-        console.log('POI Header:', poiHeader, 'POI Content:', poiContent); // Debug log
-        
-        if (poiHeader && poiContent) {
-            poiHeader.addEventListener('click', () => {
-                console.log('POI header clicked'); // Debug log
-                poiContent.classList.toggle('expanded');
-                const arrow = poiHeader.querySelector('.dropdown-arrow');
-                if (arrow) {
-                    arrow.classList.toggle('up');
-                }
-            });
-        }
+        // Function to handle toggle logic for a header and its content
+        const setupToggle = (headerId, contentId, expandByDefault = false) => {
+            const header = document.getElementById(headerId);
+            const content = document.getElementById(contentId);
+            
+            if (header && content) {
+                const $content = $(content);
+                const $arrow = $(header).find('.dropdown-arrow');
 
-        // Settings section toggle
-        const settingsHeader = document.getElementById('settings-header');
-        const settingsContent = document.getElementById('settings-content');
-        
-        console.log('Settings Header:', settingsHeader, 'Settings Content:', settingsContent); // Debug log
-        
-        if (settingsHeader && settingsContent) {
-            settingsHeader.addEventListener('click', () => {
-                console.log('Settings header clicked'); // Debug log
-                settingsContent.classList.toggle('expanded');
-                const arrow = settingsHeader.querySelector('.dropdown-arrow');
-                if (arrow) {
-                    arrow.classList.toggle('up');
+                // Initial state: hide content unless it should expand by default
+                if (!expandByDefault) {
+                    $content.hide();
+                    $arrow.removeClass('up');
+                } else {
+                    // If expanding by default, use slideDown and add class
+                    $content.slideDown(300, function() {
+                        $(this).addClass('expanded');
+                        $arrow.addClass('up');
+                    });
                 }
-            });
-        }
 
-        // Category toggles
-        const categoryHeaders = document.querySelectorAll('.category-header');
-        console.log('Found category headers:', categoryHeaders.length); // Debug log
-        
-        categoryHeaders.forEach((header, index) => {
-            console.log(`Setting up category header ${index}:`, header); // Debug log
-            header.addEventListener('click', (e) => {
-                console.log(`Category header ${index} clicked`); // Debug log
-                // Prevent event propagation to parent panel
-                e.stopPropagation();
-                
-                const content = header.nextElementSibling;
-                if (content && content.classList.contains('category-content')) {
-                    content.classList.toggle('expanded');
-                    const arrow = header.querySelector('.dropdown-arrow');
-                    if (arrow) {
-                        arrow.classList.toggle('up');
+                $(header).on('click', (e) => {
+                    // For category headers, prevent propagation to parent panel header
+                    if ($(header).hasClass('category-header')) {
+                        e.stopPropagation(); 
                     }
-                }
-            });
-        });
 
-        // Start with POI panel expanded
-        if (poiContent) {
-            console.log('Expanding POI panel by default'); // Debug log
-            poiContent.classList.add('expanded');
-            const arrow = poiHeader ? poiHeader.querySelector('.dropdown-arrow') : null;
-            if (arrow) {
-                arrow.classList.add('up');
+                    if ($content.is(':hidden')) {
+                        $content.addClass('expanded'); // Add class before animation for CSS transitions
+                        $arrow.addClass('up');
+                        $content.slideDown(300);
+                    } else {
+                        $content.slideUp(300, function() {
+                            $(this).removeClass('expanded'); // Remove class after animation completes
+                            $arrow.removeClass('up');
+                        });
+                    }
+                });
             }
-        }
+        };
 
-        // Map style section toggle
-        const mapStyleHeader = document.getElementById('map-style-header');
-        const mapStyleContent = document.getElementById('map-style-content');
-        
-        if (mapStyleHeader && mapStyleContent) {
-            mapStyleHeader.addEventListener('click', () => {
-                mapStyleContent.classList.toggle('expanded');
-                const arrow = mapStyleHeader.querySelector('.dropdown-arrow');
-                if (arrow) {
-                    arrow.classList.toggle('up');
-                }
-            });
-        }
+        // Setup main panel sections
+        setupToggle('poi-header', 'poi-content', true); // POI section expands by default
+        setupToggle('map-style-header', 'map-style-content');
+        setupToggle('settings-header', 'settings-content');
+
+        // Setup category toggles within POI section (e.g., Saúde, Educação)
+        // These are .category-header and their nextElementSibling is .category-content
+        document.querySelectorAll('.poi-category .category-header').forEach(header => {
+            const content = header.nextElementSibling;
+            if (content && content.classList.contains('category-content')) {
+                // Ensure initial state for category content is hidden and arrow down
+                $(content).hide();
+                $(header).find('.dropdown-arrow').removeClass('up');
+
+                $(header).on('click', (e) => {
+                    e.stopPropagation(); // Prevent propagation to parent panel header
+                    const $content = $(content);
+                    const $arrow = $(header).find('.dropdown-arrow');
+
+                    if ($content.is(':hidden')) {
+                        $content.addClass('expanded');
+                        $arrow.addClass('up');
+                        $content.slideDown(300);
+                    } else {
+                        $content.slideUp(300, function() {
+                            $(this).removeClass('expanded');
+                            $arrow.removeClass('up');
+                        });
+                    }
+                });
+            }
+        });
     }
 
     initAutocomplete() {
@@ -238,7 +230,7 @@ class IdealLocationFinder {
         // Enable/disable importance selectors based on checkboxes
         document.querySelectorAll('input[name="poi"]').forEach(checkbox => {
             checkbox.addEventListener('change', () => {
-                const poiItem = checkbox.closest('.poi-item-finder');
+                const poiItem = checkbox.closest('.poi-item-finder') || checkbox.closest('.poi-item');
                 const select = poiItem ? poiItem.querySelector('.importance-select') : 
                              checkbox.closest('.poi-item')?.querySelector('.importance-select');
                 
@@ -806,31 +798,12 @@ class IdealLocationFinder {
                                 <span style="font-weight: bold;">3</span>
                             </div>
                             <div>
-                                <strong style="font-weight: 600; color: #2c3e50;">Configure os parâmetros</strong> 
-                                <p style="margin-top: 5px; color: #555;">Escolha o modo de transporte (a pé, bicicleta ou carro) e defina o tempo máximo de deslocamento que considera aceitável.</p>
-                            </div>
-                        </div>
-                        
-                        <div style="display: flex; margin-bottom: 15px; align-items: flex-start;">
-                            <div style="background: #3498db; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; margin-right: 15px; flex-shrink: 0;">
-                                <span style="font-weight: bold;">4</span>
-                            </div>
-                            <div>
                                 <strong style="font-weight: 600; color: #2c3e50;">Analise os resultados</strong> 
                                 <p style="margin-top: 5px; color: #555;">O <span style="color: #3498db; font-weight: 500;">mapa de calor</span> mostrará as áreas mais adequadas, com marcadores indicando os melhores locais encontrados com base nos seus critérios.</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div style="background-color: #fff8e6; border-left: 4px solid #f39c12; padding: 15px; border-radius: 5px; margin-top: 20px;">
-                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                            <i class="fas fa-lightbulb" style="color: #f39c12; margin-right: 10px; font-size: 18px;"></i>
-                            <strong style="font-weight: 600; color: #2c3e50;">Dica</strong>
-                        </div>
-                        <p style="margin: 0; color: #555; font-size: 14px;">
-                            Este é um modelo conceitual para demonstração. Em uma implementação completa, a análise utilizaria dados reais de POIs, transportes e acessibilidade para encontrar locais ideais com base nos seus critérios específicos.
-                        </p>
-                    </div>
                 </div>
                 
                 <div style="text-align: center; margin-top: 30px;">

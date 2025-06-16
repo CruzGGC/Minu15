@@ -51,22 +51,6 @@
             <a href="index.php">
                 <img src="images/Minu15.png" alt="Minu15 Logo" class="app-logo">
             </a>
-            <h3>Localizador Ideal</h3>
-        </div>
-        
-        <!-- Location Input Section -->
-        <div class="panel-section">
-            <div class="panel-header">
-                <span><i class="fas fa-map-marker-alt"></i> Local de Referência</span>
-            </div>
-            <div class="panel-content">
-                <div class="search-container">
-                    <input type="text" id="location-input" class="search-box" placeholder="Digite o endereço ou clique no mapa">
-                    <button id="my-location-btn" class="search-button" title="Usar minha localização">
-                        <i class="fas fa-crosshairs"></i>
-                    </button>
-                </div>
-            </div>
         </div>
         
         <!-- POI Requirements Section -->
