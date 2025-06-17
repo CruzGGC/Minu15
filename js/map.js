@@ -458,8 +458,7 @@ function displayIsochrone(data, latlng) {
         // Atualizar estatísticas de área com os dados da isócrona
         updateAreaStats(latlng, radius, data);
         
-        // Buscar POIs dentro da área da isócrona
-        fetchPOIs(latlng);
+        // Não é necessário chamar fetchPOIs aqui, já que fetchPOIsWithinIsochrone é chamado em generateIsochrone
         
         // Ocultar indicador de carregamento
         hideLoading();
@@ -483,7 +482,8 @@ function showPOIsInArea(data) {
     // Se tivermos um marcador atual, usar a sua posição para buscar POIs
     if (currentMarker) {
         const latlng = currentMarker.getLatLng();
-        fetchPOIs(latlng);
+        // Não mostrar o indicador de carregamento quando chamado por esta função
+        fetchPOIs(latlng, false);
     }
 }
 
@@ -494,8 +494,8 @@ function fetchPOIsWithinIsochrone(latlng, isochroneData) {
         poiLayers[type].clearLayers();
     });
     
-    // Mostrar indicador de carregamento
-    showLoading();
+    // Mostrar indicador de carregamento de POIs
+    showPOILoading();
     
     // Extrair área da isócrona se disponível
     let radiusInMeters;
@@ -533,14 +533,14 @@ function fetchPOIsWithinIsochrone(latlng, isochroneData) {
         }
     });
     
-    // Quando todas as requisições terminarem, esconder o indicador de carregamento
+    // Quando todas as requisições terminarem, esconder o indicador de carregamento de POIs
     Promise.all(poiPromises)
         .then(() => {
-            hideLoading();
+            hidePOILoading();
         })
         .catch(error => {
             console.error("Erro ao buscar POIs:", error);
-            hideLoading();
+            hidePOILoading();
         });
     
     // Atualizar estatísticas usando o polígono da isócrona
@@ -591,8 +591,11 @@ function useCircleBufferFallback(latlng) {
         showStatisticsPanel();
     }
     
-    // Buscar POIs dentro da área
-    fetchPOIs(latlng);
+    // Armazenar os dados da isócrona circular para uso posterior
+    currentIsochroneData = buffered;
+    
+    // Buscar POIs dentro da área usando a mesma função que a isócrona principal
+    fetchPOIsWithinIsochrone(latlng, buffered);
 }
 
 // Obter cor com base no modo de transporte
@@ -618,25 +621,52 @@ function getIsochroneDashArray() {
 }
 
 // Buscar POIs da base de dados
-function fetchPOIs(latlng) {
+function fetchPOIs(latlng, showLoadingIndicator = true) {
     // Limpar camadas de POI existentes
     Object.keys(poiTypes).forEach(type => {
         poiLayers[type].clearLayers();
     });
+    
+    // Mostrar indicador de carregamento de POIs se solicitado
+    if (showLoadingIndicator) {
+        showPOILoading();
+    }
     
     // Calcular raio de busca com base no modo de transporte e tempo máximo
     const speedKmPerHour = transportSpeeds[selectedTransportMode];
     const distanceInKm = (speedKmPerHour * selectedMaxDistance) / 60;
     const radiusInMeters = distanceInKm * 1000;
     
+    // Array de promessas para controlar todas as requisições de POIs
+    const poiPromises = [];
+    
     // Buscar tipos de POI habilitados
     Object.keys(poiTypes).forEach(type => {
         const checkbox = document.getElementById(`poi-${type}`);
         if (checkbox && checkbox.checked) {
-            // Buscar POIs deste tipo no servidor
-            fetchPOIsByType(type, latlng, radiusInMeters);
+            // Adicionar promessa da requisição ao array
+            const promise = fetchPOIsByType(type, latlng, radiusInMeters)
+                .catch(error => {
+                    console.error(`Erro ao buscar POIs do tipo ${type}:`, error);
+                    return { success: false, type: type, error: error.message };
+                });
+            poiPromises.push(promise);
         }
     });
+    
+    // Quando todas as requisições terminarem, esconder o indicador de carregamento
+    Promise.all(poiPromises)
+        .then(() => {
+            if (showLoadingIndicator) {
+                hidePOILoading();
+            }
+        })
+        .catch(error => {
+            console.error("Erro ao buscar POIs:", error);
+            if (showLoadingIndicator) {
+                hidePOILoading();
+            }
+        });
 }
 
 // Buscar POIs de um tipo específico do servidor
@@ -1366,37 +1396,92 @@ function addLegend() {
 
 // Mostrar indicador de carregamento
 function showLoading() {
-    // Remover overlay existente, se houver
-    hideLoading();
+    // Obter overlay existente
+    const overlay = document.getElementById('loading-overlay');
     
-    // Criar overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'loading-overlay';
-    overlay.id = 'loading-overlay';
-    
-    // Criar spinner
-    const spinner = document.createElement('div');
-    spinner.className = 'spinner';
-    
-    // Adicionar texto de carregamento
-    const loadingText = document.createElement('div');
-    loadingText.style.marginTop = '15px';
-    loadingText.style.fontWeight = 'bold';
-    loadingText.textContent = 'A calcular a isócrona...';
-    
-    // Adicionar spinner e texto ao overlay
-    overlay.appendChild(spinner);
-    overlay.appendChild(loadingText);
-    
-    // Adicionar overlay ao contêiner do mapa
-    document.getElementById('map').appendChild(overlay);
+    if (overlay) {
+        // Garantir que o overlay está visível
+        overlay.style.display = 'flex';
+    } else {
+        // Se por alguma razão o overlay não existir no HTML, criá-lo (fallback)
+        const newOverlay = document.createElement('div');
+        newOverlay.className = 'loading-overlay';
+        newOverlay.id = 'loading-overlay';
+        
+        // Criar contentor do spinner
+        const spinnerContainer = document.createElement('div');
+        spinnerContainer.className = 'loading-spinner-container';
+        
+        // Criar spinner
+        const spinner = document.createElement('div');
+        spinner.className = 'loading-spinner';
+        
+        // Adicionar texto de carregamento
+        const loadingText = document.createElement('p');
+        loadingText.textContent = 'Gerando isócrona...';
+        
+        // Adicionar spinner e texto ao contentor
+        spinnerContainer.appendChild(spinner);
+        spinnerContainer.appendChild(loadingText);
+        
+        // Adicionar contentor ao overlay
+        newOverlay.appendChild(spinnerContainer);
+        
+        // Garantir que o overlay está visível
+        newOverlay.style.display = 'flex';
+        
+        // Adicionar overlay ao body
+        document.body.appendChild(newOverlay);
+    }
 }
 
 // Ocultar indicador de carregamento
 function hideLoading() {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
-        overlay.parentNode.removeChild(overlay);
+        overlay.style.display = 'none';
+    }
+}
+
+// Mostrar indicador de carregamento de POIs
+function showPOILoading() {
+    // Obter overlay existente
+    const overlay = document.getElementById('poi-loading-overlay');
+    
+    if (overlay) {
+        // Garantir que o overlay está visível
+        overlay.style.display = 'flex';
+    } else {
+        // Se por alguma razão o overlay não existir no HTML, criá-lo (fallback)
+        const newOverlay = document.createElement('div');
+        newOverlay.className = 'poi-loading-overlay';
+        newOverlay.id = 'poi-loading-overlay';
+        
+        // Criar spinner
+        const spinner = document.createElement('div');
+        spinner.className = 'poi-loading-spinner';
+        
+        // Adicionar texto de carregamento
+        const loadingText = document.createElement('span');
+        loadingText.textContent = 'A carregar pontos de interesse...';
+        
+        // Adicionar spinner e texto ao overlay
+        newOverlay.appendChild(spinner);
+        newOverlay.appendChild(loadingText);
+        
+        // Garantir que o overlay está visível
+        newOverlay.style.display = 'flex';
+        
+        // Adicionar overlay ao body
+        document.body.appendChild(newOverlay);
+    }
+}
+
+// Ocultar indicador de carregamento de POIs
+function hidePOILoading() {
+    const overlay = document.getElementById('poi-loading-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
     }
 }
 

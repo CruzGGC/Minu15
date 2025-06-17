@@ -245,8 +245,15 @@ function initDistanceSlider() {
         
         // Atualiza a distância máxima selecionada
         selectedMaxDistance = parseInt(this.value);
-        
-        // Não atualiza o mapa automaticamente - espera pelo botão Calcular
+    });
+    
+    // Adiciona um ouvinte para o evento 'change' (dispara quando o utilizador solta o deslizador)
+    distanceSlider.addEventListener('change', function() {
+        // Se já houver um marcador no mapa, recalcular a isócrona com a nova distância
+        if (currentMarker) {
+            console.log(`Distância alterada para: ${selectedMaxDistance} minutos. Recalculando isócrona...`);
+            generateIsochrone(currentMarker.getLatLng());
+        }
     });
 }
 
@@ -268,7 +275,6 @@ function handlePoiToggle(type) {
     // Mostrar ou ocultar a camada com base no estado da caixa de verificação
     if (isChecked) {
         // Apenas garantir que a camada é adicionada ao mapa
-        // Não procurar novos POIs - isso acontecerá quando o botão Calcular for clicado
         if (!map.hasLayer(poiLayers[type])) {
             map.addLayer(poiLayers[type]);
         }
@@ -279,14 +285,20 @@ function handlePoiToggle(type) {
         }
     }
     
-    // Se tivermos uma isócrona ativa, atualizar as estatísticas
-    // para refletir os POIs atualmente selecionados
+    // Se tivermos uma isócrona ativa e um marcador, atualizar as estatísticas
+    // e atualizar POIs sem mostrar o indicador de carregamento
     if (currentIsochroneData && currentMarker) {
+        // Atualizar as estatísticas para refletir os POIs atualmente selecionados
         updateAreaStats(
             currentMarker.getLatLng(), 
             calculateRadiusFromIsochrone(currentIsochroneData),
             JSON.stringify(currentIsochroneData)
         );
+        
+        // Recarregar POIs se houver uma isócrona ativa, mas sem mostrar o indicador de carregamento
+        if (isochroneLayer) {
+            fetchPOIs(currentMarker.getLatLng(), false);
+        }
     }
 }
 
@@ -344,21 +356,27 @@ function initSearchBox() {
             minLength: 3,
             delay: 500,
             source: function(request, response) {
-                // Mostrar indicador de carregamento
-                showLoading();
-                
-                // Fazer requisição ao nosso proxy Nominatim
-                fetch(`includes/proxy_nominatim.php?term=${encodeURIComponent(request.term)}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        hideLoading();
-                        response(data);
-                    })
-                    .catch(error => {
-                        hideLoading();
-                        console.error('Erro na pesquisa de autocompletar:', error);
-                        response([]);
-                    });
+                // Só mostrar o indicador de carregamento se houver um termo de pesquisa válido
+                if (request.term && request.term.length >= 3) {
+                    // Mostrar indicador de carregamento
+                    showLoading();
+                    
+                    // Fazer requisição ao nosso proxy Nominatim
+                    fetch(`includes/proxy_nominatim.php?term=${encodeURIComponent(request.term)}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            hideLoading();
+                            response(data);
+                        })
+                        .catch(error => {
+                            hideLoading();
+                            console.error('Erro na pesquisa de autocompletar:', error);
+                            response([]);
+                        });
+                } else {
+                    // Se não houver termo de pesquisa válido, retornar lista vazia
+                    response([]);
+                }
             },
             select: function(event, ui) {
                 // Quando um item é selecionado, realizar a pesquisa com a localização selecionada

@@ -397,11 +397,17 @@
     </div>
 
     <!-- Sobreposição de Carregamento -->
-    <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-overlay" id="loading-overlay" style="display: none;">
         <div class="loading-spinner-container">
             <div class="loading-spinner"></div>
             <p>Gerando isócrona...</p>
         </div>
+    </div>
+    
+    <!-- Sobreposição de Carregamento de POIs -->
+    <div class="poi-loading-overlay" id="poi-loading-overlay" style="display: none;">
+        <div class="poi-loading-spinner"></div>
+        <span>A carregar pontos de interesse...</span>
     </div>
     
     <!-- Sobreposição modal para popups -->
