@@ -272,16 +272,19 @@ try {
     // Conta cada categoria de POI dentro da área definida - combina pontos e polígonos
     foreach ($poiCategories as $category => $condition) {
         try {
+            // Verifica se a condição é um array (formato avançado) ou uma string (formato simples)
+            $conditionSql = is_array($condition) ? $condition['condition'] : $condition;
+            
             // Consulta que conta pontos e polígonos
             $countQuery = "
                 SELECT 
                     (
                         SELECT COUNT(*) FROM planet_osm_point 
-                        WHERE ($condition) AND $spatialCondition
+                        WHERE ($conditionSql) AND $spatialCondition
                     ) +
                     (
                         SELECT COUNT(*) FROM planet_osm_polygon 
-                        WHERE ($condition) AND $spatialCondition
+                        WHERE ($conditionSql) AND $spatialCondition
                     ) as count
             ";
             
