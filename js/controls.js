@@ -215,7 +215,11 @@ function initTransportModeSelector() {
             // Atualizar modo de transporte selecionado
             selectedTransportMode = this.getAttribute('data-mode');
             
-            // Não atualizar o mapa automaticamente - esperar pelo botão Calcular
+            // Se já houver um marcador no mapa, recalcular a isócrona para o novo modo de transporte
+            if (currentMarker) {
+                console.log(`Modo de transporte alterado para: ${selectedTransportMode}. Recalculando isócrona...`);
+                generateIsochrone(currentMarker.getLatLng());
+            }
         });
     });
     
