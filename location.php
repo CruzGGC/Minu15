@@ -1,29 +1,29 @@
 <?php
 require_once 'includes/fetch_location_data.php';
 
-// Debug incoming requests
-error_log("------------ NEW REQUEST ------------");
-error_log("Request method: " . $_SERVER['REQUEST_METHOD']);
-error_log("Request URI: " . $_SERVER['REQUEST_URI']);
-error_log("Server software: " . $_SERVER['SERVER_SOFTWARE']);
+// Depurar pedidos de entrada
+error_log("------------ NOVO PEDIDO ------------");
+error_log("Método de pedido: " . $_SERVER['REQUEST_METHOD']);
+error_log("URI do pedido: " . $_SERVER['REQUEST_URI']);
+error_log("Software do servidor: " . $_SERVER['SERVER_SOFTWARE']);
 
-// Debug POST data
+// Depurar dados POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    error_log("POST data: " . print_r($_POST, true));
+    error_log("Dados POST: " . print_r($_POST, true));
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $fetcher = new LocationFetcher();
-    $response = ['status' => 'error', 'message' => 'Invalid action or parameters.'];
+    $response = ['status' => 'error', 'message' => 'Ação ou parâmetros inválidos.'];
 
-    error_log("Processing action: " . $_POST['action']);
+    error_log("A processar ação: " . $_POST['action']);
 
     switch ($_POST['action']) {
         case 'fetchByGps':
             if (isset($_POST['latitude']) && isset($_POST['longitude'])) {
-                error_log("Fetching by GPS: " . $_POST['latitude'] . ", " . $_POST['longitude']);
+                error_log("A obter por GPS: " . $_POST['latitude'] . ", " . $_POST['longitude']);
                 $response = $fetcher->fetchByGps($_POST['latitude'], $_POST['longitude']);
-                error_log("GPS response: " . print_r($response, true));
+                error_log("Resposta GPS: " . print_r($response, true));
             }
             break;
         case 'fetchByFreguesiaAndMunicipio':
@@ -56,16 +56,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             break;
     }
 
-    error_log("Final response to be sent: " . json_encode($response));
+    error_log("Resposta final a ser enviada: " . json_encode($response));
     header('Content-Type: application/json');
     echo json_encode($response);
     exit;
 }
 
 /**
- * Location Data Explorer
- * Allows users to select a district, municipality, or freguesia in Portugal
- * and view demographic information and infrastructure counts
+ * Explorador de Dados de Localização
+ * Permite aos utilizadores selecionar um distrito, município ou freguesia em Portugal
+ * e visualizar informações demográficas e contagens de infraestruturas
  * 
  * @version 1.0
  */
@@ -77,16 +77,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minu15 - Explorador de Localização</title>
     
-    <!-- jQuery UI for autocomplete -->
+    <!-- jQuery UI para preenchimento automático -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     
-    <!-- Leaflet CSS and JS -->
+    <!-- CSS e JS do Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Turf.js for geospatial analysis -->
+    <!-- Turf.js para análise geoespacial -->
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
     
     <!-- Google Fonts -->
@@ -97,26 +97,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Configuration Files -->
+    <!-- Ficheiros de Configuração -->
     <script src="config/api_config.js"></script>
     <script src="config/map_config.js"></script>
     
-    <!-- Custom CSS -->
+    <!-- CSS Personalizado -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/location.css">
 </head>
 <body class="location-page">
-    <!-- Navigation Header removed as requested -->
+    <!-- Cabeçalho de Navegação removido conforme solicitado -->
     
     <div id="map"></div>
     
-    <!-- Mobile menu toggle button -->
+    <!-- Botão para alternar menu móvel -->
     <div class="mobile-menu-toggle" id="mobile-menu-toggle">
         <i class="fas fa-bars"></i>
     </div>
     
     <div class="overlay-panel" id="overlay-panel">
-        <!-- Close button for mobile -->
+        <!-- Botão de fechar para telemóvel -->
         <div class="mobile-panel-close" id="mobile-panel-close">
             <i class="fas fa-times"></i>
         </div>
@@ -171,11 +171,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 </div>
                 <div class="map-style-option active" data-provider="positron">
                     <div class="map-style-icon"><i class="fas fa-sun"></i></div>
-                    <span>Light</span>
+                    <span>Claro</span>
                 </div>
                 <div class="map-style-option" data-provider="dark_matter">
                     <div class="map-style-icon"><i class="fas fa-moon"></i></div>
-                    <span>Dark</span>
+                    <span>Escuro</span>
                 </div>
             </div>
         </div>
@@ -199,14 +199,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         
         <button class="calculate-button">Carregar Dados</button>
         
-        <!-- Added "Página Completa" button to the bottom of the overlay panel -->
+        <!-- Adicionado botão "Página Completa" na parte inferior do painel de sobreposição -->
         <div class="panel-section">
             <a href="#" id="view-full-data" class="btn full-width-btn" style="display: block; padding: 10px 15px; background-color: #3498db; color: white; text-decoration: none; border-radius: 4px; font-weight: 500; text-align: center; margin-top: 15px;">
                 <i class="fas fa-external-link-alt"></i> Página Completa
             </a>
         </div>
         
-        <!-- Added footer attribution to the overlay panel -->
+        <!-- Atribuição de rodapé adicionada ao painel de sobreposição -->
         <div class="panel-section footer-in-overlay">
             <p>&copy; <?php echo date('Y'); ?> Minu15 | Dados de <a href="https://geoapi.pt" target="_blank">GeoAPI.pt</a> e <a href="https://www.geofabrik.de/" target="_blank">Geofabrik</a></p>
         </div>
@@ -222,10 +222,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         </div>
     </div>
 
-    <!-- Modal overlay for popups -->
+    <!-- Sobreposição modal para popups -->
     <div class="modal-overlay" id="modal-overlay"></div>
     
-    <!-- Census data sidebar - completely new implementation -->
+    <!-- Barra lateral de dados do Censo - implementação completamente nova -->
     <div class="census-sidebar" id="census-sidebar">
         <div class="census-header">
             <div class="census-title">

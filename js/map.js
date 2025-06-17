@@ -1,11 +1,11 @@
 /**
- * Explorador de Cidade em 15 Minutos - Map Functionality
- * Handles map initialization, isochrone generation, and POI display
+ * Explorador de Cidade em 15 Minutos - Funcionalidade do Mapa
+ * Lida com a inicialização do mapa, geração de isócronas e exibição de Pontos de Interesse (POIs)
  * 
  * @version 2.0
  */
 
-// Global variables
+// Variáveis globais
 let map;
 let currentMarker;
 let isochroneLayer;
@@ -16,23 +16,23 @@ let currentIsochroneData = null; // Store current isochrone data for POI request
 let currentTileLayer = null; // Store current tile layer
 let selectedTileProvider = DEFAULT_TILE_PROVIDER; // Default tile provider from config
 
-// Map transport modes to OpenRouteService API profiles
+// Mapear modos de transporte para perfis da API OpenRouteService
 const orsProfiles = {
     walking: 'foot-walking',
     cycling: 'cycling-regular',
     driving: 'driving-car'
 };
 
-// Transport mode speeds (km/h) for fallback calculation if ORS API fails
+// Velocidades dos modos de transporte (km/h) para cálculo de fallback se a API ORS falhar
 const transportSpeeds = {
-    walking: 5,  // Walking: 5 km/h
-    cycling: 15, // Cycling: 15 km/h
-    driving: 60  // Driving: 60 km/h
+    walking: 5,  // A pé: 5 km/h
+    cycling: 15, // De bicicleta: 15 km/h
+    driving: 60  // De carro: 60 km/h
 };
 
-// POI types definition with display details
+// Definição de tipos de POI com detalhes de exibição
 const poiTypes = {
-    // === Health ===
+    // === Saúde ===
     hospitals: { 
         name: 'Hospitais', 
         icon: 'hospital', 
@@ -58,7 +58,7 @@ const poiTypes = {
         category: 'health'
     },
     
-    // === Education ===
+    // === Educação ===
     schools: { 
         name: 'Escolas Primárias e Secundárias', 
         icon: 'school', 
@@ -84,7 +84,7 @@ const poiTypes = {
         category: 'education'
     },
     
-    // === Commercial & Services ===
+    // === Comércio e Serviços ===
     supermarkets: { 
         name: 'Supermercados', 
         icon: 'shopping-basket', 
@@ -110,7 +110,7 @@ const poiTypes = {
         category: 'commercial'
     },
     
-    // === Safety & Emergency ===
+    // === Segurança e Emergência ===
     police: { 
         name: 'Esquadras da Polícia', 
         icon: 'shield-alt', 
@@ -130,7 +130,7 @@ const poiTypes = {
         category: 'safety'
     },
     
-    // === Public Administration ===
+    // === Administração Pública ===
     parish_councils: { 
         name: 'Juntas de Freguesia', 
         icon: 'city', 
@@ -150,7 +150,7 @@ const poiTypes = {
         category: 'administration'
     },
     
-    // === Culture & Leisure ===
+    // === Cultura e Lazer ===
     museums: { 
         name: 'Museus', 
         icon: 'museum', 
@@ -176,7 +176,7 @@ const poiTypes = {
         category: 'culture'
     },
     
-    // === Transportation ===
+    // === Transportes ===
     bus_stops: { 
         name: 'Paragens de Autocarro', 
         icon: 'bus', 
@@ -203,49 +203,49 @@ const poiTypes = {
     }
 };
 
-// Initialize the map when the DOM is fully loaded
+// Inicializar o mapa quando o DOM estiver totalmente carregado
 document.addEventListener('DOMContentLoaded', function() {
     initMap();
     initControls();
     showInitialInstructions();
 });
 
-// Initialize the Leaflet map
+// Inicializar o mapa Leaflet
 function initMap() {
-    // Center coordinates for Aveiro, Portugal
+    // Coordenadas centrais para Aveiro, Portugal
     const aveiroCenter = [40.6405, -8.6538];
     
-    // Create a new map centered on Aveiro with zoom controls disabled
+    // Criar um novo mapa centrado em Aveiro com os controlos de zoom desativados
     map = L.map('map', {
-        zoomControl: false  // Disable zoom controls
+        zoomControl: false  // Desativar controlos de zoom
     }).setView(aveiroCenter, 13);
     
-    // Add the selected tile layer
+    // Adicionar a camada de mapa selecionada
     updateMapTiles(selectedTileProvider);
     
-    // Initialize empty POI layer groups
+    // Inicializar grupos de camadas de POI vazios
     Object.keys(poiTypes).forEach(type => {
         poiLayers[type] = L.layerGroup().addTo(map);
     });
     
-    // Set up map click event
+    // Configurar evento de clique no mapa
     setupMapClickEvents();
     
-    // Add the POI legend
+    // Adicionar a legenda de POI
     addLegend();
 }
 
-// Update map tiles based on selected provider
+// Atualizar camadas de mapa com base no provedor selecionado
 function updateMapTiles(provider) {
-    // If there's an existing tile layer, remove it
+    // Se existir uma camada de mapa, removê-la
     if (currentTileLayer) {
         map.removeLayer(currentTileLayer);
     }
     
-    // Get the provider configuration
+    // Obter a configuração do provedor
     const tileConfig = MAP_TILE_PROVIDERS[provider] || MAP_TILE_PROVIDERS[DEFAULT_TILE_PROVIDER];
     
-    // Create and add the new tile layer
+    // Criar e adicionar a nova camada de mapa
     currentTileLayer = L.tileLayer(tileConfig.url, {
         attribution: tileConfig.attribution,
         maxZoom: tileConfig.maxZoom
@@ -258,7 +258,7 @@ function updateMapTiles(provider) {
     updateMapStyleSelector();
 }
 
-// Update the map style selector buttons to show the active style
+// Atualizar os botões do seletor de estilo do mapa para mostrar o estilo ativo
 function updateMapStyleSelector() {
     document.querySelectorAll('.map-style-option').forEach(button => {
         const provider = button.getAttribute('data-provider');
@@ -270,156 +270,156 @@ function updateMapStyleSelector() {
     });
 }
 
-// Set up map click event
+// Configurar evento de clique no mapa
 function setupMapClickEvents() {
-    // Variable to track if tutorial is active
+    // Variável para rastrear se o tutorial está ativo
     let tutorialActive = false;
     
-    // Set tutorial active state when showing instructions
+    // Definir estado ativo do tutorial ao mostrar instruções
     document.addEventListener('tutorialShown', function() {
         tutorialActive = true;
     });
     
-    // Set tutorial inactive when instructions are closed
+    // Definir tutorial inativo ao fechar instruções
     document.addEventListener('tutorialClosed', function() {
         tutorialActive = false;
     });
     
-    // Add click handler to map
+    // Adicionar manipulador de clique ao mapa
     map.on('click', function(e) {
-        // If tutorial is active, don't process the map click for sidebar hiding
+        // Se o tutorial estiver ativo, não processar o clique no mapa para ocultar a barra lateral
         if (tutorialActive && window.innerWidth > 768) {
             return;
         }
         
-        // Get click coordinates
+        // Obter coordenadas do clique
         const latlng = e.latlng;
         
-        // Remove existing marker if any
+        // Remover marcador existente, se houver
         if (currentMarker) {
             map.removeLayer(currentMarker);
         }
         
-        // Add new marker at click location
+        // Adicionar novo marcador no local do clique
         currentMarker = L.marker(latlng).addTo(map);
         
-        // Generate isochrone for the clicked location
+        // Gerar isócrona para o local clicado
         generateIsochrone(latlng);
     });
 }
 
-// Generate isochrone for the selected location
+// Gerar isócrona para o local selecionado
 function generateIsochrone(latlng) {
-    // Show loading indicator
+    // Mostrar indicador de carregamento
     showLoading();
     
-    // Clear existing isochrone and marker
+    // Limpar isócrona e marcador existentes
     if (isochroneLayer) {
         map.removeLayer(isochroneLayer);
     }
     
-    // Clear existing POI layers
+    // Limpar camadas de POI existentes
     Object.keys(poiTypes).forEach(type => {
         poiLayers[type].clearLayers();
     });
     
-    // Add marker at the selected location
+    // Adicionar marcador no local selecionado
     if (currentMarker) {
         map.removeLayer(currentMarker);
     }
     
     currentMarker = L.marker(latlng).addTo(map);
     
-    // Get the selected transport mode profile for OpenRouteService
+    // Obter o perfil do modo de transporte selecionado para OpenRouteService
     const profile = orsProfiles[selectedTransportMode];
     
-    // Prepare parameters for OpenRouteService API request
+    // Preparar parâmetros para a requisição da API OpenRouteService
     const params = {
         locations: [[latlng.lng, latlng.lat]],
-        range: [selectedMaxDistance * 60], // Convert minutes to seconds
+        range: [selectedMaxDistance * 60], // Converter minutos para segundos
         range_type: 'time',
         attributes: ['area'],
         area_units: 'km',
         smoothing: 0.5
     };
     
-    // Use our PHP proxy instead of direct ORS API call
+    // Usar o nosso proxy PHP em vez da chamada direta à API ORS
     const formData = new FormData();
     formData.append('endpoint', `/v2/isochrones/${profile}`);
     formData.append('data', JSON.stringify(params));
     
-    console.log(`Generating isochrone for ${profile} mode, ${selectedMaxDistance} minutes`);
+    console.log(`A gerar isócrona para o modo ${profile}, ${selectedMaxDistance} minutos`);
     
-    // Make request to our proxy
+    // Fazer requisição ao nosso proxy
     fetch('includes/proxy_ors.php', {
         method: 'POST',
         body: formData
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            throw new Error(`Erro HTTP! Estado: ${response.status}`);
         }
         return response.json();
     })
     .then(data => {
-        // First check if the response indicates an API error
+        // Primeiro verificar se a resposta indica um erro da API
         if (data.success === false) {
-            // This is an error response from our PHP proxy
-            const errorMessage = data.message || 'Unknown API error';
-            throw new Error(`API Error: ${errorMessage}`);
+            // Esta é uma resposta de erro do nosso proxy PHP
+            const errorMessage = data.message || 'Erro desconhecido da API';
+            throw new Error(`Erro da API: ${errorMessage}`);
         }
         
-        console.log('Received API response:', data);
+        console.log('Resposta da API recebida:', data);
         
-        // Validate GeoJSON response
+        // Validar resposta GeoJSON
         if (!data.type) {
-            throw new Error('Missing type property in GeoJSON');
+            throw new Error('Propriedade de tipo GeoJSON em falta');
         }
         
         if (data.type !== 'FeatureCollection') {
-            throw new Error(`Invalid GeoJSON type: ${data.type || 'undefined'}`);
+            throw new Error(`Tipo GeoJSON inválido: ${data.type || 'indefinido'}`);
         }
         
         if (!data.features || !Array.isArray(data.features) || data.features.length === 0) {
-            throw new Error('Missing or empty features array in GeoJSON');
+            throw new Error('Array de funcionalidades GeoJSON em falta ou vazio');
         }
         
         const feature = data.features[0];
         if (!feature.geometry || !feature.geometry.coordinates) {
-            throw new Error('Missing geometry or coordinates in GeoJSON feature');
+            throw new Error('Geometria ou coordenadas em falta na funcionalidade GeoJSON');
         }
         
         if (!feature.geometry.type || feature.geometry.type !== 'Polygon') {
-            throw new Error(`Invalid geometry type: ${feature.geometry.type || 'undefined'}`);
+            throw new Error(`Tipo de geometria inválido: ${feature.geometry.type || 'indefinido'}`);
         }
         
-        console.log('Validated GeoJSON response successfully');
+        console.log('Resposta GeoJSON validada com sucesso');
         
-        // Process response and display isochrone
+        // Processar resposta e exibir isócrona
         currentIsochroneData = data;
         displayIsochrone(data, latlng);
         
-        // Now fetch POIs within the isochrone area
+        // Agora buscar POIs dentro da área da isócrona
         fetchPOIsWithinIsochrone(latlng, data);
     })
     .catch(error => {
-        console.error('Error generating isochrone:', error);
-        console.error('Error details:', error.message);
+        console.error('Erro ao gerar isócrona:', error);
+        console.error('Detalhes do erro:', error.message);
         
-        // Use fallback circle buffer if API fails
+        // Usar buffer de círculo de fallback se a API falhar
         useCircleBufferFallback(latlng);
         
-        // Hide loading indicator
+        // Ocultar indicador de carregamento
         hideLoading();
     });
 }
 
-// Display the isochrone on the map
+// Exibir a isócrona no mapa
 function displayIsochrone(data, latlng) {
     try {
-        console.log('Displaying isochrone with data:', data);
+        console.log('A exibir isócrona com dados:', data);
         
-        // Create GeoJSON layer from API response
+        // Criar camada GeoJSON a partir da resposta da API
         isochroneLayer = L.geoJSON(data, {
             style: function() {
                 return {
@@ -433,54 +433,54 @@ function displayIsochrone(data, latlng) {
             }
         }).addTo(map);
         
-        // Fit map view to isochrone bounds
+        // Ajustar a vista do mapa aos limites da isócrona
         map.fitBounds(isochroneLayer.getBounds());
         
-        // Calculate radius for statistics
+        // Calcular raio para estatísticas
         let radius = null;
         
-        // If we have an isochrone, calculate approximate radius
+        // Se tivermos uma isócrona, calcular o raio aproximado
         if (data && data.features && data.features[0]) {
-            // Calculate the area of the isochrone
+            // Calcular a área da isócrona
             const area = turf.area(data.features[0]);
-            // Approximate radius from area (assuming circular shape): r = sqrt(area / π)
+            // Raio aproximado da área (assumindo forma circular): r = sqrt(area / π)
             radius = Math.sqrt(area / Math.PI);
         } else {
-            // Fallback to speed-based calculation
+            // Fallback para cálculo baseado na velocidade
             const speedKmPerHour = transportSpeeds[selectedTransportMode];
             const distanceInKm = (speedKmPerHour * selectedMaxDistance) / 60;
-            radius = distanceInKm * 1000; // Convert to meters
+            radius = distanceInKm * 1000; // Converter para metros
         }
         
-        // Show the statistics panel
+        // Mostrar o painel de estatísticas
         showStatisticsPanel();
         
-        // Update area statistics with the isochrone data
+        // Atualizar estatísticas de área com os dados da isócrona
         updateAreaStats(latlng, radius, data);
         
-        // Fetch POIs within the isochrone area
+        // Buscar POIs dentro da área da isócrona
         fetchPOIs(latlng);
         
-        // Hide loading indicator
+        // Ocultar indicador de carregamento
         hideLoading();
         
     } catch (error) {
-        console.error('Error displaying isochrone:', error);
+        console.error('Erro ao exibir isócrona:', error);
         
-        // Fallback to simple circle buffer if isochrone display fails
+        // Fallback para buffer de círculo simples se a exibição da isócrona falhar
         useCircleBufferFallback(latlng);
         
-        // Hide loading indicator
+        // Ocultar indicador de carregamento
         hideLoading();
     }
 }
 
 /**
- * Show POIs within the given area
- * This function is a wrapper for fetchPOIs to maintain compatibility
+ * Mostrar POIs dentro da área dada
+ * Esta função é um invólucro para fetchPOIs para manter a compatibilidade
  */
 function showPOIsInArea(data) {
-    // If we have a current marker, use its position to fetch POIs
+    // Se tivermos um marcador atual, usar a sua posição para buscar POIs
     if (currentMarker) {
         const latlng = currentMarker.getLatLng();
         fetchPOIs(latlng);
@@ -526,7 +526,7 @@ function fetchPOIsWithinIsochrone(latlng, isochroneData) {
             // Adicionar promessa da requisição ao array
             const promise = fetchPOIsByType(type, latlng, radiusInMeters, isochroneGeoJSON)
                 .catch(error => {
-                    console.error(`Error fetching ${type} POIs:`, error);
+                    console.error(`Erro ao buscar POIs do tipo ${type}:`, error);
                     return { success: false, type: type, error: error.message };
                 });
             poiPromises.push(promise);
@@ -547,8 +547,8 @@ function fetchPOIsWithinIsochrone(latlng, isochroneData) {
     try {
         updateAreaStats(latlng, radiusInMeters, isochroneGeoJSON);
     } catch (error) {
-        console.error("Error updating area statistics:", error);
-        // Continue with the application flow even if statistics fail
+        console.error("Erro ao atualizar estatísticas de área:", error);
+        // Continuar com o fluxo da aplicação mesmo que as estatísticas falhem
         displayAreaStats(null, latlng);
     }
 }
@@ -582,11 +582,11 @@ function useCircleBufferFallback(latlng) {
     map.fitBounds(isochroneLayer.getBounds());
     
     try {
-        // Update statistics panel - wrapped in try/catch to prevent errors from breaking the map functionality
+        // Atualizar painel de estatísticas - envolvido em try/catch para evitar que erros quebrem a funcionalidade do mapa
         updateAreaStats(latlng, distanceInMeters, buffered);
     } catch (statsError) {
-        console.error('Error updating area statistics in fallback mode:', statsError);
-        // Continue with the application flow even if statistics fail
+        console.error('Erro ao atualizar estatísticas de área no modo fallback:', statsError);
+        // Continuar com o fluxo da aplicação mesmo que as estatísticas falhem
         displayAreaStats(null, latlng);
         showStatisticsPanel();
     }
@@ -662,12 +662,12 @@ function fetchPOIsByType(type, latlng, radius, isochroneGeoJSON) {
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+                throw new Error(`Erro HTTP! Estado: ${response.status}`);
             }
-            return response.text(); // Get as text first to check if it's valid JSON
+            return response.text(); // Obter como texto primeiro para verificar se é JSON válido
         })
         .then(text => {
-            // Try to parse the response as JSON
+            // Tentar analisar a resposta como JSON
             try {
                 const data = JSON.parse(text);
                 
@@ -678,13 +678,13 @@ function fetchPOIsByType(type, latlng, radius, isochroneGeoJSON) {
                 } else {
                     console.error(`Erro ao buscar POIs do tipo ${type}:`, data.message);
                     if (data.debug) {
-                        console.debug(`Debug info para ${type}:`, data.debug);
+                        console.debug(`Informação de depuração para ${type}:`, data.debug);
                     }
                     reject(new Error(data.message));
                 }
             } catch (parseError) {
-                console.error(`Error parsing JSON for ${type}:`, parseError);
-                console.debug('Raw response:', text);
+                console.error(`Erro ao analisar JSON para ${type}:`, parseError);
+                console.debug('Resposta bruta:', text);
                 reject(parseError);
             }
         })
@@ -743,35 +743,35 @@ function openDirections(lat, lng) {
 }
 
 /**
- * Update area statistics with data from the API
+ * Atualizar estatísticas de área com dados da API
  */
 function updateAreaStats(latlng, radius, isochroneGeoJSON) {
-    // Show loading indicator in stats panel
+    // Mostrar indicador de carregamento no painel de estatísticas
     const statsContent = document.getElementById('stats-content');
     if (statsContent) {
         statsContent.innerHTML = '<div class="loading-spinner"></div>';
     }
     
-    // Prepare data for the request
+    // Preparar dados para a requisição
     const requestData = new FormData();
     requestData.append('lat', latlng.lat);
     requestData.append('lng', latlng.lng);
     
-    // Add isochrone GeoJSON if available
+    // Adicionar GeoJSON da isócrona se disponível
     if (isochroneGeoJSON) {
-        // Check if isochroneGeoJSON is already a string or needs to be stringified
+        // Verificar se isochroneGeoJSON já é uma string ou precisa ser stringificado
         const geoJsonString = typeof isochroneGeoJSON === 'string' 
             ? isochroneGeoJSON 
             : JSON.stringify(isochroneGeoJSON);
         requestData.append('isochrone', geoJsonString);
     }
     
-    // Add radius as fallback
+    // Adicionar raio como fallback
     if (radius) {
         requestData.append('radius', radius);
     }
     
-    // Add selected POI types
+    // Adicionar tipos de POI selecionados
     const selectedPOIs = [];
     Object.keys(poiTypes).forEach(type => {
         const checkbox = document.getElementById(`poi-${type}`);
@@ -781,53 +781,53 @@ function updateAreaStats(latlng, radius, isochroneGeoJSON) {
     });
     requestData.append('selected_pois', JSON.stringify(selectedPOIs));
     
-    // Make API request
+    // Fazer requisição à API
     fetch('includes/fetch_statistics.php', {
         method: 'POST',
         body: requestData
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            throw new Error(`Erro HTTP! Estado: ${response.status}`);
         }
-        return response.text(); // Get as text first to check if it's valid JSON
+        return response.text(); // Obter como texto primeiro para verificar se é JSON válido
     })
     .then(text => {
         try {
             const data = JSON.parse(text);
             
             if (data.success) {
-                // Display statistics
+                // Exibir estatísticas
                 displayAreaStats(data.stats, latlng);
             } else {
-                console.error('Error fetching area statistics:', data.message);
-                // Display error in stats panel but still show basic info
+                console.error('Erro ao buscar estatísticas de área:', data.message);
+                // Exibir erro no painel de estatísticas, mas ainda mostrar informações básicas
                 displayAreaStats(null, latlng);
             }
         } catch (parseError) {
-            console.error('Error parsing statistics JSON:', parseError);
-            console.debug('Raw response:', text);
-            // Display error in stats panel but still show basic info
+            console.error('Erro ao analisar JSON de estatísticas:', parseError);
+            console.debug('Resposta bruta:', text);
+            // Exibir erro no painel de estatísticas, mas ainda mostrar informações básicas
             displayAreaStats(null, latlng);
         }
     })
     .catch(error => {
-        console.error('Error fetching area statistics:', error);
-        // Handle error gracefully - still display the isochrone but with limited stats
+        console.error('Erro ao buscar estatísticas de área:', error);
+        // Lidar com o erro graciosamente - ainda exibir a isócrona, mas com estatísticas limitadas
         displayAreaStats(null, latlng);
     });
 }
 
 /**
- * Display area statistics in the panel
+ * Exibir estatísticas de área no painel
  */
 function displayAreaStats(stats, latlng) {
-    // Get the stats content element
+    // Obter o elemento de conteúdo das estatísticas
     const statsContent = document.getElementById('stats-content');
     
-    // Check if stats is undefined or null
+    // Verificar se as estatísticas são indefinidas ou nulas
     if (!stats) {
-        // Display basic information without statistics
+        // Exibir informações básicas sem estatísticas
         statsContent.innerHTML = `
             <div class="error-message">
                 <i class="fas fa-exclamation-triangle"></i>
@@ -856,10 +856,10 @@ function displayAreaStats(stats, latlng) {
         return; // Exit the function early
     }
     
-    // Calculate accessibility score
+    // Calcular pontuação de acessibilidade
     const accessibilityScore = calculateAccessibilityScore(stats);
     
-    // Create HTML for the statistics
+    // Criar HTML para as estatísticas
     let html = `
         <div class="stats-section accessibility-score">
             <h3>Pontuação de Acessibilidade</h3>
@@ -882,11 +882,11 @@ function displayAreaStats(stats, latlng) {
             <p><strong>Área:</strong> ${stats.area_km2.toFixed(2)} km²</p>
             <p><strong>Tempo:</strong> ${selectedMaxDistance} minutos ${getTransportModeText()}</p>
             <p><strong>Coordenadas:</strong> ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</p>
-            <p class="freguesia-info">Carregando informações do município...</p>
+            <p class="freguesia-info">A carregar informações do município...</p>
         </div>
     `;
     
-    // Add POI statistics by category
+    // Adicionar estatísticas de POI por categoria
     const poiCategories = {
         'Saúde': ['hospitals', 'health_centers', 'pharmacies', 'dentists'],
         'Educação': ['schools', 'universities', 'kindergartens', 'libraries'],
@@ -897,10 +897,10 @@ function displayAreaStats(stats, latlng) {
         'Transportes': ['bus_stops', 'train_stations', 'subway_stations', 'parking']
     };
     
-    // Add infrastructure statistics section
+    // Adicionar seção de estatísticas de infraestrutura
     html += `<div class="stats-section infrastructure-stats"><h3>Infraestruturas</h3>`;
     
-    // Add POI statistics for each category
+    // Adicionar estatísticas de POI para cada categoria
     let hasInfrastructureData = false;
     
     for (const [category, types] of Object.entries(poiCategories)) {
@@ -932,23 +932,23 @@ function displayAreaStats(stats, latlng) {
         }
     }
     
-    // Close infrastructure section
+    // Fechar seção de infraestrutura
     html += `</div>`;
     
-    // If no infrastructure data was found
+    // Se nenhum dado de infraestrutura foi encontrado
     if (!hasInfrastructureData) {
         html = html.replace('<div class="stats-section infrastructure-stats"><h3>Infraestruturas</h3></div>', 
             '<div class="stats-section infrastructure-stats"><h3>Infraestruturas</h3><p>Não foram encontradas infraestruturas nesta área.</p></div>');
     }
     
-    // Set the HTML content
+    // Definir o conteúdo HTML
     statsContent.innerHTML = html;
     
-    // Automatically fetch municipality information
+    // Buscar informações do município automaticamente
     identifyMunicipio(latlng);
 }
 
-// Add a new function to handle municipio identification only
+// Adicionar uma nova função para lidar apenas com a identificação do município
 function identifyMunicipio(latlng) {
     const municipioInfo = document.querySelector('.freguesia-info');
     municipioInfo.textContent = 'A identificar municipio...';
@@ -1046,7 +1046,7 @@ function identifyMunicipio(latlng) {
     // Get the detail level from settings or use default (municipio)
     const detailLevel = localStorage.getItem('locationDetailLevel') || 'municipio';
     
-    // Update loading text based on selected detail level
+    // Atualizar texto de carregamento com base no nível de detalhe selecionado
     let loadingText = 'A identificar município...';
     if (detailLevel === 'freguesia') {
         loadingText = 'A identificar freguesia...';
@@ -1055,31 +1055,31 @@ function identifyMunicipio(latlng) {
     }
     municipioInfo.textContent = loadingText;
     
-    // First try with the proxy
+    // Primeiro tentar com o proxy
     fetch(`includes/geoapi_proxy.php?endpoint=${encodeURIComponent(`gps/${latlng.lat},${latlng.lng}/base/detalhes`)}`)
         .then(response => {
-            // Check if the response is valid JSON
+            // Verificar se a resposta é JSON válido
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
-                // Not a JSON response, read text and log it
+                // Não é uma resposta JSON, ler texto e registá-lo
                 return response.text().then(text => {
-                    console.error('Non-JSON response:', text);
-                    throw new Error('Invalid response format - not JSON');
+                    console.error('Resposta não JSON:', text);
+                    throw new Error('Formato de resposta inválido - não é JSON');
                 });
             }
             return response.json();
         })
         .then(data => {
-            console.log('API response data:', data);
+            console.log('Dados de resposta da API:', data);
             
-            // Create a location data object
+            // Criar um objeto de dados de localização
             const locationData = {
                 nomeMunicipio: data.concelho || (data.detalhesMunicipio ? data.detalhesMunicipio.nome : ''),
                 freguesia: data.freguesia || (data.detalhesFreguesia ? data.detalhesFreguesia.nome : ''),
                 distrito: data.distrito || (data.detalhesMunicipio ? data.detalhesMunicipio.distrito : '')
             };
             
-            // Check if we have the data for the selected detail level
+            // Verificar se temos os dados para o nível de detalhe selecionado
             let hasRequiredData = false;
             if (detailLevel === 'freguesia' && locationData.freguesia) {
                 hasRequiredData = true;
@@ -1098,25 +1098,25 @@ function identifyMunicipio(latlng) {
             }
         })
         .catch(error => {
-            console.error('Error identifying location:', error);
+            console.error('Erro ao identificar localização:', error);
             
-            // Attempt to fetch directly from the API
-            console.log('Attempting direct API fetch...');
+            // Tentar buscar diretamente da API
+            console.log('A tentar buscar diretamente da API...');
             
-            // Try direct API as fallback
+            // Tentar API direta como fallback
             fetch(`http://json.localhost:8080/gps/${latlng.lat},${latlng.lng}/base/detalhes`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Direct API response:', data);
+                    console.log('Resposta direta da API:', data);
                     
-                    // Create a location data object
+                    // Criar um objeto de dados de localização
                     const locationData = {
                         nomeMunicipio: data.concelho || (data.detalhesMunicipio ? data.detalhesMunicipio.nome : ''),
                         freguesia: data.freguesia || (data.detalhesFreguesia ? data.detalhesFreguesia.nome : ''),
                         distrito: data.distrito || (data.detalhesMunicipio ? data.detalhesMunicipio.distrito : '')
                     };
                     
-                    // Check if we have the data for the selected detail level
+                    // Verificar se temos os dados para o nível de detalhe selecionado
                     let hasRequiredData = false;
                     if (detailLevel === 'freguesia' && locationData.freguesia) {
                         hasRequiredData = true;
@@ -1135,7 +1135,7 @@ function identifyMunicipio(latlng) {
                     }
                 })
                 .catch(directError => {
-                    console.error('Error with direct API call:', directError);
+                    console.error('Erro com a chamada direta da API:', directError);
                     municipioInfo.textContent = 'Erro ao identificar localização';
                     municipioInfo.classList.remove('loading');
                 });
@@ -1144,7 +1144,7 @@ function identifyMunicipio(latlng) {
 
 // Calcular o Accessibility Score baseado nos POIs disponíveis
 function calculateAccessibilityScore(stats) {
-    // Check if stats is undefined or null
+    // Verificar se as estatísticas são indefinidas ou nulas
     if (!stats) {
         return {
             score: 0,
@@ -1197,10 +1197,10 @@ function calculateAccessibilityScore(stats) {
         parks: 8
     };
     
-    // Get custom weights from settings panel if available
+    // Obter pesos personalizados do painel de configurações, se disponível
     const weights = { ...defaultWeights };
     
-    // Update weights from user settings
+    // Atualizar pesos das configurações do utilizador
     Object.keys(weights).forEach(key => {
         const savedWeight = localStorage.getItem(`weight-${key}`);
         if (savedWeight) {
@@ -1256,7 +1256,7 @@ function calculateAccessibilityScore(stats) {
         }
     }
     
-    // Prevent division by zero
+    // Evitar divisão por zero
     if (maxPossibleScore === 0) {
         return {
             score: 0,
@@ -1283,14 +1283,14 @@ function calculateAccessibilityScore(stats) {
     // Garantir que o score esteja entre 0 e 100
     finalScore = Math.max(0, Math.min(100, finalScore));
     
-    // Add essential services check - if there are no essential services, reduce score
+    // Adicionar verificação de serviços essenciais - se não houver serviços essenciais, reduzir pontuação
     const hasEssentialServices = 
-        (stats.hospitals > 0 || stats.health_centers > 0 || stats.pharmacies > 0) && // Health
-        (stats.supermarkets > 0 || stats.restaurants > 0) && // Food
-        (stats.schools > 0 || stats.kindergartens > 0); // Education
+        (stats.hospitals > 0 || stats.health_centers > 0 || stats.pharmacies > 0) && // Saúde
+        (stats.supermarkets > 0 || stats.restaurants > 0) && // Alimentação
+        (stats.schools > 0 || stats.kindergartens > 0); // Educação
     
     if (!hasEssentialServices) {
-        // If missing essential services, reduce score by 20%
+        // Se faltarem serviços essenciais, reduzir pontuação em 20%
         finalScore = Math.round(finalScore * 0.8);
     }
     
@@ -1303,9 +1303,9 @@ function calculateAccessibilityScore(stats) {
 }
 
 /**
- * Calculate time adjustment factor for the accessibility score
- * For times less than 15 minutes, increase the score (more impressive to have POIs in less time)
- * For times more than 15 minutes, decrease the score (less impressive to have POIs in more time)
+ * Calcular fator de ajuste de tempo para a pontuação de acessibilidade
+ * Para tempos menores que 15 minutos, aumentar a pontuação (mais impressionante ter POIs em menos tempo)
+ * Para tempos maiores que 15 minutos, diminuir a pontuação (menos impressionante ter POIs em mais tempo)
  */
 function calculateTimeAdjustmentFactor(minutes) {
     if (minutes < 15) {
@@ -1319,7 +1319,7 @@ function calculateTimeAdjustmentFactor(minutes) {
 }
 
 /**
- * Get text explaining the time adjustment factor
+ * Obter texto explicando o fator de ajuste de tempo
  */
 function getTimeAdjustmentText(minutes) {
     if (minutes < 15) {
@@ -1331,7 +1331,7 @@ function getTimeAdjustmentText(minutes) {
 }
 
 /**
- * Get score label based on numeric score
+ * Obter rótulo de pontuação com base na pontuação numérica
  */
 function getScoreLabel(score) {
     if (score >= 90) return 'Excelente';
@@ -1347,7 +1347,7 @@ function getScoreLabel(score) {
 }
 
 /**
- * Get transport mode text for display
+ * Obter texto do modo de transporte para exibição
  */
 function getTransportModeText() {
     switch (selectedTransportMode) {
@@ -1361,7 +1361,7 @@ function getTransportModeText() {
 // Adicionar legenda ao mapa
 function addLegend() {
     // Usando a legenda de POI que agora está no HTML
-    // Não precisamos de L.control legend mais, pois temos uma personalizada na UI
+    // Não precisamos mais de L.control legend, pois temos uma personalizada na UI
 }
 
 // Mostrar indicador de carregamento
@@ -1416,14 +1416,14 @@ function hideStatisticsPanel() {
     }
 }
 
-// Shows initial instructions to help new users
+// Mostrar instruções iniciais para ajudar novos utilizadores
 function showInitialInstructions() {
-    // Check if the user has seen the tutorial before
+    // Verificar se o utilizador já viu o tutorial antes
     if (localStorage.getItem('minu15_instructions_seen') === 'true') {
         return;
     }
     
-    // Create the tutorial container
+    // Criar o contêiner do tutorial
     const tutorialBox = document.createElement('div');
     tutorialBox.id = 'instruction-box';
     tutorialBox.style.position = 'absolute';
@@ -1440,7 +1440,7 @@ function showInitialInstructions() {
     tutorialBox.style.opacity = '0';
     tutorialBox.style.transition = 'all 0.3s ease-out';
     
-    // Create tutorial content
+    // Criar conteúdo do tutorial
     tutorialBox.innerHTML = `
         <div style="position: relative;">
             <div style="text-align: center; margin-bottom: 25px;">
@@ -1468,7 +1468,7 @@ function showInitialInstructions() {
                             <span style="font-weight: bold;">2</span>
                         </div>
                         <div>
-                            <strong style="font-weight: 600; color: #2c3e50;">Configure suas preferências</strong> 
+                            <strong style="font-weight: 600; color: #2c3e50;">Configure as suas preferências</strong> 
                             <p style="margin-top: 5px; color: #555;">Escolha o modo de transporte (a pé, bicicleta ou carro) e ajuste o tempo máximo de deslocamento utilizando o painel lateral.</p>
                         </div>
                     </div>
@@ -1505,29 +1505,29 @@ function showInitialInstructions() {
         </div>
     `;
     
-    // Add to document
+    // Adicionar ao documento
     document.body.appendChild(tutorialBox);
     
-    // Add entrance animation
+    // Adicionar animação de entrada
     setTimeout(() => {
         tutorialBox.style.opacity = '1';
         tutorialBox.style.transform = 'translate(-50%, -50%) scale(1)';
         
-        // Show a visual hint of map click after tutorial appears
+        // Mostrar uma dica visual de clique no mapa após o tutorial aparecer
         setTimeout(() => {
             showMapClickAnimation();
         }, 1000);
         
-        // Dispatch event that tutorial is shown
+        // Disparar evento de que o tutorial é mostrado
         document.dispatchEvent(new Event('tutorialShown'));
     }, 100);
     
-    // Prevent clicks on the tutorial from propagating to the map
+    // Impedir que cliques no tutorial se propaguem para o mapa
     tutorialBox.addEventListener('click', function(event) {
         event.stopPropagation();
     });
     
-    // Add hover effect to the button
+    // Adicionar efeito de hover ao botão
     const tutorialBtn = document.getElementById('got-it-btn');
     tutorialBtn.addEventListener('mouseover', function() {
         this.style.backgroundColor = '#2980b9';
@@ -1541,32 +1541,32 @@ function showInitialInstructions() {
         this.style.boxShadow = 'none';
     });
     
-    // Close button event
+    // Evento do botão de fechar
     tutorialBtn.addEventListener('click', function(event) {
         event.stopPropagation();
         
-        // Add exit animation
+        // Adicionar animação de saída
         tutorialBox.style.opacity = '0';
         tutorialBox.style.transform = 'translate(-50%, -50%) scale(0.9)';
         
-        // Save preference if checkbox is checked
+        // Salvar preferência se a caixa de seleção estiver marcada
         if (document.getElementById('dont-show-again').checked) {
             localStorage.setItem('minu15_instructions_seen', 'true');
         }
         
-        // Remove after animation completes
+        // Remover após a conclusão da animação
         setTimeout(() => {
             document.getElementById('instruction-box').remove();
             
-            // Critical fix for sidebar disappearing issue
-            // Force the sidebar to be visible on desktop
+            // Correção crítica para o problema de desaparecimento da barra lateral
+            // Forçar a barra lateral a ser visível no desktop
             if (window.innerWidth > 768) {
                 const panel = document.getElementById('overlay-panel');
                 if (panel) {
-                    // First remove any problematic class or style that might be hiding it
+                    // Primeiro remover qualquer classe ou estilo problemático que possa estar a ocultá-la
                     panel.classList.remove('mobile-active');
                     
-                    // Apply direct styles to ensure visibility
+                    // Aplicar estilos diretos para garantir a visibilidade
                     panel.style.display = 'block';
                     panel.style.transform = 'none';
                     panel.style.visibility = 'visible';
@@ -1575,7 +1575,7 @@ function showInitialInstructions() {
                     panel.style.zIndex = '999';
                     panel.style.position = 'absolute';
                     
-                    // Apply additional override styles through a CSS rule
+                    // Aplicar estilos de substituição adicionais através de uma regra CSS
                     const styleElement = document.createElement('style');
                     styleElement.id = 'sidebar-fix-style';
                     styleElement.textContent = `
@@ -1595,12 +1595,12 @@ function showInitialInstructions() {
                         }
                     `;
                     
-                    // Add the style element if it doesn't exist yet
+                    // Adicionar o elemento de estilo se ainda não existir
                     if (!document.getElementById('sidebar-fix-style')) {
                         document.head.appendChild(styleElement);
                     }
                     
-                    // Set multiple delayed fixes to catch any race conditions
+                    // Definir várias correções atrasadas para capturar quaisquer condições de corrida
                     for (let i = 1; i <= 5; i++) {
                         setTimeout(() => {
                             panel.style.display = 'block';
@@ -1612,26 +1612,26 @@ function showInitialInstructions() {
                 }
             }
             
-            // Dispatch event that tutorial is closed
+            // Disparar evento de que o tutorial foi fechado
             document.dispatchEvent(new Event('tutorialClosed'));
             
-            // Highlight key UI elements after tutorial closes
+            // Destacar elementos chave da UI após o tutorial fechar
             highlightKeyElements();
         }, 300);
     });
     
-    // "Don't show again" event
+    // Evento "Não mostrar novamente"
     document.getElementById('dont-show-again').addEventListener('click', function(event) {
-        // Stop event propagation to prevent triggering map click
+        // Parar a propagação do evento para evitar disparar o clique no mapa
         event.stopPropagation();
     });
 }
 
 /**
- * Shows a visual animation suggesting to click on the map
+ * Mostra uma animação visual sugerindo para clicar no mapa
  */
 function showMapClickAnimation() {
-    // Create the cursor element
+    // Criar o elemento do cursor
     const cursor = document.createElement('div');
     cursor.style.position = 'absolute';
     cursor.style.width = '24px';
@@ -1645,7 +1645,7 @@ function showMapClickAnimation() {
     cursor.style.opacity = '0.9';
     document.body.appendChild(cursor);
     
-    // Create the click effect element
+    // Criar o elemento do efeito de clique
     const clickEffect = document.createElement('div');
     clickEffect.style.position = 'absolute';
     clickEffect.style.width = '40px';
@@ -1657,7 +1657,7 @@ function showMapClickAnimation() {
     clickEffect.style.pointerEvents = 'none';
     document.body.appendChild(clickEffect);
     
-    // Get a point in the center-right area of the map
+    // Obter um ponto na área centro-direita do mapa
     const mapElement = document.getElementById('map');
     const mapRect = mapElement.getBoundingClientRect();
     const startX = mapRect.left + mapRect.width * 0.65;
@@ -1665,33 +1665,33 @@ function showMapClickAnimation() {
     const targetX = startX + 50;
     const targetY = startY + 30;
     
-    // Position the cursor at starting point
+    // Posicionar o cursor no ponto inicial
     cursor.style.left = startX + 'px';
     cursor.style.top = startY + 'px';
     
-    // Animate cursor to target position
+    // Animar o cursor para a posição alvo
     setTimeout(() => {
         cursor.style.transition = 'all 1s ease-in-out';
         cursor.style.left = targetX + 'px';
         cursor.style.top = targetY + 'px';
         
-        // Show click effect at target position
+        // Mostrar efeito de clique na posição alvo
         setTimeout(() => {
             cursor.style.transform = 'scale(0.8)';
             
-            // Position and animate the click effect
+            // Posicionar e animar o efeito de clique
             clickEffect.style.left = targetX + 'px';
             clickEffect.style.top = targetY + 'px';
             clickEffect.style.transition = 'all 0.5s ease-out';
             clickEffect.style.transform = 'translate(-50%, -50%) scale(1)';
             clickEffect.style.opacity = '1';
             
-            // Fade out click effect
+            // Desvanecer efeito de clique
             setTimeout(() => {
                 clickEffect.style.transform = 'translate(-50%, -50%) scale(1.5)';
                 clickEffect.style.opacity = '0';
                 
-                // Clean up after animation
+                // Limpar após a animação
                 setTimeout(() => {
                     cursor.remove();
                     clickEffect.remove();
@@ -1702,14 +1702,14 @@ function showMapClickAnimation() {
 }
 
 /**
- * Highlights key UI elements to guide users where to start
+ * Destaca elementos chave da UI para guiar os utilizadores onde começar
  */
 function highlightKeyElements() {
-    // Highlight the sidebar panel
+    // Destacar o painel lateral
     const panel = document.querySelector('.overlay-panel');
     const transportOptions = document.querySelector('.transport-mode');
     
-    // Create highlight effect elements
+    // Criar elementos de efeito de destaque
     const panelHighlight = document.createElement('div');
     panelHighlight.style.position = 'absolute';
     panelHighlight.style.top = '0';
@@ -1723,11 +1723,11 @@ function highlightKeyElements() {
     panelHighlight.style.opacity = '0';
     panelHighlight.style.transition = 'opacity 0.5s ease-in-out';
     
-    // Add the highlight to the panel
+    // Adicionar o destaque ao painel
     panel.style.position = 'relative';
     panel.appendChild(panelHighlight);
     
-    // Create a highlight for the transport mode options
+    // Criar um destaque para as opções de modo de transporte
     const transportHighlight = document.createElement('div');
     transportHighlight.style.position = 'absolute';
     transportHighlight.style.top = '0';
@@ -1741,24 +1741,24 @@ function highlightKeyElements() {
     transportHighlight.style.opacity = '0';
     transportHighlight.style.transition = 'opacity 0.5s ease-in-out';
     
-    // Add the highlight to the transport options
+    // Adicionar o destaque às opções de transporte
     transportOptions.style.position = 'relative';
     transportOptions.appendChild(transportHighlight);
     
-    // Animate the highlight for the panel
+    // Animar o destaque para o painel
     setTimeout(() => {
         panelHighlight.style.opacity = '1';
         
-        // Highlight transport options after the panel
+        // Destacar opções de transporte após o painel
         setTimeout(() => {
             panelHighlight.style.opacity = '0';
             transportHighlight.style.opacity = '1';
             
-            // Remove the highlights after 2 seconds
+            // Remover os destaques após 2 segundos
             setTimeout(() => {
                 transportHighlight.style.opacity = '0';
                 
-                // Remove the highlight elements after fade out
+                // Remover os elementos de destaque após o desvanecimento
                 setTimeout(() => {
                     panelHighlight.remove();
                     transportHighlight.remove();
@@ -1767,7 +1767,7 @@ function highlightKeyElements() {
         }, 2000);
     }, 500);
     
-    // Add the pulse animation class if it doesn't exist
+    // Adicionar a classe de animação de pulso se não existir
     if (!document.getElementById('pulse-animation-style')) {
         const style = document.createElement('style');
         style.id = 'pulse-animation-style';

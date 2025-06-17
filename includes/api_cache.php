@@ -1,7 +1,7 @@
 <?php
 /**
- * API Cache System
- * Provides a general-purpose caching mechanism for API calls
+ * Sistema de Cache da API
+ * Fornece um mecanismo de cache de propósito geral para chamadas de API
  * 
  * @version 1.0
  */
@@ -11,32 +11,32 @@ class ApiCache {
     private $defaultExpiry = 31536000; // 365 days in seconds
     
     /**
-     * Constructor
+     * Construtor
      * 
-     * @param string $cacheDir The directory to store cache files (without trailing slash)
-     * @param int $defaultExpiry Default cache expiry time in seconds
+     * @param string $cacheDir O diretório para armazenar ficheiros de cache (sem barra final)
+     * @param int $defaultExpiry Tempo de expiração de cache padrão em segundos
      */
     public function __construct($cacheDir = null, $defaultExpiry = null) {
-        // Set cache directory, default to ../cache/api/
+        // Define o diretório de cache, predefinido para ../cache/api/
         $this->cacheDir = $cacheDir ?: __DIR__ . '/../cache/api/';
         
-        // Ensure cache directory exists
+        // Garante que o diretório de cache existe
         if (!is_dir($this->cacheDir)) {
             mkdir($this->cacheDir, 0755, true);
         }
         
-        // Set default expiry if provided
+        // Define a expiração padrão se fornecida
         if ($defaultExpiry !== null) {
             $this->defaultExpiry = $defaultExpiry;
         }
     }
     
     /**
-     * Generate a cache key from various parameters
+     * Gera uma chave de cache a partir de vários parâmetros
      * 
-     * @param string $baseKey Base key (usually the endpoint)
-     * @param array $params Additional parameters to include in the key
-     * @return string The cache key
+     * @param string $baseKey Chave base (normalmente o endpoint)
+     * @param array $params Parâmetros adicionais a incluir na chave
+     * @return string A chave de cache
      */
     public function generateCacheKey($baseKey, $params = []) {
         $key = $baseKey;
@@ -51,21 +51,21 @@ class ApiCache {
     }
     
     /**
-     * Get the full path to a cache file
+     * Obtém o caminho completo para um ficheiro de cache
      * 
-     * @param string $cacheKey The cache key
-     * @return string The full path to the cache file
+     * @param string $cacheKey A chave de cache
+     * @return string O caminho completo para o ficheiro de cache
      */
     public function getCacheFilePath($cacheKey) {
         return $this->cacheDir . $cacheKey . '.json';
     }
     
     /**
-     * Check if a cached item exists and is still valid
+     * Verifica se um item em cache existe e ainda é válido
      * 
-     * @param string $cacheKey The cache key
-     * @param int $expiry Override the default expiry time (in seconds)
-     * @return bool True if the cache exists and is valid, false otherwise
+     * @param string $cacheKey A chave de cache
+     * @param int $expiry Ignora o tempo de expiração padrão (em segundos)
+     * @return bool Verdadeiro se o cache existe e é válido, falso caso contrário
      */
     public function hasValidCache($cacheKey, $expiry = null) {
         $cacheFile = $this->getCacheFilePath($cacheKey);
@@ -81,10 +81,10 @@ class ApiCache {
     }
     
     /**
-     * Get data from cache
+     * Obtém dados do cache
      * 
-     * @param string $cacheKey The cache key
-     * @return mixed The cached data (decoded from JSON), or null if not found
+     * @param string $cacheKey A chave de cache
+     * @return mixed Os dados em cache (descodificados de JSON), ou nulo se não encontrado
      */
     public function get($cacheKey) {
         $cacheFile = $this->getCacheFilePath($cacheKey);
@@ -98,11 +98,11 @@ class ApiCache {
     }
     
     /**
-     * Store data in cache
+     * Armazena dados no cache
      * 
-     * @param string $cacheKey The cache key
-     * @param mixed $data The data to store (will be JSON encoded)
-     * @return bool True on success, false on failure
+     * @param string $cacheKey A chave de cache
+     * @param mixed $data Os dados a armazenar (serão codificados em JSON)
+     * @return bool Verdadeiro em caso de sucesso, falso em caso de falha
      */
     public function set($cacheKey, $data) {
         $cacheFile = $this->getCacheFilePath($cacheKey);
@@ -120,10 +120,10 @@ class ApiCache {
     }
     
     /**
-     * Delete a cached item
+     * Apaga um item em cache
      * 
-     * @param string $cacheKey The cache key
-     * @return bool True if the cache was deleted, false otherwise
+     * @param string $cacheKey A chave de cache
+     * @return bool Verdadeiro se o cache foi apagado, falso caso contrário
      */
     public function delete($cacheKey) {
         $cacheFile = $this->getCacheFilePath($cacheKey);
@@ -136,9 +136,9 @@ class ApiCache {
     }
     
     /**
-     * Clear all cached items
+     * Limpa todos os itens em cache
      * 
-     * @return bool True on success, false on failure
+     * @return bool Verdadeiro em caso de sucesso, falso em caso de falha
      */
     public function clearAll() {
         $files = glob($this->cacheDir . '*.json');
@@ -158,23 +158,23 @@ class ApiCache {
     }
     
     /**
-     * Get or set cached data with a callback function
+     * Obtém ou define dados em cache com uma função de callback
      * 
-     * @param string $cacheKey The cache key
-     * @param callable $callback Function to call if cache is not valid
-     * @param int $expiry Override the default expiry time (in seconds)
-     * @return mixed The cached data or the result of the callback
+     * @param string $cacheKey A chave de cache
+     * @param callable $callback Função a chamar se o cache não for válido
+     * @param int $expiry Ignora o tempo de expiração padrão (em segundos)
+     * @return mixed Os dados em cache ou o resultado da callback
      */
     public function remember($cacheKey, $callback, $expiry = null) {
-        // Check if we have valid cached data
+        // Verifica se temos dados em cache válidos
         if ($this->hasValidCache($cacheKey, $expiry)) {
             return $this->get($cacheKey);
         }
         
-        // Call the callback to get fresh data
+        // Chama a callback para obter dados atualizados
         $data = $callback();
         
-        // Store the fresh data in cache
+        // Armazena os dados atualizados no cache
         $this->set($cacheKey, $data);
         
         return $data;

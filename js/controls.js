@@ -1,53 +1,53 @@
 /**
- * Explorador de Cidade em 15 Minutos - Controls Functionality
- * Handles UI control interactions and their effects on the map
+ * Explorador de Cidade em 15 Minutos - Funcionalidades dos Controlos
+ * Gere as interações dos controlos da interface de utilizador (UI) e os seus efeitos no mapa.
  * 
  * @version 2.0
  */
 
-// Initialize controls when DOM is loaded
+// Inicializa os controlos quando o DOM é carregado
 function initControls() {
-    // Initialize mobile menu functionality
+    // Inicializa a funcionalidade do menu móvel
     initMobileMenu();
     
-    // Initialize collapsible panels
+    // Inicializa os painéis colapsáveis
     initCollapsiblePanels();
     
-    // Initialize map style selector
+    // Inicializa o seletor de estilo do mapa
     initMapStyleSelector();
     
-    // Initialize transport mode selector
+    // Inicializa o seletor de modo de transporte
     initTransportModeSelector();
     
-    // Initialize distance slider
+    // Inicializa o deslizador de distância
     initDistanceSlider();
     
-    // Initialize POI checkboxes
+    // Inicializa as caixas de verificação dos POI
     initPoiCheckboxes();
     
-    // Initialize calculate button
+    // Inicializa o botão de calcular
     initCalculateButton();
     
-    // Initialize search box
+    // Inicializa a caixa de pesquisa
     initSearchBox();
     
-    // Initialize panel close buttons
+    // Inicializa os botões de fechar painel
     initPanelCloseButtons();
     
-    // Initialize settings controls
+    // Inicializa os controlos das definições
     initSettingsControls();
 }
 
-// Initialize mobile menu functionality
+// Inicializa a funcionalidade do menu móvel
 function initMobileMenu() {
     const menuToggle = document.getElementById('mobile-menu-toggle');
     const closeButton = document.getElementById('mobile-panel-close');
     const panel = document.getElementById('overlay-panel');
     
-    // Track if tutorial is active
+    // Rastrear se o tutorial está ativo
     let tutorialActive = false;
     
-    // Listen for tutorial events
+    // Monitorizar eventos do tutorial
     document.addEventListener('tutorialShown', function() {
         tutorialActive = true;
     });
@@ -57,21 +57,21 @@ function initMobileMenu() {
     });
     
     if (menuToggle && closeButton && panel) {
-        // Show menu when toggle is clicked
+        // Mostrar menu quando o interruptor é clicado
         menuToggle.addEventListener('click', function() {
             panel.classList.add('mobile-active');
         });
         
-        // Hide menu when close button is clicked
+        // Esconder menu quando o botão de fechar é clicado
         closeButton.addEventListener('click', function() {
             panel.classList.remove('mobile-active');
         });
         
-        // Hide menu when clicking on map (mobile only)
+        // Esconder menu ao clicar no mapa (apenas em dispositivos móveis)
         document.getElementById('map').addEventListener('click', function() {
-            // Never hide the panel on desktop, regardless of tutorial state
+            // Nunca esconder o painel no ambiente de trabalho, independentemente do estado do tutorial
             if (window.innerWidth > 768) {
-                // Instead of hiding, make sure it's visible
+                // Em vez de esconder, garantir que está visível
                 panel.style.display = 'block';
                 panel.style.transform = 'none';
                 panel.style.visibility = 'visible';
@@ -79,17 +79,17 @@ function initMobileMenu() {
                 return;
             }
             
-            // Only hide on mobile
+            // Apenas esconder em dispositivos móveis
             if (window.innerWidth <= 768) {
                 panel.classList.remove('mobile-active');
             }
         });
         
-        // Hide menu when clicking calculate button (mobile only)
+        // Esconder menu ao clicar no botão de calcular (apenas em dispositivos móveis)
         document.querySelector('.calculate-button').addEventListener('click', function() {
-            // Never hide the panel on desktop, regardless of tutorial state
+            // Nunca esconder o painel no ambiente de trabalho, independentemente do estado do tutorial
             if (window.innerWidth > 768) {
-                // Instead of hiding, make sure it's visible
+                // Em vez de esconder, garantir que está visível
                 panel.style.display = 'block';
                 panel.style.transform = 'none';
                 panel.style.visibility = 'visible';
@@ -97,7 +97,7 @@ function initMobileMenu() {
                 return;
             }
             
-            // Only hide on mobile
+            // Apenas esconder em dispositivos móveis
             if (window.innerWidth <= 768) {
                 panel.classList.remove('mobile-active');
             }
@@ -105,43 +105,43 @@ function initMobileMenu() {
     }
 }
 
-// Initialize map style selector
+// Inicializa o seletor de estilo do mapa
 function initMapStyleSelector() {
     const mapStyleOptions = document.querySelectorAll('.map-style-option');
     
     mapStyleOptions.forEach(option => {
         option.addEventListener('click', function() {
-            // Get the provider from the data-provider attribute
+            // Obter o fornecedor do atributo data-provider
             const provider = this.getAttribute('data-provider');
             
-            // Update the map tiles
+            // Atualiza os 'tiles' do mapa
             updateMapTiles(provider);
         });
     });
 }
 
-// Initialize collapsible panels
+// Inicializa os painéis colapsáveis
 function initCollapsiblePanels() {
-    // Log all panel headers for debugging
-    console.log('Found panel headers:', document.querySelectorAll('.panel-header').length);
+    // Registar todos os cabeçalhos de painel para depuração
+    console.log('Cabeçalhos de painel encontrados:', document.querySelectorAll('.panel-header').length);
     
-    // Initialize panel headers (excluding settings which is handled separately)
+    // Inicializa os cabeçalhos de painel (excluindo definições que são tratadas separadamente)
     document.querySelectorAll('.panel-header').forEach(header => {
-        // Skip headers with 'js-custom-handled' class (e.g., settings header) as they are handled by other scripts
+        // Ignorar cabeçalhos com a classe 'js-custom-handled' (ex: cabeçalho das definições) pois são tratados por outros scripts
         if (header.classList.contains('js-custom-handled')) {
-            console.log('Skipping panel header with js-custom-handled class:', header.id);
+            console.log('A ignorar cabeçalho de painel com classe js-custom-handled:', header.id);
             return;
         }
         
-        console.log('Initializing panel header:', header.id);
+        console.log('A inicializar cabeçalho de painel:', header.id);
         
         header.addEventListener('click', function() {
-            console.log('Panel header clicked:', this.id);
+            console.log('Cabeçalho de painel clicado:', this.id);
             const content = this.nextElementSibling;
-            console.log('Next element:', content?.id);
+            console.log('Elemento seguinte:', content?.id);
             
             if (content && content.classList.contains('panel-content')) {
-                console.log('Toggling expanded class on', content.id);
+                console.log('A alternar a classe expanded em', content.id);
                 content.classList.toggle('expanded');
                 const arrow = this.querySelector('.dropdown-arrow');
                 if (arrow) {
@@ -151,10 +151,10 @@ function initCollapsiblePanels() {
         });
     });
     
-    // Initialize POI category headers
+    // Inicializa os cabeçalhos das categorias de POI
     document.querySelectorAll('.category-header').forEach(header => {
         header.addEventListener('click', function(e) {
-            // Prevent event propagation to parent panel
+            // Previne a propagação do evento para o painel pai
             e.stopPropagation();
             
             const content = this.nextElementSibling;
@@ -168,7 +168,7 @@ function initCollapsiblePanels() {
         });
     });
     
-    // Start with POI panel expanded
+    // Começar com o painel de POI expandido
     const poiContent = document.getElementById('poi-content');
     if (poiContent) {
         poiContent.classList.add('expanded');
@@ -178,16 +178,16 @@ function initCollapsiblePanels() {
         }
     }
     
-    // Make sure settings panel has correct class
+    // Garantir que o painel de definições tem a classe correta
     const settingsContent = document.getElementById('settings-content');
     if (settingsContent) {
-        // Make sure it has panel-content class
+        // Garantir que tem a classe panel-content
         settingsContent.classList.add('panel-content');
-        // Ensure it's initially collapsed
+        // Garantir que está inicialmente colapsado
         settingsContent.classList.remove('expanded');
     }
     
-    // Start with first category expanded (Health)
+    // Começar com a primeira categoria expandida (Saúde)
     const firstCategory = document.querySelector('.category-content');
     if (firstCategory) {
         firstCategory.classList.add('expanded');
@@ -198,55 +198,55 @@ function initCollapsiblePanels() {
     }
 }
 
-// Initialize transport mode selector
+// Inicializa o seletor de modo de transporte
 function initTransportModeSelector() {
     const transportOptions = document.querySelectorAll('.transport-option');
     
     transportOptions.forEach(option => {
         option.addEventListener('click', function() {
-            // Remove active class from all options
+            // Remover classe ativa de todas as opções
             transportOptions.forEach(opt => {
                 opt.classList.remove('active');
             });
             
-            // Add active class to selected option
+            // Adicionar classe ativa à opção selecionada
             this.classList.add('active');
             
-            // Update selected transport mode
+            // Atualizar modo de transporte selecionado
             selectedTransportMode = this.getAttribute('data-mode');
             
-            // Don't automatically update map - wait for Calculate button
+            // Não atualizar o mapa automaticamente - esperar pelo botão Calcular
         });
     });
     
-    // Set initial transport mode
+    // Define o modo de transporte inicial
     const activeModeElement = document.querySelector('.transport-option.active');
     if (activeModeElement) {
         selectedTransportMode = activeModeElement.getAttribute('data-mode');
     }
 }
 
-// Initialize distance slider
+// Inicializa o deslizador de distância
 function initDistanceSlider() {
     const distanceSlider = document.getElementById('max-distance');
     const distanceValue = document.getElementById('distance-value');
     
-    // Set initial distance value
+    // Define o valor de distância inicial
     distanceValue.textContent = distanceSlider.value + ' minutos';
     
-    // Add input event listener to slider
+    // Adiciona um ouvinte de evento de entrada ao deslizador
     distanceSlider.addEventListener('input', function() {
-        // Update displayed value
+        // Atualiza o valor exibido
         distanceValue.textContent = this.value + ' minutos';
         
-        // Update selected max distance
+        // Atualiza a distância máxima selecionada
         selectedMaxDistance = parseInt(this.value);
         
-        // Don't automatically update map - wait for Calculate button
+        // Não atualiza o mapa automaticamente - espera pelo botão Calcular
     });
 }
 
-// Initialize POI checkboxes
+// Inicializa as caixas de verificação dos POI
 function initPoiCheckboxes() {
     Object.keys(poiTypes).forEach(type => {
         const checkbox = document.getElementById(`poi-${type}`);
@@ -256,27 +256,27 @@ function initPoiCheckboxes() {
     });
 }
 
-// Handle POI checkbox toggle
+// Lida com a alternância da caixa de verificação do POI
 function handlePoiToggle(type) {
     const checkbox = document.getElementById(`poi-${type}`);
     const isChecked = checkbox.checked;
     
-    // Show or hide the layer based on checkbox state
+    // Mostrar ou ocultar a camada com base no estado da caixa de verificação
     if (isChecked) {
-        // Just make sure the layer is added to the map
-        // Don't fetch new POIs - that will happen when Calculate is clicked
+        // Apenas garantir que a camada é adicionada ao mapa
+        // Não procurar novos POIs - isso acontecerá quando o botão Calcular for clicado
         if (!map.hasLayer(poiLayers[type])) {
             map.addLayer(poiLayers[type]);
         }
     } else {
-        // Remove layer from map
+        // Remover camada do mapa
         if (map.hasLayer(poiLayers[type])) {
             map.removeLayer(poiLayers[type]);
         }
     }
     
-    // If we have an active isochrone, update the statistics
-    // to reflect the currently selected POIs
+    // Se tivermos uma isócrona ativa, atualizar as estatísticas
+    // para refletir os POIs atualmente selecionados
     if (currentIsochroneData && currentMarker) {
         updateAreaStats(
             currentMarker.getLatLng(), 
@@ -286,7 +286,7 @@ function handlePoiToggle(type) {
     }
 }
 
-// Helper to calculate radius from isochrone for statistics
+// Função auxiliar para calcular o raio a partir da isócrona para estatísticas
 function calculateRadiusFromIsochrone(isochroneData) {
     let radiusInMeters;
     
@@ -294,11 +294,11 @@ function calculateRadiusFromIsochrone(isochroneData) {
         isochroneData.features[0] && 
         isochroneData.features[0].properties && 
         isochroneData.features[0].properties.area) {
-        // Convert km² to m² to get an equivalent radius
+        // Converter km² para m² para obter um raio equivalente
         const areaInKm2 = isochroneData.features[0].properties.area;
         radiusInMeters = Math.sqrt(areaInKm2 * 1000000 / Math.PI);
     } else {
-        // Fallback: use speed-based estimate
+        // Alternativa: usar estimativa baseada na velocidade
         const speedKmPerHour = transportSpeeds[selectedTransportMode];
         const distanceInKm = (speedKmPerHour * selectedMaxDistance) / 60;
         radiusInMeters = distanceInKm * 1000;
@@ -307,20 +307,20 @@ function calculateRadiusFromIsochrone(isochroneData) {
     return radiusInMeters;
 }
 
-// Initialize calculate button
+// Inicializa o botão de calcular
 function initCalculateButton() {
     const calculateButton = document.querySelector('.calculate-button');
     if (calculateButton) {
-        // Hide the calculate button since we're automating the process
+        // Ocultar o botão de calcular, pois estamos a automatizar o processo
         calculateButton.style.display = 'none';
         
-        // Keep the event listener for backwards compatibility with other code
+        // Manter o ouvinte de evento para compatibilidade com outros códigos
         calculateButton.addEventListener('click', function() {
             if (currentMarker) {
-                // Show loading indicator
+                // Mostrar indicador de carregamento
                 showLoading();
                 
-                // Generate isochrone using ORS API
+                // Gerar isócrona usando a API ORS
                 generateIsochrone(currentMarker.getLatLng());
             } else {
                 alert('Por favor, selecione primeiro uma localização no mapa');
@@ -329,21 +329,21 @@ function initCalculateButton() {
     }
 }
 
-// Initialize search box
+// Inicializa a caixa de pesquisa
 function initSearchBox() {
     const searchBox = document.querySelector('.search-box');
     const searchButton = document.querySelector('.search-button');
     
     if (searchBox && searchButton) {
-        // Add jQuery UI autocomplete to search box
+        // Adicionar autocompletar da interface de utilizador jQuery à caixa de pesquisa
         $(searchBox).autocomplete({
             minLength: 3,
             delay: 500,
             source: function(request, response) {
-                // Show loading indicator
+                // Mostrar indicador de carregamento
                 showLoading();
                 
-                // Make request to our Nominatim proxy
+                // Fazer requisição ao nosso proxy Nominatim
                 fetch(`includes/proxy_nominatim.php?term=${encodeURIComponent(request.term)}`)
                     .then(res => res.json())
                     .then(data => {
@@ -352,52 +352,52 @@ function initSearchBox() {
                     })
                     .catch(error => {
                         hideLoading();
-                        console.error('Error in autocomplete search:', error);
+                        console.error('Erro na pesquisa de autocompletar:', error);
                         response([]);
                     });
             },
             select: function(event, ui) {
-                // When an item is selected, perform the search with the selected location
+                // Quando um item é selecionado, realizar a pesquisa com a localização selecionada
                 if (ui.item) {
-                    // Set the search box value
+                    // Definir o valor da caixa de pesquisa
                     searchBox.value = ui.item.label;
                     
-                    // Create LatLng object
+                    // Criar objeto LatLng
                     const latlng = L.latLng(ui.item.lat, ui.item.lon);
                     
-                    // Set map view to found location
+                    // Definir a vista do mapa para a localização encontrada
                     map.setView(latlng, 15);
                     
-                    // Create marker at found location
+                    // Criar marcador na localização encontrada
                     if (currentMarker) {
                         map.removeLayer(currentMarker);
                     }
                     currentMarker = L.marker(latlng).addTo(map);
                     
-                    // Automatically generate isochrone
+                    // Gerar isócrona automaticamente
                     generateIsochrone(latlng);
                     
-                    // On mobile, close the panel after search
+                    // Em dispositivos móveis, fechar o painel após a pesquisa
                     if (window.innerWidth <= 768) {
                         document.getElementById('overlay-panel').classList.remove('mobile-active');
                     }
                     
-                    return false; // Prevent default action
+                    return false; // Prevenir ação padrão
                 }
             }
         }).autocomplete("instance")._renderItem = function(ul, item) {
-            // Customize the appearance of each item in the autocomplete dropdown
+            // Personalizar a aparência de cada item no menu pendente de autocompletar
             return $("<li>")
                 .append("<div class='autocomplete-item'><i class='fas fa-map-marker-alt'></i> " + item.label + "</div>")
                 .appendTo(ul);
         };
         
-        // Search when button is clicked
+        // Pesquisar quando o botão é clicado
         searchButton.addEventListener('click', function() {
             performSearch(searchBox.value);
         });
         
-        // Search when Enter key is pressed
+        // Pesquisar quando a tecla Enter é pressionada
         searchBox.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 performSearch(this.value);
@@ -406,16 +406,16 @@ function initSearchBox() {
     }
 }
 
-// Perform location search
+// Realizar pesquisa de localização
 function performSearch(searchTerm) {
     if (!searchTerm.trim()) {
         return;
     }
     
-    // Show loading indicator
+    // Mostrar indicador de carregamento
     showLoading();
     
-    // Use Nominatim for geocoding (OpenStreetMap's geocoding service)
+    // Usar Nominatim para geocodificação (serviço de geocodificação do OpenStreetMap)
     const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)},Portugal&limit=1`;
     
     fetch(searchUrl)
@@ -427,19 +427,19 @@ function performSearch(searchTerm) {
                 const result = data[0];
                 const latlng = L.latLng(result.lat, result.lon);
                 
-                // Set map view to found location
+                // Definir a vista do mapa para a localização encontrada
                 map.setView(latlng, 15);
                 
-                // Create marker at found location
+                // Criar marcador na localização encontrada
                 if (currentMarker) {
                     map.removeLayer(currentMarker);
                 }
                 currentMarker = L.marker(latlng).addTo(map);
                 
-                // Automatically generate isochrone instead of waiting for Calculate button
+                // Gerar isócrona automaticamente em vez de esperar pelo botão Calcular
                 generateIsochrone(latlng);
                 
-                // On mobile, close the panel after search
+                // Em dispositivos móveis, fechar o painel após a pesquisa
                 if (window.innerWidth <= 768) {
                     document.getElementById('overlay-panel').classList.remove('mobile-active');
                 }
@@ -449,34 +449,34 @@ function performSearch(searchTerm) {
         })
         .catch(error => {
             hideLoading();
-            console.error('Error searching location:', error);
+            console.error('Erro ao pesquisar localização:', error);
             alert('Ocorreu um erro ao pesquisar a localização.');
         });
 }
 
-// Initialize panel close buttons
+// Inicializa os botões de fechar painel
 function initPanelCloseButtons() {
-    // Statistics panel close button
+    // Botão de fechar painel de estatísticas
     const closeStatsButton = document.querySelector('.close-stats');
     if (closeStatsButton) {
         closeStatsButton.addEventListener('click', function() {
             hideStatisticsPanel();
-            console.log('Statistics panel closed');
+            console.log('Painel de estatísticas fechado');
         });
     } else {
-        console.error('Statistics close button not found');
+        console.error('Botão de fechar estatísticas não encontrado');
     }
 }
 
-// Reset the UI to its initial state
+// Redefine a interface de utilizador para o seu estado inicial
 function resetUI() {
-    // Clear statistics panel
+    // Limpar painel de estatísticas
     document.getElementById('area-stats').innerHTML = '<p>Clique no mapa para ver estatísticas</p>';
     
-    // Hide panels
+    // Ocultar painéis
     hideStatisticsPanel();
     
-    // Reset all layers
+    // Redefinir todas as camadas
     if (isochroneLayer) {
         map.removeLayer(isochroneLayer);
         isochroneLayer = null;
@@ -487,66 +487,66 @@ function resetUI() {
         currentMarker = null;
     }
     
-    // Clear POI layers
+    // Limpar camadas de POI
     clearAllPOIs();
     
-    // Reset current isochrone data
+    // Redefinir dados da isócrona atual
     currentIsochroneData = null;
 }
 
-// Handle window resize events
+// Lida com eventos de redimensionamento da janela
 window.addEventListener('resize', function() {
-    // If we transition from mobile to desktop view, ensure panel is visible
+    // Se houver transição da vista móvel para a de ambiente de trabalho, garantir que o painel está visível
     if (window.innerWidth > 768) {
         document.getElementById('overlay-panel').classList.remove('mobile-active');
     }
 });
 
-// Hide statistics panel
+// Ocultar painel de estatísticas
 function hideStatisticsPanel() {
     const statsPanel = document.querySelector('.statistics-panel');
     if (statsPanel) {
         statsPanel.classList.remove('visible');
-        console.log('Statistics panel hidden');
+        console.log('Painel de estatísticas escondido');
     } else {
-        console.error('Statistics panel not found');
+        console.error('Painel de estatísticas não encontrado');
     }
 }
 
-// Initialize settings controls
+// Inicializa os controlos das definições
 function initSettingsControls() {
-    console.log('Settings controls initialization bypassed - using jQuery instead');
+    console.log('Inicialização dos controlos de definições ignorada - a usar jQuery em vez disso');
     
-    // Just handle localStorage functionality, all UI interactions are in jQuery
+    // Apenas lidar com a funcionalidade de armazenamento local, todas as interações da interface de utilizador estão em jQuery
     
-    // Initialize location detail level selector - just localStorage loading
+    // Inicializa o seletor de nível de detalhe da localização - apenas carregamento do armazenamento local
     const locationDetailLevel = document.getElementById('location-detail-level');
     if (locationDetailLevel) {
-        // Set initial value from localStorage if available
+        // Definir valor inicial do armazenamento local se disponível
         const savedLevel = localStorage.getItem('locationDetailLevel');
         if (savedLevel) {
             locationDetailLevel.value = savedLevel;
         }
         
-        // Add change event handler to store in localStorage
+        // Adicionar ouvinte de evento de mudança para armazenar no armazenamento local
         locationDetailLevel.addEventListener('change', function() {
             localStorage.setItem('locationDetailLevel', this.value);
-            console.log(`Location detail level changed to: ${this.value}`);
+            console.log(`Nível de detalhe da localização alterado para: ${this.value}`);
         });
     }
     
-    // Initialize weight inputs to load from localStorage
+    // Inicializa os campos de peso para carregar do armazenamento local
     document.querySelectorAll('.weight-input').forEach(input => {
-        // Set initial value from localStorage if available
+        // Definir valor inicial do armazenamento local se disponível
         const poiType = input.id.replace('weight-', '');
         const savedWeight = localStorage.getItem(`weight-${poiType}`);
         if (savedWeight) {
             input.value = savedWeight;
         }
         
-        // Add change event handler to store in localStorage
+        // Adicionar ouvinte de evento de mudança para armazenar no armazenamento local
         input.addEventListener('change', function() {
-            // Validate input value (between 1-10)
+            // Validar valor de entrada (entre 1-10)
             let value = parseInt(this.value);
             if (isNaN(value) || value < 1) {
                 value = 1;
@@ -556,7 +556,7 @@ function initSettingsControls() {
                 this.value = 10;
             }
             
-            // Store the weight in localStorage
+            // Armazenar o peso no armazenamento local
             const poiType = this.id.replace('weight-', '');
             localStorage.setItem(`weight-${poiType}`, value);
         });

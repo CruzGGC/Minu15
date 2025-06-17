@@ -1,13 +1,12 @@
 <?php
 /**
- * API Configuration for 15-Minute City Explorer
- * Contains API keys and endpoints for external services
+ * Configuração da API para o 15-Minute City Explorer
+ * Contém chaves de API e pontos de extremidade para serviços externos
  * 
- * This file is used by the proxy_ors.php to access the API key
+ * Este ficheiro é utilizado pelo proxy_ors.php para aceder à chave de API
  */
 
-// OpenRouteService API Configuration
+// Configuração da API OpenRouteService
 define('ORS_API_URL', 'https://api.openrouteservice.org');
-// Replace with your actual API key - previous key was disallowed (403 error)
 define('ORS_API_KEY', '5b3ce3597851110001cf624850f24527ef9a4022921696fb1ba0e525');
 ?>

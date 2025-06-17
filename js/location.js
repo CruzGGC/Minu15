@@ -1,39 +1,39 @@
 /**
  * Location.js
- * Handles the functionality for the location.php page
- * Allows users to select locations from dropdowns or by clicking on the map
- * Fetches and displays data from GeoAPI.pt
+ * Gere a funcionalidade para a página location.php
+ * Permite aos utilizadores selecionar localizações a partir de dropdowns ou clicando no mapa
+ * Obtém e exibe dados da GeoAPI.pt
  */
 
-// Initialize variables
+// Inicializar variáveis
 let map;
 let locationMarker;
 let locationPolygon;
-let freguesiaPolygons = []; // New array to store individual freguesia boundaries
+let freguesiaPolygons = []; // Novo array para armazenar limites de freguesias individuais
 let currentLocation = null;
 let currentClickedCoordinates;
 let genderChart = null;
 let censusSidebarActive = false;
-let currentCensusYear = 2021; // Default to 2021
-let showFreguesias = false; // Track whether to show freguesias
+let currentCensusYear = 2021; // Padrão para 2021
+let showFreguesias = false; // Rastreia se deve mostrar as freguesias
 
-// Map style providers
+// Fornecedores de estilo de mapa
 const mapProviders = {
     osm: {
         url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contribuidores'
     },
     positron: {
         url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contribuidores &copy; <a href="https://carto.com/attributions">CARTO</a>'
     },
     dark_matter: {
         url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contribuidores &copy; <a href="https://carto.com/attributions">CARTO</a>'
     }
 };
 
-// POI Icons configuration
+// Configuração dos Ícones de POI
 const poiIcons = {
     hospitals: { icon: 'hospital', color: '#e74c3c' },
     health_centers: { icon: 'clinic-medical', color: '#e67e22' },
@@ -56,19 +56,19 @@ const poiIcons = {
     police_stations: { icon: 'shield-alt', color: '#34495e' }
 };
 
-// Initialize the map when the DOM is fully loaded
+// Inicializa o mapa quando o DOM está totalmente carregado
 document.addEventListener('DOMContentLoaded', function() {
     initializeMap();
     loadDistritos();
     setupEventListeners();
-    showLocationTutorial(); // Show tutorial on first visit
+    showLocationTutorial(); // Mostrar tutorial na primeira visita
 });
 
 /**
- * Initialize the Leaflet map
+ * Inicializa o mapa Leaflet
  */
 function initializeMap() {
-    // Create the map centered on Portugal
+    // Criar o mapa centrado em Portugal
     map = L.map('map', {
         center: [39.6, -8.0],
         zoom: 7,
@@ -76,47 +76,47 @@ function initializeMap() {
         attributionControl: false
     });
     
-    // Add attribution control to the bottom-right
+    // Adicionar controlo de atribuição ao canto inferior direito
     L.control.attribution({
         position: 'bottomright'
     }).addTo(map);
     
-    // Set the default map style (Positron)
+    // Definir o estilo de mapa padrão (Positron)
     setMapStyle('positron');
     
-    // Add click event to the map
+    // Adicionar evento de clique ao mapa
     map.on('click', function(e) {
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
         
-        console.log(`Map clicked at coordinates: ${lat}, ${lng}`);
+        console.log(`Mapa clicado nas coordenadas: ${lat}, ${lng}`);
         
-        // Validate coordinates (ensure they're within Portugal's rough bounding box)
+        // Validar coordenadas (garantir que estão dentro da área aproximada de Portugal)
         const inPortugal = lat >= 36.8 && lat <= 42.2 && lng >= -9.6 && lng <= -6.1;
         
         if (!inPortugal) {
-            console.warn('Coordinates outside Portugal\'s bounding box');
-            // We'll still proceed but warn the user
+            console.warn('Coordenadas fora da caixa delimitadora de Portugal');
+            // Continuaremos, mas avisaremos o utilizador
             alert('As coordenadas selecionadas parecem estar fora de Portugal. Os dados podem não estar disponíveis.');
         }
         
-        // Clear previous selection
+        // Limpar seleção anterior
         clearLocationSelection();
         
-        // Store the clicked coordinates
+        // Armazenar as coordenadas clicadas
         currentClickedCoordinates = {
             lat: parseFloat(lat.toFixed(6)),
             lng: parseFloat(lng.toFixed(6))
         };
         
-        // Add marker at clicked location
+        // Adicionar marcador na localização clicada
         locationMarker = L.marker([lat, lng]).addTo(map);
         
-        // Focus the Carregar Dados button to indicate the next step
+        // Focar o botão Carregar Dados para indicar o próximo passo
         document.querySelector('.calculate-button').focus();
         document.querySelector('.calculate-button').classList.add('highlight');
         
-        // Remove highlight after 2 seconds
+        // Remover destaque após 2 segundos
         setTimeout(() => {
             document.querySelector('.calculate-button').classList.remove('highlight');
         }, 2000);
@@ -124,21 +124,21 @@ function initializeMap() {
 }
 
 /**
- * Set the map style based on the selected provider
+ * Define o estilo do mapa com base no fornecedor selecionado
  */
 function setMapStyle(provider) {
-    // Remove existing tile layer if it exists
+    // Remover camada de 'tiles' existente, se houver
     if (window.tileLayer && map.hasLayer(window.tileLayer)) {
         map.removeLayer(window.tileLayer);
     }
     
-    // Create new tile layer with selected provider
+    // Criar nova camada de 'tiles' com o fornecedor selecionado
     window.tileLayer = L.tileLayer(mapProviders[provider].url, {
         attribution: mapProviders[provider].attribution,
         maxZoom: 19
     }).addTo(map);
     
-    // Update active style in UI
+    // Atualizar estilo ativo na UI
     document.querySelectorAll('.map-style-option').forEach(function(el) {
         el.classList.remove('active');
     });
@@ -146,10 +146,10 @@ function setMapStyle(provider) {
 }
 
 /**
- * Load the list of distritos from the API
+ * Carrega a lista de distritos da API
  */
 function loadDistritos() {
-    console.log('Loading distritos...');
+    console.log('A carregar distritos...');
     
     fetch('location.php', {
         method: 'POST',
@@ -160,32 +160,32 @@ function loadDistritos() {
     })
         .then(response => {
             if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+                throw new Error(`Erro HTTP! Estado: ${response.status}`);
             }
             return response.json();
         })
         .then(data => {
-            console.log('Distritos data received:', data);
+            console.log('Dados dos distritos recebidos:', data);
             const distritoSelect = document.getElementById('distrito-select');
             
-            // Ensure data is properly structured
+            // Garantir que os dados estão corretamente estruturados
             const distritos = data.data || [];
             
-            // Check if distritos is an array of objects with distrito property
+            // Verificar se os distritos são um array de objetos com propriedade distrito
             let distritoNames = [];
             
             if (distritos.length > 0 && typeof distritos[0] === 'object' && distritos[0].distrito) {
-                // Extract distrito names from objects
+                // Extrair nomes de distritos dos objetos
                 distritoNames = distritos.map(d => d.distrito);
             } else if (Array.isArray(distritos)) {
-                // If it's just an array of strings, use as is
+                // Se for apenas um array de strings, usar como está
                 distritoNames = distritos;
             }
             
-            // Sort distrito names alphabetically
+            // Ordenar nomes de distritos alfabeticamente
             distritoNames.sort((a, b) => a.localeCompare(b));
             
-            // Add options to select
+            // Adicionar opções à seleção
             distritoNames.forEach(distritoName => {
                 const option = document.createElement('option');
                 option.value = distritoName;
@@ -194,15 +194,15 @@ function loadDistritos() {
             });
         })
         .catch(error => {
-            console.error('Error loading distritos:', error);
-            // Display error in the UI
+            console.error('Erro ao carregar distritos:', error);
+            // Exibir erro na UI
             const distritoSelect = document.getElementById('distrito-select');
             distritoSelect.innerHTML = '<option value="">Erro ao carregar distritos</option>';
         });
 }
 
 /**
- * Load concelhos for the selected distrito
+ * Carrega concelhos para o distrito selecionado
  */
 function loadConcelhos(distrito) {
     fetch('location.php', {
@@ -216,16 +216,16 @@ function loadConcelhos(distrito) {
         .then(data => {
             const concelhoSelect = document.getElementById('concelho-select');
             
-            // Clear previous options
+            // Limpar opções anteriores
             concelhoSelect.innerHTML = '<option value="">Selecione um concelho...</option>';
             
-            // Get the municipios array from the response
+            // Obter o array de municípios da resposta
             const municipios = data.data?.municipios || [];
             
-            // Sort municipios alphabetically (by nome)
+            // Ordenar municípios alfabeticamente (por nome)
             municipios.sort((a, b) => a.nome.localeCompare(b.nome));
             
-            // Add options to select
+            // Adicionar opções à seleção
             municipios.forEach(municipio => {
                 const option = document.createElement('option');
                 option.value = municipio.nome;
@@ -233,21 +233,21 @@ function loadConcelhos(distrito) {
                 concelhoSelect.appendChild(option);
             });
             
-            // Enable the select
+            // Ativar a seleção
             concelhoSelect.disabled = false;
             
-            // Disable freguesia select until concelho is selected
+            // Desativar a seleção de freguesia até que o concelho seja selecionado
             document.getElementById('freguesia-select').disabled = true;
             document.getElementById('freguesia-select').innerHTML = '<option value="">Selecione uma freguesia...</option>';
         })
         .catch(error => {
-            console.error('Error loading concelhos:', error);
+            console.error('Erro ao carregar concelhos:', error);
             alert('Ocorreu um erro ao carregar os concelhos.');
         });
 }
 
 /**
- * Load freguesias for the selected concelho
+ * Carrega freguesias para o concelho selecionado
  */
 function loadFreguesias(concelho) {
     fetch('location.php', {
@@ -259,34 +259,34 @@ function loadFreguesias(concelho) {
     })
         .then(response => response.json())
         .then(data => {
-            console.log('Freguesias data received:', data);
+            console.log('Dados das freguesias recebidos:', data);
             
             const freguesiaSelect = document.getElementById('freguesia-select');
             
-            // Clear previous options
+            // Limpar opções anteriores
             freguesiaSelect.innerHTML = '<option value="">Selecione uma freguesia...</option>';
             
-            // Get the freguesias names array from the response, handling the new structure
+            // Obter o array de nomes de freguesias da resposta, lidando com a nova estrutura
             let freguesias = data.data?.freguesias || [];
             const freguesiaGeojsons = data.data?.geojsons?.freguesias || [];
 
-            console.log('Original freguesias array:', freguesias);
+            console.log('Array de freguesias original:', freguesias);
 
-            // Handle case where freguesias might be objects instead of strings
+            // Lidar com o caso em que as freguesias podem ser objetos em vez de strings
             if (freguesias.length > 0 && typeof freguesias[0] !== 'string') {
-                // Check if freguesias are objects with 'nome' property
+                // Verificar se as freguesias são objetos com a propriedade 'nome'
                 if (freguesias[0] && typeof freguesias[0].nome === 'string') {
-                    console.log('Freguesias are objects with nome property');
+                    console.log('Freguesias são objetos com a propriedade nome');
                     freguesias = freguesias.map(f => f.nome);
                 } else {
-                    console.log('Freguesias have unexpected format, trying to convert to strings');
+                    console.log('Freguesias têm formato inesperado, a tentar converter para strings');
                     freguesias = freguesias.map(f => String(f));
                 }
             }
             
-            console.log('Processed freguesias array:', freguesias);
+            console.log('Array de freguesias processado:', freguesias);
             
-            // Create a map of freguesia names to their respective codes from geojsons
+            // Criar um mapa de nomes de freguesias para os seus respetivos códigos dos geojsons
             const freguesiaCodes = {};
             freguesiaGeojsons.forEach(geojson => {
                 if (geojson?.properties?.Freguesia && geojson?.properties?.Dicofre) {
@@ -294,42 +294,42 @@ function loadFreguesias(concelho) {
                 }
             });
             
-            // Sort freguesia names alphabetically only if they are strings
+            // Ordenar nomes de freguesias alfabeticamente apenas se forem strings
             if (freguesias.length > 0 && typeof freguesias[0] === 'string') {
                 try {
                     freguesias.sort((a, b) => a.localeCompare(b));
                 } catch (error) {
-                    console.error('Error sorting freguesia names:', error);
-                    console.log('Unable to sort freguesia names, using as-is');
+                    console.error('Erro ao ordenar nomes de freguesia:', error);
+                    console.log('Não foi possível ordenar nomes de freguesia, usando como estão');
                 }
             }
             
-            // Add options to select
+            // Adicionar opções à seleção
             freguesias.forEach(freguesiaName => {
                 const option = document.createElement('option');
-                // Store both code and name - the name is what we'll use for API calls
-                option.value = freguesiaName; // Store freguesia name as value for API calls
-                option.dataset.code = freguesiaCodes[freguesiaName] || ''; // Store code as data attribute
+                // Armazenar tanto o código quanto o nome - o nome é o que usaremos para chamadas à API
+                option.value = freguesiaName; // Armazenar nome da freguesia como valor para chamadas à API
+                option.dataset.code = freguesiaCodes[freguesiaName] || ''; // Armazenar código como atributo de dados
                 option.textContent = freguesiaName;
                 freguesiaSelect.appendChild(option);
             });
             
-            // Enable the select
+            // Ativar a seleção
             freguesiaSelect.disabled = false;
         })
         .catch(error => {
-            console.error('Error loading freguesias:', error);
+            console.error('Erro ao carregar freguesias:', error);
             alert('Ocorreu um erro ao carregar as freguesias.');
         });
 }
 
 /**
- * Fetch location data by coordinates
+ * Obtém dados de localização por coordenadas
  */
 function fetchLocationByCoordinates(lat, lng) {
-    console.log(`Fetching location data for coordinates: ${lat}, ${lng}`);
+    console.log(`A obter dados de localização para coordenadas: ${lat}, ${lng}`);
     
-    // Fetch data from the API
+    // Obter dados da API
     fetch('location.php', {
         method: 'POST',
         headers: {
@@ -339,54 +339,54 @@ function fetchLocationByCoordinates(lat, lng) {
     })
         .then(response => {
             if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+                throw new Error(`Erro HTTP! Estado: ${response.status}`);
             }
-            console.log("Response received:", response);
+            console.log("Resposta recebida:", response);
             return response.text().then(text => {
-                console.log("Raw response text:", text);
+                console.log("Texto da resposta bruta:", text);
                 if (!text || text.trim() === '') {
-                    throw new Error('Empty response received');
+                    throw new Error('Resposta vazia recebida');
                 }
                 try {
                     return JSON.parse(text);
                 } catch (e) {
-                    console.error("JSON parse error:", e);
-                    throw new Error(`JSON parse error: ${e.message}`);
+                    console.error("Erro de análise JSON:", e);
+                    throw new Error(`Erro de análise JSON: ${e.message}`);
                 }
             });
         })
         .then(data => {
-            // Reset UI state
+            // Redefinir estado da UI
             document.querySelector('.calculate-button').textContent = 'Carregar Dados';
             document.querySelector('.calculate-button').disabled = false;
             
             if (data.success && data.data) {
-                // Store the current location data
+                // Armazenar os dados de localização atuais
                 currentLocation = data.data;
                 
-                // Update dropdowns to match the selected location
+                // Atualizar dropdowns para corresponder à localização selecionada
                 if (currentLocation.distrito) {
                     const distritoSelect = document.getElementById('distrito-select');
                     distritoSelect.value = currentLocation.distrito;
                     
-                    // Load concelhos for this distrito
+                    // Carregar concelhos para este distrito
                     loadConcelhos(currentLocation.distrito);
                     
-                    // Wait for concelhos to load, then set the concelho
+                    // Esperar que os concelhos carreguem, depois definir o concelho
                     setTimeout(() => {
                         if (currentLocation.concelho) {
                             const concelhoSelect = document.getElementById('concelho-select');
                             concelhoSelect.value = currentLocation.concelho;
                             
-                            // Load freguesias for this concelho
+                            // Carregar freguesias para este concelho
                             loadFreguesias(currentLocation.concelho);
                             
-                            // Wait for freguesias to load, then set the freguesia
+                            // Esperar que as freguesias carreguem, depois definir a freguesia
                             setTimeout(() => {
                                 if (currentLocation.freguesia) {
                                     const freguesiaSelect = document.getElementById('freguesia-select');
                                     
-                                    // Find the option with matching text
+                                    // Encontrar a opção com texto correspondente
                                     const options = Array.from(freguesiaSelect.options);
                                     const option = options.find(opt => opt.textContent === currentLocation.freguesia);
                                     
@@ -399,20 +399,20 @@ function fetchLocationByCoordinates(lat, lng) {
                     }, 1000);
                 }
                 
-                // Draw the location boundary
+                // Desenhar o limite da localização
                 if (currentLocation.geometry) {
                     drawLocationBoundary(currentLocation.geometry);
                 }
                 
-                // Display location data
+                // Exibir dados de localização
                 displayLocationData(currentLocation);
                 
-                // If we have coordinates, center the map
+                // Se tivermos coordenadas, centrar o mapa
                 if (currentLocation.centroid) {
                     map.setView([currentLocation.centroid.lat, currentLocation.centroid.lng], 12);
                 }
             } else {
-                // Show error message
+                // Mostrar mensagem de erro
                 document.getElementById('location-data').innerHTML = `
                     <div class="error-message">
                         <i class="fas fa-exclamation-triangle"></i>
@@ -447,12 +447,12 @@ function fetchLocationByCoordinates(lat, lng) {
 }
 
 /**
- * Fetch location data by freguesia
+ * Obtém dados de localização por freguesia
  */
 function fetchLocationByFreguesia(freguesia, municipio) {
-    console.log(`Fetching freguesia data: ${freguesia}, ${municipio}`);
+    console.log(`A obter dados da freguesia: ${freguesia}, ${municipio}`);
     
-    // Update UI to show loading state
+    // Atualizar UI para mostrar estado de carregamento
     document.querySelector('.calculate-button').textContent = 'A carregar...';
     document.querySelector('.calculate-button').disabled = true;
     
@@ -465,7 +465,7 @@ function fetchLocationByFreguesia(freguesia, municipio) {
     })
         .then(response => response.json())
         .then(data => {
-            // Reset UI state
+            // Redefinir estado da UI
             document.querySelector('.calculate-button').textContent = 'Carregar Dados';
             document.querySelector('.calculate-button').disabled = false;
             
@@ -473,11 +473,11 @@ function fetchLocationByFreguesia(freguesia, municipio) {
                 currentLocation = data.data;
                 displayLocationData(currentLocation);
                 
-                // Show the location data panel
+                // Mostrar o painel de dados de localização
                 document.querySelector('.location-data-panel').classList.add('visible');
                 
-                // Log the data structure to help debug
-                console.log('Freguesia data structure:', {
+                // Registar a estrutura de dados para depuração
+                console.log('Estrutura de dados da freguesia:', {
                     hasGeojson: !!currentLocation.geojson,
                     hasGeojsons: !!currentLocation.geojsons,
                     hasFreguesias: currentLocation.geojsons && !!currentLocation.geojsons.freguesias,
@@ -485,9 +485,9 @@ function fetchLocationByFreguesia(freguesia, municipio) {
                     hasFreguesia: currentLocation.geojsons && !!currentLocation.geojsons.freguesia
                 });
                 
-                // Draw the location boundary if geometry is available
+                // Desenhar o limite da localização se a geometria estiver disponível
                 if (currentLocation.geojsons) {
-                    // Pass the entire location object to preserve the geojsons structure
+                    // Passar o objeto de localização completo para preservar a estrutura de geojsons
                     drawLocationBoundary(currentLocation);
                 } else if (currentLocation.geojson) {
                     drawLocationBoundary(currentLocation.geojson);
@@ -499,7 +499,7 @@ function fetchLocationByFreguesia(freguesia, municipio) {
             }
         })
         .catch(error => {
-            console.error('Error fetching freguesia data:', error);
+            console.error('Erro ao obter dados da freguesia:', error);
             alert('Ocorreu um erro ao obter os dados da freguesia.');
             document.querySelector('.calculate-button').textContent = 'Carregar Dados';
             document.querySelector('.calculate-button').disabled = false;
@@ -507,12 +507,12 @@ function fetchLocationByFreguesia(freguesia, municipio) {
 }
 
 /**
- * Fetch location data by municipio
+ * Obtém dados de localização por município
  */
 function fetchLocationByMunicipio(municipio) {
-    console.log(`Fetching municipio data: ${municipio}`);
+    console.log(`A obter dados do município: ${municipio}`);
     
-    // Update UI to show loading state
+    // Atualizar interface de utilizador para mostrar estado de carregamento
     document.querySelector('.calculate-button').textContent = 'A carregar...';
     document.querySelector('.calculate-button').disabled = true;
     
@@ -525,7 +525,7 @@ function fetchLocationByMunicipio(municipio) {
     })
         .then(response => response.json())
         .then(data => {
-            // Reset UI state
+            // Redefinir o estado da interface de utilizador
             document.querySelector('.calculate-button').textContent = 'Carregar Dados';
             document.querySelector('.calculate-button').disabled = false;
             
@@ -533,11 +533,11 @@ function fetchLocationByMunicipio(municipio) {
                 currentLocation = data.data;
                 displayLocationData(currentLocation);
                 
-                // Show the location data panel
+                // Mostrar o painel de dados de localização
                 document.querySelector('.location-data-panel').classList.add('visible');
                 
-                // Log the data structure to help debug
-                console.log('Municipality data structure:', {
+                // Registar a estrutura de dados para depuração
+                console.log('Estrutura de dados do município:', {
                     hasGeojson: !!currentLocation.geojson,
                     hasGeojsons: !!currentLocation.geojsons,
                     hasFreguesias: currentLocation.geojsons && !!currentLocation.geojsons.freguesias,
@@ -545,9 +545,9 @@ function fetchLocationByMunicipio(municipio) {
                     hasMunicipio: currentLocation.geojsons && !!currentLocation.geojsons.municipio
                 });
                 
-                // Draw the location boundary if geometry is available
+                // Desenhar o limite da localização se a geometria estiver disponível
                 if (currentLocation.geojsons) {
-                    // Pass the entire location object to preserve the geojsons structure
+                    // Passar o objeto de localização completo para preservar a estrutura de geojsons
                     drawLocationBoundary(currentLocation);
                 } else if (currentLocation.geojson) {
                     drawLocationBoundary(currentLocation.geojson);
@@ -559,7 +559,7 @@ function fetchLocationByMunicipio(municipio) {
             }
         })
         .catch(error => {
-            console.error('Error fetching municipio data:', error);
+            console.error('Erro ao obter dados do município:', error);
             alert('Ocorreu um erro ao obter os dados do município.');
             document.querySelector('.calculate-button').textContent = 'Carregar Dados';
             document.querySelector('.calculate-button').disabled = false;
@@ -567,12 +567,12 @@ function fetchLocationByMunicipio(municipio) {
 }
 
 /**
- * Fetch location data by distrito
+ * Obtém dados de localização por distrito
  */
 function fetchLocationByDistrito(distrito) {
-    console.log(`Fetching distrito data: ${distrito}`);
+    console.log(`A obter dados do distrito: ${distrito}`);
     
-    // Update UI to show loading state
+    // Atualizar interface de utilizador para mostrar estado de carregamento
     document.querySelector('.calculate-button').textContent = 'A carregar...';
     document.querySelector('.calculate-button').disabled = true;
     
@@ -585,7 +585,7 @@ function fetchLocationByDistrito(distrito) {
     })
         .then(response => response.json())
         .then(data => {
-            // Reset UI state
+            // Redefinir o estado da interface de utilizador
             document.querySelector('.calculate-button').textContent = 'Carregar Dados';
             document.querySelector('.calculate-button').disabled = false;
             
@@ -593,19 +593,19 @@ function fetchLocationByDistrito(distrito) {
                 currentLocation = data.data;
                 displayLocationData(currentLocation);
                 
-                // Show the location data panel
+                // Mostrar o painel de dados de localização
                 document.querySelector('.location-data-panel').classList.add('visible');
                 
-                // Log the data structure to help debug
-                console.log('Distrito data structure:', {
+                // Registar a estrutura de dados para depuração
+                console.log('Estrutura de dados do distrito:', {
                     hasGeojson: !!currentLocation.geojson,
                     hasGeojsons: !!currentLocation.geojsons,
                     hasDistrito: currentLocation.geojsons && !!currentLocation.geojsons.distrito
                 });
                 
-                // Draw the location boundary if geometry is available
+                // Desenhar o limite da localização se a geometria estiver disponível
                 if (currentLocation.geojsons) {
-                    // Pass the entire location object to preserve the geojsons structure
+                    // Passar o objeto de localização completo para preservar a estrutura de geojsons
                     drawLocationBoundary(currentLocation);
                 } else if (currentLocation.geojson) {
                     drawLocationBoundary(currentLocation.geojson);
@@ -617,7 +617,7 @@ function fetchLocationByDistrito(distrito) {
             }
         })
         .catch(error => {
-            console.error('Error fetching distrito data:', error);
+            console.error('Erro ao obter dados do distrito:', error);
             alert('Ocorreu um erro ao obter os dados do distrito.');
             document.querySelector('.calculate-button').textContent = 'Carregar Dados';
             document.querySelector('.calculate-button').disabled = false;
@@ -625,32 +625,32 @@ function fetchLocationByDistrito(distrito) {
 }
 
 /**
- * Display location data in the right panel
+ * Exibir dados de localização no painel direito
  */
 function displayLocationData(location) {
-    console.log('Displaying location data:', location);
+    console.log('A exibir dados de localização:', location);
     currentLocation = location;
     
-    // Ensure old panel is hidden
+    // Garantir que o painel antigo está escondido
     document.querySelector('.location-data-panel').classList.remove('visible');
     
-    // Show the census sidebar with location data
+    // Mostrar a barra lateral do censo com dados de localização
     showCensusSidebar(location);
 }
 
 /**
- * Show the census sidebar with smooth animations
+ * Mostrar a barra lateral do censo com animações suaves
  */
 function showCensusSidebar(location) {
     if (!location) return;
     
-    console.log('Showing census sidebar with location data:', location);
+    console.log('A mostrar a barra lateral do censo com dados de localização:', location);
     
-    // Set location name and type
+    // Definir nome e tipo da localização
     const locationName = document.getElementById('census-location-name');
     const locationType = document.getElementById('census-location-type');
     
-    // Determine location name and type
+    // Determinar nome e tipo da localização
     let name = '';
     let type = '';
     
@@ -680,101 +680,101 @@ function showCensusSidebar(location) {
     locationName.textContent = name;
     locationType.textContent = type;
     
-    // Get census data - check both direct and nested locations
+    // Obter dados do censo - verificar locais diretos e aninhados
     let census2021 = location.censos2021 || null;
     let census2011 = location.censos2011 || null;
     
-    // If census data is not directly on the location object, check nested objects
+    // Se os dados do censo não estiverem diretamente no objeto de localização, verificar objetos aninhados
     if (!census2021) {
         if (location.detalhesFreguesia && location.detalhesFreguesia.censos2021) {
             census2021 = location.detalhesFreguesia.censos2021;
-            console.log('Found census 2021 data in detalhesFreguesia');
+            console.log('Encontrados dados do censo 2021 em detalhesFreguesia');
         } else if (location.detalhesMunicipio && location.detalhesMunicipio.censos2021) {
             census2021 = location.detalhesMunicipio.censos2021;
-            console.log('Found census 2021 data in detalhesMunicipio');
+            console.log('Encontrados dados do censo 2021 em detalhesMunicipio');
         }
     }
     
     if (!census2011) {
         if (location.detalhesFreguesia && location.detalhesFreguesia.censos2011) {
             census2011 = location.detalhesFreguesia.censos2011;
-            console.log('Found census 2011 data in detalhesFreguesia');
+            console.log('Encontrados dados do censo 2011 em detalhesFreguesia');
         } else if (location.detalhesMunicipio && location.detalhesMunicipio.censos2011) {
             census2011 = location.detalhesMunicipio.censos2011;
-            console.log('Found census 2011 data in detalhesMunicipio');
+            console.log('Encontrados dados do censo 2011 em detalhesMunicipio');
         }
     }
     
-    // If no census data, show message
+    // Se não houver dados do censo, mostrar mensagem
     if (!census2021 && !census2011) {
-        console.warn('No census data found for this location');
+        console.warn('Nenhum dado do censo encontrado para esta localização');
         const ageContainer = document.getElementById('age-bars');
         if (ageContainer) {
             ageContainer.innerHTML = '<p class="no-data">Não existem dados censitários disponíveis para esta localização.</p>';
         }
         
-        // Show sidebar with empty data
+        // Mostrar barra lateral com dados vazios
         document.getElementById('census-sidebar').classList.add('active');
         censusSidebarActive = true;
         return;
     }
     
-    // Use 2021 data if available, otherwise use 2011
+    // Usar dados de 2021 se disponíveis, caso contrário, usar 2011
     const primaryCensus = census2021 || census2011;
     const secondaryCensus = census2021 && census2011 ? census2011 : null;
     
-    console.log('Using census data:', { primary: primaryCensus, secondary: secondaryCensus });
+    console.log('A usar dados do censo:', { primary: primaryCensus, secondary: secondaryCensus });
     
-    // Update toggle visibility
+    // Atualizar visibilidade do toggle
     const yearToggle = document.getElementById('census-year-toggle');
     if (census2021 && census2011) {
-        // Both census years available, show toggle
+        // Ambos os anos do censo disponíveis, mostrar toggle
         yearToggle.parentElement.parentElement.style.display = 'flex';
-        yearToggle.checked = census2021 ? true : false; // Default to 2021 if available
+        yearToggle.checked = census2021 ? true : false; // Padrão para 2021, se disponível
     } else {
-        // Only one census year available, hide toggle
+        // Apenas um ano do censo disponível, esconder toggle
         yearToggle.parentElement.parentElement.style.display = 'none';
     }
     
-    // Update year in the current state
+    // Atualizar ano no estado atual
     currentCensusYear = census2021 ? 2021 : 2011;
     
-    // Update main stats
+    // Atualizar estatísticas principais
     updateCensusStats(primaryCensus, secondaryCensus);
     
-    // Create/update mini charts
+    // Criar/atualizar mini gráficos
     createMiniCharts(primaryCensus, secondaryCensus);
     
-    // Create age distribution bars
+    // Criar barras de distribuição etária
     createAgeBars(primaryCensus);
     
-    // Set "View Full Data" link
+    // Definir link "Ver Dados Completos"
     const viewFullData = document.getElementById('census-view-full-data');
     if (viewFullData) {
         viewFullData.href = buildFullDataUrl(location);
     }
     
-    // Show sidebar with animation
+    // Mostrar barra lateral com animação
     document.getElementById('census-sidebar').classList.add('active');
     censusSidebarActive = true;
 }
 
 /**
- * Update census statistics based on the primary and secondary census data
+ * Atualiza as estatísticas do censo com base nos dados do censo primário e secundário
  */
 function updateCensusStats(primaryCensus, secondaryCensus) {
-    // Population
+    // População
     const populationValue = document.getElementById('population-value');
     const populationChange = document.getElementById('population-change');
         
-    // Get population value
+    // Obter valor da população
     const population = getCensusValue(primaryCensus, ['N_INDIVIDUOS_RESIDENT', 'N_INDIVIDUOS']);
     
     if (population) {
-        // Format with thousands separator
+        // Formatar com separador de milhares
         populationValue.textContent = new Intl.NumberFormat('pt-PT').format(population);
         
-        // Calculate change if both census data available
+        // Calcular mudança se ambos os dados do censo estiverem disponíveis
         if (secondaryCensus) {
             const oldPopulation = getCensusValue(secondaryCensus, ['N_INDIVIDUOS_RESIDENT', 'N_INDIVIDUOS']);
             
@@ -798,7 +798,7 @@ function updateCensusStats(primaryCensus, secondaryCensus) {
         populationChange.style.display = 'none';
     }
     
-    // Buildings
+    // Edifícios
     const buildingsValue = document.getElementById('buildings-value');
     const buildings = getCensusValue(primaryCensus, ['N_EDIFICIOS_CLASSICOS', 'N_EDIFICIOS']);
     
@@ -808,7 +808,7 @@ function updateCensusStats(primaryCensus, secondaryCensus) {
         buildingsValue.textContent = 'N/A';
     }
         
-    // Dwellings
+    // Alojamentos
     const dwellingsValue = document.getElementById('dwellings-value');
     const dwellings = getCensusValue(primaryCensus, ['N_ALOJAMENTOS_TOTAL', 'N_ALOJAMENTOS']);
     
@@ -818,53 +818,53 @@ function updateCensusStats(primaryCensus, secondaryCensus) {
         dwellingsValue.textContent = 'N/A';
     }
     
-    // Population density
+    // Densidade populacional
     const densityValue = document.getElementById('density-value');
     let density = null;
     
-    // Check for area in multiple possible locations
+    // Verificar área em múltiplos locais possíveis
     let areaHa = null;
     
-    // Debug area fields in location
-    console.log('Location data for density calculation:', {
+    // Depurar campos de área na localização
+    console.log('Dados de localização para cálculo de densidade:', {
         location: currentLocation
     });
     
-    // Check for area in multiple possible locations
+    // Verificar área em múltiplos locais possíveis
     if (currentLocation) {
-        // Direct properties
+        // Propriedades diretas
         areaHa = currentLocation.area_ha || currentLocation.areaha || currentLocation.area;
         
-        // Nested in detalhesFreguesia
+        // Aninhado em detalhesFreguesia
         if (!areaHa && currentLocation.detalhesFreguesia) {
             areaHa = currentLocation.detalhesFreguesia.areaha || 
                     currentLocation.detalhesFreguesia.area_ha ||
                     currentLocation.detalhesFreguesia.area;
         }
         
-        // Nested in detalhesMunicipio
+        // Aninhado em detalhesMunicipio
         if (!areaHa && currentLocation.detalhesMunicipio) {
             areaHa = currentLocation.detalhesMunicipio.areaha || 
                     currentLocation.detalhesMunicipio.area_ha ||
                     currentLocation.detalhesMunicipio.area;
         }
         
-        // Try to parse if it's a string
+        // Tentar analisar se for uma string
         if (typeof areaHa === 'string') {
             areaHa = parseFloat(areaHa);
         }
     }
     
-    console.log(`Found area: ${areaHa} ha`);
+    console.log(`Área encontrada: ${areaHa} ha`);
     
     if (population && areaHa) {
         const areaKm2 = areaHa / 100;
         density = Math.round(population / areaKm2);
-        console.log(`Calculated density: ${density} from population ${population} and area ${areaHa} ha (${areaKm2} km²)`);
+        console.log(`Densidade calculada: ${density} de população ${population} e área ${areaHa} ha (${areaKm2} km²)`);
     } else if (population) {
-        // Fallback density estimate
+        // Estimativa de densidade de fallback
         density = Math.round(population / 10);
-        console.log(`Using fallback density: ${density} based on population ${population}`);
+        console.log(`Usando densidade de fallback: ${density} com base na população ${population}`);
     }
     
     if (density) {
@@ -875,10 +875,10 @@ function updateCensusStats(primaryCensus, secondaryCensus) {
 }
 
 /**
- * Create mini charts for gender and age distribution
+ * Criar mini gráficos para distribuição de género e idade
  */
 function createMiniCharts(primaryCensus, secondaryCensus) {
-    // Always load Chart.js first, then create charts
+    // Sempre carregar Chart.js primeiro, depois criar gráficos
     loadChartJS(() => {
         createGenderChart(primaryCensus);
         calculateAverageAge(primaryCensus);
@@ -886,16 +886,16 @@ function createMiniCharts(primaryCensus, secondaryCensus) {
 }
 
 /**
- * Load Chart.js dynamically
+ * Carregar Chart.js dinamicamente
  */
 function loadChartJS(callback) {
-    // Check if Chart.js is already loaded
+    // Verificar se Chart.js já está carregado
     if (typeof Chart !== 'undefined') {
         callback();
         return;
     }
     
-    // Create script element
+    // Criar elemento script
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js';
     script.onload = callback;
@@ -903,7 +903,7 @@ function loadChartJS(callback) {
 }
 
 /**
- * Create gender distribution pie chart
+ * Criar gráfico de pizza de distribuição de género
  */
 function createGenderChart(census) {
     const males = getCensusValue(census, ['N_INDIVIDUOS_H']);
@@ -914,24 +914,24 @@ function createGenderChart(census) {
         return;
     }
     
-    // Get the container element
+    // Obter o elemento contentor
     const container = document.getElementById('gender-chart');
     
-    // Clear previous content
+    // Limpar conteúdo anterior
     container.innerHTML = '';
     
-    // Create a new canvas element
+    // Criar um novo elemento canvas
     const canvas = document.createElement('canvas');
     canvas.width = 100;
     canvas.height = 100;
     container.appendChild(canvas);
     
-    // Destroy existing chart if it exists
+    // Destruir gráfico existente, se houver
     if (genderChart) {
         genderChart.destroy();
     }
     
-    // Create new chart
+    // Criar novo gráfico
     genderChart = new Chart(canvas, {
         type: 'pie',
         data: {
@@ -970,30 +970,30 @@ function createGenderChart(census) {
 }
 
 /**
- * Calculate and display average age
+ * Calcular e exibir idade média
  */
 function calculateAverageAge(census) {
     const ageElement = document.getElementById('average-age-value');
     
-    // Get age group data
+    // Obter dados do grupo etário
     const age0_14 = getCensusValue(census, ['N_INDIVIDUOS_0_14', 'N_INDIVIDUOS_RESIDENT_0A14']) || 0;
     const age15_24 = getCensusValue(census, ['N_INDIVIDUOS_15_24', 'N_INDIVIDUOS_RESIDENT_15A24']) || 0;
     const age25_64 = getCensusValue(census, ['N_INDIVIDUOS_25_64', 'N_INDIVIDUOS_RESIDENT_25A64']) || 0;
     const age65plus = getCensusValue(census, ['N_INDIVIDUOS_65_OU_MAIS', 'N_INDIVIDUOS_RESIDENT_65']) || 0;
     
-    // Calculate average age (using midpoints of age ranges)
+    // Calcular idade média (usando pontos médios de faixas etárias)
     const totalPeople = age0_14 + age15_24 + age25_64 + age65plus;
     
     if (totalPeople > 0) {
-        // Use approximate midpoints for each age group
+        // Usar pontos médios aproximados para cada grupo etário
         const avgAge = (
-            (age0_14 * 7) +         // midpoint of 0-14 is 7
-            (age15_24 * 19.5) +     // midpoint of 15-24 is 19.5
-            (age25_64 * 44.5) +     // midpoint of 25-64 is 44.5
-            (age65plus * 75)        // approximate midpoint for 65+ (conservative estimate)
+            (age0_14 * 7) +         // ponto médio de 0-14 é 7
+            (age15_24 * 19.5) +     // ponto médio de 15-24 é 19.5
+            (age25_64 * 44.5) +     // ponto médio de 25-64 é 44.5
+            (age65plus * 75)        // ponto médio aproximado para 65+ (estimativa conservadora)
         ) / totalPeople;
         
-        // Display with one decimal place
+        // Exibir com uma casa decimal
         ageElement.textContent = avgAge.toFixed(1).replace('.', ',');
     } else {
         ageElement.textContent = 'N/A';
@@ -1001,13 +1001,13 @@ function calculateAverageAge(census) {
 }
 
 /**
- * Create age distribution bars
+ * Criar barras de distribuição etária
  */
 function createAgeBars(census) {
     const ageContainer = document.getElementById('age-bars');
-    ageContainer.innerHTML = ''; // Clear previous bars
+    ageContainer.innerHTML = ''; // Limpar barras anteriores
     
-    // Define age groups
+    // Definir grupos etários
     const ageGroups = [
         { label: '0-14 anos', keys: ['N_INDIVIDUOS_0_14', 'N_INDIVIDUOS_RESIDENT_0A14'], color: '#3498db' },
         { label: '15-24 anos', keys: ['N_INDIVIDUOS_15_24', 'N_INDIVIDUOS_RESIDENT_15A24'], color: '#2ecc71' },
@@ -1015,7 +1015,7 @@ function createAgeBars(census) {
         { label: '65+ anos', keys: ['N_INDIVIDUOS_65_OU_MAIS', 'N_INDIVIDUOS_RESIDENT_65'], color: '#9b59b6' }
     ];
     
-    // Get total population
+    // Obter população total
     const population = getCensusValue(census, ['N_INDIVIDUOS_RESIDENT', 'N_INDIVIDUOS']);
     
     if (!population) {
@@ -1023,7 +1023,7 @@ function createAgeBars(census) {
         return;
     }
     
-    // Create bars for each age group
+    // Criar barras para cada grupo etário
     ageGroups.forEach((group, index) => {
         const value = getCensusValue(census, group.keys);
         
@@ -1053,14 +1053,14 @@ function createAgeBars(census) {
 }
 
 /**
- * Adjust color lightness
+ * Ajustar a luminosidade da cor
  */
 function adjustColor(color, amount) {
-    return color; // Simplified for now
+    return color; // Simplificado por enquanto
 }
 
 /**
- * Build URL for the full data page
+ * Construir URL para a página de dados completos
  */
 function buildFullDataUrl(location) {
     let url = 'location_data.php?';
@@ -1094,36 +1094,36 @@ function getCensusValue(censusData, possibleKeys) {
 }
 
 /**
- * Draw the location boundary on the map
+ * Desenhar o limite da localização no mapa
  */
 function drawLocationBoundary(geojson) {
-    console.log('Drawing boundary with data:', geojson);
+    console.log('A desenhar limite com dados:', geojson);
     
-    // Remove existing polygons
+    // Remover polígonos existentes
     clearBoundaries();
     
-    // Check if we have valid GeoJSON data
+    // Verificar se temos dados GeoJSON válidos
     if (!geojson) {
-        console.warn('No GeoJSON data provided');
+        console.warn('Nenhum dado GeoJSON fornecido');
         return;
     }
     
     try {
-        // If geojson is a string, try to parse it
+        // Se geojson for uma string, tentar analisá-la
         if (typeof geojson === 'string') {
             try {
                 geojson = JSON.parse(geojson);
             } catch (e) {
-                console.error('Error parsing GeoJSON string:', e);
+                console.error('Erro ao analisar string GeoJSON:', e);
                 return;
             }
         }
         
-        // Store the original data to handle freguesia toggle
+        // Armazenar os dados originais para lidar com a alternância da freguesia
         const originalData = JSON.parse(JSON.stringify(geojson));
         
-        // Log the structure of the data to help debug
-        console.log('GeoJSON structure:', {
+        // Registar a estrutura de dados para depuração
+        console.log('Estrutura GeoJSON:', {
             hasGeojsons: !!geojson.geojsons,
             hasFreguesias: geojson.geojsons && !!geojson.geojsons.freguesias,
             freguesiasLength: geojson.geojsons && geojson.geojsons.freguesias ? geojson.geojsons.freguesias.length : 0,
@@ -1131,20 +1131,20 @@ function drawLocationBoundary(geojson) {
             showFreguesias: showFreguesias
         });
         
-        // Handle the case where we have a geojsons object with multiple geometries
+        // Lidar com o caso em que temos um objeto geojsons com múltiplas geometrias
         if (geojson.geojsons) {
-            // Check if we have freguesias and the toggle is on
+            // Verificar se temos freguesias e se o interruptor está ligado
             if (showFreguesias && geojson.geojsons.freguesias && geojson.geojsons.freguesias.length > 0) {
-                console.log('Drawing individual freguesias boundaries, count:', geojson.geojsons.freguesias.length);
+                console.log('A desenhar limites de freguesias individuais, contagem:', geojson.geojsons.freguesias.length);
                 
-                // Draw each freguesia as a separate layer
+                // Desenhar cada freguesia como uma camada separada
                 geojson.geojsons.freguesias.forEach((freguesiaGeoJson, index) => {
-                    console.log(`Drawing freguesia ${index}:`, freguesiaGeoJson.properties ? freguesiaGeoJson.properties.Freguesia || freguesiaGeoJson.properties.freguesia : 'Unknown');
+                    console.log(`A desenhar freguesia ${index}:`, freguesiaGeoJson.properties ? freguesiaGeoJson.properties.Freguesia || freguesiaGeoJson.properties.freguesia : 'Desconhecido');
                     
                     const freguesiaLayer = L.geoJSON(freguesiaGeoJson, {
                         style: function () {
                             return {
-                                color: '#2ecc71', // Green for freguesias
+                                color: '#2ecc71', // Verde para freguesias
                                 weight: 2,
                                 opacity: 0.7,
                                 fillOpacity: 0.2,
@@ -1154,7 +1154,7 @@ function drawLocationBoundary(geojson) {
                         onEachFeature: function (feature, layer) {
                             let name = 'Freguesia';
                             
-                            // Try to extract name from properties
+                            // Tentar extrair o nome das propriedades
                             if (feature.properties) {
                                 name = feature.properties.Freguesia || 
                                        feature.properties.freguesia || 
@@ -1172,7 +1172,7 @@ function drawLocationBoundary(geojson) {
                     freguesiaPolygons.push(freguesiaLayer);
                 });
                 
-                // Try to fit map to all freguesias bounds
+                // Tentar ajustar o mapa aos limites de todas as freguesias
                 if (freguesiaPolygons.length > 0) {
                     const bounds = freguesiaPolygons[0].getBounds();
                     for (let i = 1; i < freguesiaPolygons.length; i++) {
@@ -1181,12 +1181,12 @@ function drawLocationBoundary(geojson) {
                     map.fitBounds(bounds);
                 }
                 
-                // Optionally draw the município boundary as well, with different style
+                // Opcionalmente, desenhar também o limite do município, com estilo diferente
                 if (geojson.geojsons.municipio) {
                     locationPolygon = L.geoJSON(geojson.geojsons.municipio, {
                         style: function () {
                             return {
-                                color: '#3498db', // Blue for município
+                                color: '#3498db', // Azul para município
                                 weight: 3,
                                 opacity: 0.5,
                                 fillOpacity: 0.05,
@@ -1196,7 +1196,7 @@ function drawLocationBoundary(geojson) {
                         onEachFeature: function (feature, layer) {
                             let name = 'Município';
                             
-                            // Try to extract name from properties
+                            // Tentar extrair o nome das propriedades
                             if (feature.properties) {
                                 name = feature.properties.Concelho || 
                                        feature.properties.concelho || 
@@ -1212,37 +1212,37 @@ function drawLocationBoundary(geojson) {
                     }).addTo(map);
                 }
                 
-                console.log('Finished drawing freguesias');
-                return; // Skip the rest of the function
+                console.log('Terminado o desenho das freguesias');
+                return; // Ignorar o resto da função
             }
             
-            // If we're not showing freguesias or don't have freguesia data, show the município
+            // Se não estivermos a mostrar freguesias ou não houver dados de freguesia, mostrar o município
             if (geojson.geojsons.municipio) {
-                console.log('Using municipio geometry');
+                console.log('A usar geometria do município');
                 geojson = geojson.geojsons.municipio;
             }
-            // For freguesias, use the freguesia geometry
+            // Para freguesias, usar a geometria da freguesia
             else if (geojson.geojsons.freguesia) {
-                console.log('Using freguesia geometry');
+                console.log('A usar geometria da freguesia');
                 geojson = geojson.geojsons.freguesia;
             }
-            // If we have a freguesias array but aren't showing them all, use the first one
+            // Se tivermos um array de freguesias mas não estivermos a mostrá-las todas, usar a primeira
             else if (geojson.geojsons.freguesias && geojson.geojsons.freguesias.length > 0) {
-                console.log('Using first freguesia from freguesias array');
+                console.log('A usar a primeira freguesia do array de freguesias');
                 geojson = geojson.geojsons.freguesias[0];
             }
         }
         
-        // Normalize GeoJSON object if needed
+        // Normalizar objeto GeoJSON, se necessário
         if (!geojson.type && geojson.coordinates) {
-            // If it's missing the type but has coordinates, assume it's a Polygon or MultiPolygon
+            // Se estiver a faltar o tipo mas tiver coordenadas, assumir que é um Polígono ou MultiPolígono
             geojson = {
                 type: Array.isArray(geojson.coordinates[0][0][0]) ? 'MultiPolygon' : 'Polygon',
                 coordinates: geojson.coordinates
             };
         }
         
-        // Create a proper GeoJSON feature if needed
+        // Criar uma Feature GeoJSON adequada, se necessário
         if (geojson.coordinates && !geojson.features) {
             if (!geojson.type || (geojson.type !== 'Feature' && !geojson.geometry)) {
                 geojson = {
@@ -1256,42 +1256,42 @@ function drawLocationBoundary(geojson) {
             }
         }
         
-        // For feature collections, ensure they have at least one feature
+        // Para coleções de features, garantir que têm pelo menos uma feature
         if (geojson.type === 'FeatureCollection' && (!geojson.features || geojson.features.length === 0)) {
-            console.warn('Empty GeoJSON FeatureCollection');
+            console.warn('FeatureCollection GeoJSON vazia');
             return;
         }
         
-        // Add new polygon
+        // Adicionar novo polígono
         locationPolygon = L.geoJSON(geojson, {
             style: function (feature) {
-                // Determine the style based on the type of boundary
+                // Determinar o estilo com base no tipo de limite
                 let style = {
                     weight: 3,
                     opacity: 0.7,
                     fillOpacity: 0.2
                 };
                 
-                // Try to determine the boundary type from properties
+                // Tentar determinar o tipo de limite a partir das propriedades
                 if (feature.properties) {
                     if (feature.properties.Freguesia || feature.properties.freguesia) {
-                        // Freguesia style
-                        style.color = '#2ecc71'; // Green
+                        // Estilo de Freguesia
+                        style.color = '#2ecc71'; // Verde
                         style.className = 'freguesia-boundary';
                     } else if (feature.properties.Concelho || feature.properties.concelho || feature.properties.Municipio || feature.properties.municipio) {
-                        // Concelho/Municipio style
-                        style.color = '#3498db'; // Blue
+                        // Estilo de Concelho/Município
+                        style.color = '#3498db'; // Azul
                         style.className = 'concelho-boundary';
                     } else if (feature.properties.Distrito || feature.properties.distrito) {
-                        // Distrito style
-                        style.color = '#9b59b6'; // Purple
+                        // Estilo de Distrito
+                        style.color = '#9b59b6'; // Roxo
                         style.className = 'distrito-boundary';
                     } else {
-                        // Default style
+                        // Estilo padrão
                         style.color = '#3498db';
                     }
                 } else {
-                    // Default style
+                    // Estilo padrão
                     style.color = '#3498db';
                 }
                 
@@ -1300,7 +1300,7 @@ function drawLocationBoundary(geojson) {
             onEachFeature: function (feature, layer) {
                 let name = 'Localização';
                 
-                // Try to extract name from properties
+                // Tentar extrair o nome das propriedades
                 if (feature.properties) {
                     name = feature.properties.Nome || 
                            feature.properties.nome || 
@@ -1322,43 +1322,43 @@ function drawLocationBoundary(geojson) {
             }
         }).addTo(map);
         
-        // Fit map to polygon bounds if the polygon has valid bounds
+        // Ajustar mapa aos limites do polígono, se o polígono tiver limites válidos
         if (locationPolygon && locationPolygon.getBounds && !locationPolygon.getBounds().isValid()) {
-            console.warn('Invalid bounds for the drawn polygon');
+            console.warn('Limites inválidos para o polígono desenhado');
         } else if (locationPolygon && locationPolygon.getBounds) {
             map.fitBounds(locationPolygon.getBounds());
         }
         
-        // Store the original data in the current location for redrawing
+        // Armazenar os dados originais na localização atual para redesenhar
         if (currentLocation) {
             if (originalData.geojsons) {
                 currentLocation._originalGeojsons = originalData.geojsons;
             } else {
-                // If the original data doesn't have geojsons but the current location does
+                // Se os dados originais não tiverem geojsons mas a localização atual tiver
                 currentLocation._originalGeojsons = currentLocation.geojsons;
             }
         }
         
-        console.log('Boundary drawn successfully');
+        console.log('Limite desenhado com sucesso');
     } catch (error) {
-        console.error('Error drawing boundary:', error);
+        console.error('Erro ao desenhar limite:', error);
     }
 }
 
 /**
- * Clear all boundary layers
+ * Limpar todas as camadas de limites
  */
 function clearBoundaries() {
-    // Remove existing polygon if it exists
+    // Remover polígono existente, se houver
     if (locationPolygon) {
-        console.log('Removing existing polygon');
+        console.log('A remover polígono existente');
         map.removeLayer(locationPolygon);
         locationPolygon = null;
     }
     
-    // Remove all freguesia polygons
+    // Remover todos os polígonos de freguesia
     if (freguesiaPolygons.length > 0) {
-        console.log('Removing freguesia polygons:', freguesiaPolygons.length);
+        console.log('A remover polígonos de freguesia:', freguesiaPolygons.length);
         freguesiaPolygons.forEach(polygon => {
             if (polygon) {
                 map.removeLayer(polygon);
@@ -1369,71 +1369,74 @@ function clearBoundaries() {
 }
 
 /**
- * Clear the current location selection
+ * Limpar a seleção de localização atual
  */
 function clearLocationSelection() {
-    console.log('Clearing location selection');
+    console.log('A limpar seleção de localização');
     
-    // Remove marker if it exists
+    // Remover marcador, se houver
     if (locationMarker) {
-        console.log('Removing marker');
+        console.log('A remover marcador');
         map.removeLayer(locationMarker);
         locationMarker = null;
     }
     
-    // Remove all boundary polygons
+    // Remover todos os polígonos de limite
     clearBoundaries();
     
-    // Reset clicked coordinates
+    // Redefinir coordenadas clicadas
     currentClickedCoordinates = null;
     
-    // Reset dropdowns
+    // Redefinir dropdowns
     document.getElementById('distrito-select').value = '';
     document.getElementById('concelho-select').value = '';
+    document.getElementById('concelho-select').innerHTML = '<option value="">Selecione um concelho...</option>';
     document.getElementById('concelho-select').disabled = true;
     document.getElementById('freguesia-select').value = '';
+    document.getElementById('freguesia-select').innerHTML = '<option value="">Selecione uma freguesia...</option>';
     document.getElementById('freguesia-select').disabled = true;
     
-    // Clear location data panel
+    // Limpar painel de dados de localização
     document.getElementById('location-data').innerHTML = '<p>Selecione uma localização para ver os dados</p>';
     
     // Esconder o painel de dados
     const locationPanel = document.querySelector('.location-data-panel');
-    console.log('Closing panel, before removing class:', locationPanel.className);
+    console.log('A fechar painel, antes de remover classe:', locationPanel.className);
     locationPanel.classList.remove('visible');
-    console.log('Panel after removing class:', locationPanel.className);
+    console.log('Painel depois de remover classe:', locationPanel.className);
     
-    // Hide the "Página Completa" button
+    // Esconder o botão "Página Completa"
     const fullDataLink = document.getElementById('view-full-data');
     if (fullDataLink) {
         fullDataLink.style.display = 'none';
     }
     
-    // Reset current location data
+    // Redefinir dados de localização atuais
     currentLocation = null;
 }
 
 /**
- * Setup all event listeners for UI elements
+ * Configurar todos os ouvintes de evento para elementos da UI
  */
 function setupEventListeners() {
-    // Mobile menu toggle
+    // Alternar menu móvel
     document.getElementById('mobile-menu-toggle').addEventListener('click', function() {
         document.getElementById('overlay-panel').classList.toggle('active');
     });
 
-    // Mobile panel close
+    // Fechar painel móvel
     document.getElementById('mobile-panel-close').addEventListener('click', function() {
         document.getElementById('overlay-panel').classList.remove('active');
     });
 
-    // Initialize the "Página Completa" button as hidden
+    // Inicializar o botão "Página Completa" como escondido
     const fullDataLink = document.getElementById('view-full-data');
     if (fullDataLink) {
         fullDataLink.style.display = 'none';
     }
 
-    // Map style options
+    // Opções de estilo de mapa
+    // Opções de estilo do mapa
     document.querySelectorAll('.map-style-option').forEach(option => {
         option.addEventListener('click', function() {
             const provider = this.dataset.provider;
@@ -1441,11 +1444,11 @@ function setupEventListeners() {
         });
     });
     
-    // District select change event
+    // Evento de alteração do seletor de distrito
     document.getElementById('distrito-select').addEventListener('change', function() {
         const selectedDistrito = this.value;
         
-        // Reset concelho and freguesia
+        // Reiniciar concelho e freguesia
         const concelhoSelect = document.getElementById('concelho-select');
         concelhoSelect.value = '';
         concelhoSelect.innerHTML = '<option value="">Selecione um concelho...</option>';
@@ -1456,7 +1459,7 @@ function setupEventListeners() {
         freguesiaSelect.innerHTML = '<option value="">Selecione uma freguesia...</option>';
         freguesiaSelect.disabled = true;
         
-        // Remove any map markers or polygons from previous selections
+        // Remover quaisquer marcadores ou polígonos do mapa de seleções anteriores
         if (locationMarker) {
             map.removeLayer(locationMarker);
             locationMarker = null;
@@ -1466,7 +1469,7 @@ function setupEventListeners() {
             locationPolygon = null;
         }
         
-        // Reset currentClickedCoordinates
+        // Reiniciar currentClickedCoordinates
         currentClickedCoordinates = null;
         
         if (selectedDistrito) {
@@ -1474,17 +1477,17 @@ function setupEventListeners() {
         }
     });
 
-    // Concelho select change event
+    // Evento de alteração do seletor de concelho
     document.getElementById('concelho-select').addEventListener('change', function() {
         const selectedConcelho = this.value;
         
-        // Reset freguesia
+        // Reiniciar freguesia
         const freguesiaSelect = document.getElementById('freguesia-select');
         freguesiaSelect.value = '';
         freguesiaSelect.innerHTML = '<option value="">Selecione uma freguesia...</option>';
         freguesiaSelect.disabled = true;
         
-        // Remove any map markers or polygons from previous selections
+        // Remover quaisquer marcadores ou polígonos do mapa de seleções anteriores
         if (locationMarker) {
             map.removeLayer(locationMarker);
             locationMarker = null;
@@ -1494,7 +1497,7 @@ function setupEventListeners() {
             locationPolygon = null;
         }
         
-        // Reset currentClickedCoordinates
+        // Reiniciar currentClickedCoordinates
         currentClickedCoordinates = null;
         
         if (selectedConcelho) {
@@ -1502,9 +1505,9 @@ function setupEventListeners() {
         }
     });
 
-    // Freguesia select change event
+    // Evento de alteração do seletor de freguesia
     document.getElementById('freguesia-select').addEventListener('change', function() {
-        // Remove any map markers or polygons from previous selections
+        // Remover quaisquer marcadores ou polígonos do mapa de seleções anteriores
         if (locationMarker) {
             map.removeLayer(locationMarker);
             locationMarker = null;
@@ -1514,46 +1517,46 @@ function setupEventListeners() {
             locationPolygon = null;
         }
         
-        // Reset currentClickedCoordinates
+        // Reiniciar currentClickedCoordinates
         currentClickedCoordinates = null;
     });
 
-    // Calculate button event - now this is the only place where data is fetched
+    // Evento do botão Calcular - agora este é o único local onde os dados são obtidos
     document.querySelector('.calculate-button').addEventListener('click', function() {
-        // Get the selected values
+        // Obter os valores selecionados
         const selectedDistrito = document.getElementById('distrito-select').value;
         const selectedConcelho = document.getElementById('concelho-select').value;
         const selectedFreguesia = document.getElementById('freguesia-select').value;
         
-        // Clear any existing location data (but keep the marker if it exists)
+        // Limpar quaisquer dados de localização existentes (mas manter o marcador, se existir)
         if (locationPolygon) {
             map.removeLayer(locationPolygon);
             locationPolygon = null;
         }
         
-        // Make sure the census sidebar is hidden before fetching new data
+        // Garantir que a barra lateral do censo está oculta antes de obter novos dados
         document.getElementById('census-sidebar').classList.remove('active');
         censusSidebarActive = false;
         
-        // Update UI to show loading state
+        // Atualizar a interface de utilizador para mostrar o estado de carregamento
         document.querySelector('.calculate-button').textContent = 'A carregar...';
         document.querySelector('.calculate-button').disabled = true;
         
-        // Determine what to fetch based on selection or clicked coordinates
+        // Determinar o que obter com base na seleção ou nas coordenadas clicadas
         if (currentClickedCoordinates) {
-            // If map was clicked, prioritize those coordinates
+            // Se o mapa foi clicado, priorizar essas coordenadas
             fetchLocationByCoordinates(
                 currentClickedCoordinates.lat, 
                 currentClickedCoordinates.lng
             );
         } else if (selectedFreguesia && selectedConcelho) {
-            // If freguesia is selected, fetch freguesia data
+            // Se freguesia está selecionada, obter dados da freguesia
             fetchLocationByFreguesia(selectedFreguesia, selectedConcelho);
         } else if (selectedConcelho) {
-            // If only concelho is selected (no freguesia), fetch concelho data
+            // Se apenas concelho está selecionado (sem freguesia), obter dados do concelho
             fetchLocationByMunicipio(selectedConcelho);
         } else if (selectedDistrito) {
-            // If only distrito is selected (no concelho or freguesia), fetch distrito data
+            // Se apenas distrito está selecionado (sem concelho ou freguesia), obter dados do distrito
             fetchLocationByDistrito(selectedDistrito);
         } else {
             // Reset UI state
@@ -1563,7 +1566,7 @@ function setupEventListeners() {
         }
     });
 
-    // Close location data panel
+    // Fechar painel de dados de localização
     document.querySelector('.location-data-panel .close-panel').addEventListener('click', function() {
         const locationPanel = document.querySelector('.location-data-panel');
         console.log('Close button clicked, panel before:', locationPanel.className);
@@ -1578,13 +1581,13 @@ function setupEventListeners() {
         }, 100);
     });
 
-    // Census sidebar close button
+    // Botão de fechar da barra lateral do censo
     document.getElementById('census-close-btn').addEventListener('click', function() {
         document.getElementById('census-sidebar').classList.remove('active');
         censusSidebarActive = false;
     });
     
-    // Census year toggle
+    // Interruptor de ano do censo
     document.getElementById('census-year-toggle').addEventListener('change', function() {
         if (!currentLocation) return;
         
@@ -1593,32 +1596,32 @@ function setupEventListeners() {
         
         currentCensusYear = selectedYear;
         
-        // Get the relevant census data
+        // Obter os dados do censo relevantes
         const primaryCensus = selectedYear === 2021 ? currentLocation.censos2021 : currentLocation.censos2011;
         const secondaryCensus = selectedYear === 2021 ? currentLocation.censos2011 : currentLocation.censos2021;
         
         if (!primaryCensus) return;
         
-        // Update stats with animation
+        // Atualizar estatísticas com animação
         animateStatUpdate('population-value', primaryCensus);
         animateStatUpdate('buildings-value', primaryCensus);
         animateStatUpdate('dwellings-value', primaryCensus);
         animateStatUpdate('density-value', primaryCensus);
         
-        // Update charts
+        // Atualizar gráficos
         updateCensusStats(primaryCensus, secondaryCensus);
         
-        // Recreate charts with new data
+        // Recriar gráficos com novos dados
         if (typeof Chart !== 'undefined') {
             createGenderChart(primaryCensus);
             calculateAverageAge(primaryCensus);
         }
         
-        // Recreate age bars
+        // Recriar barras etárias
         createAgeBars(primaryCensus);
     });
     
-    // Link to location_data.php
+    // Ligação para location_data.php
     document.getElementById('census-view-full-data').addEventListener('click', function(e) {
         if (currentLocation) {
             const url = buildFullDataUrl(currentLocation);
@@ -1633,7 +1636,7 @@ function setupEventListeners() {
         return false;
     });
     
-    // Handle ESC key to close census sidebar
+    // Lidar com a tecla ESC para fechar a barra lateral do censo
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && censusSidebarActive) {
             document.getElementById('census-sidebar').classList.remove('active');
@@ -1641,22 +1644,22 @@ function setupEventListeners() {
         }
     });
 
-    // Freguesia toggle switch
+    // Interruptor de freguesias
     document.getElementById('show-freguesias-toggle').addEventListener('change', function() {
         showFreguesias = this.checked;
         console.log('Show freguesias toggle changed to:', showFreguesias);
         
-        // Redraw boundaries if we have current location data with freguesias
+        // Redesenhar limites se tivermos dados de localização atuais com freguesias
         if (currentLocation) {
             console.log('Redrawing with freguesias toggle:', showFreguesias);
             
             if (currentLocation._originalGeojsons) {
-                console.log('Using stored original geojsons');
+                console.log('Usando geojsons originais armazenados');
                 const tempData = { ...currentLocation };
                 tempData.geojsons = currentLocation._originalGeojsons;
                 drawLocationBoundary(tempData);
             } else if (currentLocation.geojsons) {
-                console.log('Using current geojsons');
+                console.log('Usando geojsons atuais');
                 drawLocationBoundary(currentLocation);
             }
         }
@@ -1664,7 +1667,7 @@ function setupEventListeners() {
 }
 
 /**
- * Animate stat value update
+ * Animar atualização de valor de estatística
  */
 function animateStatUpdate(elementId, censusData) {
     const element = document.getElementById(elementId);
@@ -1684,7 +1687,7 @@ function animateStatUpdate(elementId, censusData) {
             break;
         case 'density-value':
             const population = getCensusValue(censusData, ['N_INDIVIDUOS_RESIDENT', 'N_INDIVIDUOS']);
-            // Check multiple possible area property names
+            // Verificar múltiplos nomes de propriedade de área possíveis
             const areaHa = currentLocation.area_ha || currentLocation.areaha || currentLocation.area || 
                           (currentLocation.data && currentLocation.data.area_ha) || 
                           (currentLocation.data && currentLocation.data.areaha);
@@ -1693,12 +1696,12 @@ function animateStatUpdate(elementId, censusData) {
                 const areaKm2 = areaHa / 100;
                 targetValue = Math.round(population / areaKm2);
             } else if (population) {
-                // Fallback density estimate
+                // Estimativa de densidade de recurso
                 targetValue = Math.round(population / 10);
             }
             break;
         case 'average-age-value':
-            // We'll handle this specially
+            // Vamos lidar com isto de forma especial
             calculateAverageAge(censusData);
             return;
     }
@@ -1708,13 +1711,13 @@ function animateStatUpdate(elementId, censusData) {
         return;
     }
     
-    // Get current value
+    // Obter valor atual
     let currentValue = parseInt(element.textContent.replace(/[^\d]/g, '')) || 0;
     const diff = targetValue - currentValue;
     
-    // Use animation frame for smooth update
+    // Usar frame de animação para atualização suave
     let startTime;
-    const duration = 1000; // 1 second
+    const duration = 1000; // 1 segundo
     
     function updateValue(timestamp) {
         if (!startTime) startTime = timestamp;
@@ -1724,7 +1727,7 @@ function animateStatUpdate(elementId, censusData) {
         
         const currentVal = Math.round(currentValue + diff * easeProgress);
         
-        // Format based on element type
+        // Formatar com base no tipo de elemento
         if (elementId === 'density-value') {
             element.textContent = `${new Intl.NumberFormat('pt-PT').format(currentVal)} h/km²`;
         } else {
@@ -1740,10 +1743,10 @@ function animateStatUpdate(elementId, censusData) {
 }
 
 /**
- * Shows a modern tutorial for first-time users explaining how to use the location page
+ * Mostra um tutorial moderno para utilizadores pela primeira vez, explicando como usar a página de localização
  */
 function showLocationTutorial() {
-    // Check if the user has seen the tutorial before
+    // Verificar se o utilizador já viu o tutorial antes
     if (localStorage.getItem('minu15_location_tutorial_seen') === 'true') {
         return;
     }

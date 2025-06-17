@@ -1,4 +1,4 @@
-// Ideal Location Finder JavaScript
+// JavaScript do Localizador Ideal
 class IdealLocationFinder {
     constructor() {
         this.map = null;
@@ -19,33 +19,33 @@ class IdealLocationFinder {
         this.initAutocomplete();
         this.setupPOIControls();
         
-        // Show the tutorial after a short delay
+        // Mostrar o tutorial após um curto atraso
         setTimeout(() => {
             this.showIdealFinderTutorial();
         }, 800);
     }
 
     initMap() {
-        // Initialize map centered on Aveiro, Portugal
+        // Inicializar mapa centrado em Aveiro, Portugal
         const aveiroCenter = [40.6405, -8.6538];
         this.map = L.map('map', { zoomControl: false }).setView(aveiroCenter, 13);
         
-        // You can add custom zoom controls if needed:
+        // Pode adicionar controlos de zoom personalizados, se necessário:
         // L.control.zoom({ position: 'topright' }).addTo(this.map);
         
-        // Add tile layer using map configuration
+        // Adicionar camada de 'tiles' usando a configuração do mapa
         this.currentTileLayer = null;
         this.selectedTileProvider = DEFAULT_TILE_PROVIDER;
         this.updateMapTiles(this.selectedTileProvider);
 
-        // Map click handler
+        // Manipulador de clique no mapa
         this.map.on('click', (e) => {
             this.setLocation(e.latlng.lat, e.latlng.lng);
         });
     }
 
     initEventListeners() {
-        // Transport mode buttons (now using transport-option class like app.php)
+        // Botões de modo de transporte (agora usando a classe transport-option como em app.php)
         document.querySelectorAll('.transport-option').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelector('.transport-option.active')?.classList.remove('active');
@@ -53,14 +53,14 @@ class IdealLocationFinder {
             });
         });
 
-        // Time slider
+        // Deslizador de tempo
         const timeSlider = document.getElementById('max-time');
         const timeDisplay = document.getElementById('time-display');
         timeSlider.addEventListener('input', () => {
             timeDisplay.textContent = timeSlider.value + ' minutos';
         });
 
-        // Heatmap intensity slider
+        // Deslizador de intensidade do mapa de calor
         const intensitySlider = document.getElementById('heatmap-intensity');
         const intensityValue = document.getElementById('intensity-value');
         if (intensitySlider && intensityValue) {
@@ -69,7 +69,7 @@ class IdealLocationFinder {
             });
         }
 
-        // Map style selector
+        // Seletor de estilo do mapa
         document.querySelectorAll('.map-style-option').forEach(option => {
             option.addEventListener('click', () => {
                 const provider = option.getAttribute('data-provider');
@@ -77,17 +77,17 @@ class IdealLocationFinder {
             });
         });
 
-        // Analyze button (now using calculate-button class like app.php)
+        // Botão de analisar (agora usando a classe calculate-button como em app.php)
         document.getElementById('analyze-btn').addEventListener('click', () => {
             this.startAnalysis();
         });
 
-        // Results panel toggle
+        // Alternar painel de resultados
         document.getElementById('toggle-results').addEventListener('click', () => {
             this.toggleResultsPanel();
         });
 
-        // Heatmap controls
+        // Controlos do mapa de calor
         document.getElementById('toggle-heatmap').addEventListener('click', () => {
             this.toggleHeatmap();
         });
@@ -96,10 +96,10 @@ class IdealLocationFinder {
             this.resetMapView();
         });
 
-        // Panel collapsible sections
+        // Secções colapsáveis do painel
         this.initCollapsibleSections();
 
-        // Mobile menu toggle
+        // Alternar menu móvel
         const mobileToggle = document.getElementById('mobile-menu-toggle');
         const overlayPanel = document.getElementById('overlay-panel');
         const mobileClose = document.getElementById('mobile-panel-close');
@@ -118,9 +118,9 @@ class IdealLocationFinder {
     }
 
     initCollapsibleSections() {
-        // Initialize all collapsible contents and set up their toggles using jQuery slideToggle
+        // Inicializa todos os conteúdos colapsáveis e configura os seus interruptores usando jQuery slideToggle
         
-        // Function to handle toggle logic for a header and its content
+        // Função para lidar com a lógica de alternância para um cabeçalho e o seu conteúdo
         const setupToggle = (headerId, contentId, expandByDefault = false) => {
             const header = document.getElementById(headerId);
             const content = document.getElementById(contentId);
@@ -129,12 +129,12 @@ class IdealLocationFinder {
                 const $content = $(content);
                 const $arrow = $(header).find('.dropdown-arrow');
 
-                // Initial state: hide content unless it should expand by default
+                // Estado inicial: ocultar conteúdo, a menos que deva expandir por padrão
                 if (!expandByDefault) {
                     $content.hide();
                     $arrow.removeClass('up');
                 } else {
-                    // If expanding by default, use slideDown and add class
+                    // Se expandir por padrão, usar slideDown e adicionar classe
                     $content.slideDown(300, function() {
                         $(this).addClass('expanded');
                         $arrow.addClass('up');
@@ -142,18 +142,18 @@ class IdealLocationFinder {
                 }
 
                 $(header).on('click', (e) => {
-                    // For category headers, prevent propagation to parent panel header
+                    // Para cabeçalhos de categoria, prevenir a propagação para o cabeçalho do painel pai
                     if ($(header).hasClass('category-header')) {
                         e.stopPropagation(); 
                     }
 
                     if ($content.is(':hidden')) {
-                        $content.addClass('expanded'); // Add class before animation for CSS transitions
+                        $content.addClass('expanded'); // Adicionar classe antes da animação para transições CSS
                         $arrow.addClass('up');
                         $content.slideDown(300);
                     } else {
                         $content.slideUp(300, function() {
-                            $(this).removeClass('expanded'); // Remove class after animation completes
+                            $(this).removeClass('expanded'); // Remover classe após a animação completar
                             $arrow.removeClass('up');
                         });
                     }
@@ -161,22 +161,22 @@ class IdealLocationFinder {
             }
         };
 
-        // Setup main panel sections
-        setupToggle('poi-header', 'poi-content', true); // POI section expands by default
+        // Configurar secções principais do painel
+        setupToggle('poi-header', 'poi-content', true); // A secção POI expande por padrão
         setupToggle('map-style-header', 'map-style-content');
         setupToggle('settings-header', 'settings-content');
 
-        // Setup category toggles within POI section (e.g., Saúde, Educação)
-        // These are .category-header and their nextElementSibling is .category-content
+        // Configurar interruptores de categoria dentro da secção POI (ex: Saúde, Educação)
+        // Estes são .category-header e o seu nextElementSibling é .category-content
         document.querySelectorAll('.poi-category .category-header').forEach(header => {
             const content = header.nextElementSibling;
             if (content && content.classList.contains('category-content')) {
-                // Ensure initial state for category content is hidden and arrow down
+                // Garantir que o estado inicial para o conteúdo da categoria é oculto e a seta para baixo
                 $(content).hide();
                 $(header).find('.dropdown-arrow').removeClass('up');
 
                 $(header).on('click', (e) => {
-                    e.stopPropagation(); // Prevent propagation to parent panel header
+                    e.stopPropagation(); // Prevenir a propagação para o cabeçalho do painel pai
                     const $content = $(content);
                     const $arrow = $(header).find('.dropdown-arrow');
 
@@ -198,7 +198,7 @@ class IdealLocationFinder {
     initAutocomplete() {
         $('#location-input').autocomplete({
             source: (request, response) => {
-                // Use Nominatim for geocoding
+                // Usar Nominatim para geocodificação
                 $.ajax({
                     url: 'https://nominatim.openstreetmap.org/search',
                     data: {
@@ -227,7 +227,7 @@ class IdealLocationFinder {
     }
 
     setupPOIControls() {
-        // Enable/disable importance selectors based on checkboxes
+        // Ativar/desativar seletores de importância com base nas caixas de verificação
         document.querySelectorAll('input[name="poi"]').forEach(checkbox => {
             checkbox.addEventListener('change', () => {
                 const poiItem = checkbox.closest('.poi-item-finder') || checkbox.closest('.poi-item');
@@ -249,12 +249,12 @@ class IdealLocationFinder {
     setLocation(lat, lng) {
         this.currentLocation = { lat, lng };
         
-        // Remove existing marker
+        // Remover marcador existente
         if (this.currentMarker) {
             this.map.removeLayer(this.currentMarker);
         }
 
-        // Add new marker
+        // Adicionar novo marcador
         this.currentMarker = L.marker([lat, lng], {
             icon: L.divIcon({
                 className: 'custom-marker reference-marker',
@@ -264,10 +264,10 @@ class IdealLocationFinder {
             })
         }).addTo(this.map);
 
-        // Center map on location
+        // Centrar mapa na localização
         this.map.setView([lat, lng], 13);
 
-        // Reverse geocode to update input
+        // Geocodificação inversa para atualizar o input
         this.reverseGeocode(lat, lng);
     }
 
@@ -362,7 +362,7 @@ class IdealLocationFinder {
                 throw new Error(response.error || 'Erro na análise');
             }
         } catch (error) {
-            console.error('Analysis error:', error);
+            console.error('Erro na análise:', error);
             alert('Erro durante a análise: ' + error.message);
         } finally {
             this.isAnalyzing = false;
@@ -377,13 +377,13 @@ class IdealLocationFinder {
                 method: 'POST',
                 data: JSON.stringify(settings),
                 contentType: 'application/json',
-                timeout: 120000, // 2 minutes timeout
+                timeout: 120000, // Tempo limite de 2 minutos
                 xhr: () => {
                     const xhr = new XMLHttpRequest();
                     xhr.upload.addEventListener('progress', (e) => {
                         if (e.lengthComputable) {
                             const percentComplete = (e.loaded / e.total) * 100;
-                            this.updateProgress(percentComplete, 'Enviando dados...');
+                            this.updateProgress(percentComplete, 'A enviar dados...');
                         }
                     });
                     return xhr;
@@ -401,7 +401,7 @@ class IdealLocationFinder {
                 }
             });
 
-            // Simulate progress updates
+            // Simular atualizações de progresso
             this.simulateProgress();
         });
     }
@@ -409,11 +409,11 @@ class IdealLocationFinder {
     simulateProgress() {
         let progress = 0;
         const stages = [
-            { progress: 20, message: 'Configurando análise de grelha...' },
-            { progress: 40, message: 'Consultando base de dados...' },
-            { progress: 60, message: 'Calculando acessibilidade...' },
-            { progress: 80, message: 'Gerando mapa de calor...' },
-            { progress: 95, message: 'Finalizando resultados...' }
+            { progress: 20, message: 'A configurar a análise da grelha...' },
+            { progress: 40, message: 'A consultar a base de dados...' },
+            { progress: 60, message: 'A calcular a acessibilidade...' },
+            { progress: 80, message: 'A gerar o mapa de calor...' },
+            { progress: 95, message: 'A finalizar os resultados...' }
         ];
 
         const updateStage = (index) => {
@@ -430,7 +430,7 @@ class IdealLocationFinder {
     showLoading() {
         document.getElementById('loading-overlay').style.display = 'flex';
         document.getElementById('analyze-btn').disabled = true;
-        this.updateProgress(0, 'Iniciando análise...');
+        this.updateProgress(0, 'A iniciar a análise...');
     }
 
     hideLoading() {
@@ -445,35 +445,35 @@ class IdealLocationFinder {
     }
 
     clearPreviousResults() {
-        // Remove heatmap
+        // Remover o mapa de calor
         if (this.heatmapLayer) {
             this.map.removeLayer(this.heatmapLayer);
             this.heatmapLayer = null;
         }
 
-        // Remove top location markers
+        // Remover os marcadores de localização superior
         this.topLocationMarkers.forEach(marker => {
             this.map.removeLayer(marker);
         });
         this.topLocationMarkers = [];
 
-        // Clear results list
+        // Limpar a lista de resultados
         document.getElementById('results-list').innerHTML = '';
         document.getElementById('results-panel').style.display = 'none';
     }
 
     displayResults(data) {
-        // Display heatmap
+        // Exibir o mapa de calor
         if (data.heatmap && data.heatmap.length > 0) {
             this.displayHeatmap(data.heatmap);
         }
 
-        // Display top locations
+        // Exibir as localizações principais
         if (data.top_locations && data.top_locations.length > 0) {
             this.displayTopLocations(data.top_locations);
         }
 
-        // Show results panel
+        // Mostrar o painel de resultados
         document.getElementById('results-panel').style.display = 'block';
     }
 
@@ -485,12 +485,12 @@ class IdealLocationFinder {
             blur: 15,
             maxZoom: 17,
             gradient: {
-                0.0: '#0000ff',  // Blue for low scores
-                0.2: '#00ffff',  // Cyan
-                0.4: '#00ff00',  // Green
-                0.6: '#ffff00',  // Yellow
-                0.8: '#ff8000',  // Orange
-                1.0: '#ff0000'   // Red for high scores
+                0.0: '#0000ff',  // Azul para pontuações baixas
+                0.2: '#00ffff',  // Ciano
+                0.4: '#00ff00',  // Verde
+                0.6: '#ffff00',  // Amarelo
+                0.8: '#ff8000',  // Laranja
+                1.0: '#ff0000'   // Vermelho para pontuações altas
             },
             max: intensity
         }).addTo(this.map);
@@ -501,7 +501,7 @@ class IdealLocationFinder {
         resultsList.innerHTML = '';
 
         topLocations.forEach((location, index) => {
-            // Add marker to map
+            // Adicionar marcador ao mapa
             const marker = L.marker([location.lat, location.lng], {
                 icon: L.divIcon({
                     className: 'custom-marker top-location-marker',
@@ -514,13 +514,13 @@ class IdealLocationFinder {
                 })
             }).addTo(this.map);
 
-            // Create popup with details
+            // Criar 'popup' com detalhes
             const popupContent = this.createLocationPopup(location, index + 1);
             marker.bindPopup(popupContent, { maxWidth: 300 });
 
             this.topLocationMarkers.push(marker);
 
-            // Add to results list
+            // Adicionar à lista de resultados
             const resultItem = this.createResultItem(location, index + 1);
             resultsList.appendChild(resultItem);
         });
@@ -589,7 +589,7 @@ class IdealLocationFinder {
             </div>
         `;
 
-        // Add click handler to expand/collapse details
+        // Adicionar manipulador de clique para expandir/colapsar detalhes
         resultItem.querySelector('.result-header').addEventListener('click', () => {
             resultItem.classList.toggle('expanded');
         });
@@ -599,41 +599,41 @@ class IdealLocationFinder {
 
     getPOIDisplayName(type) {
         const displayNames = {
-            // === Health ===
+            // === Saúde ===
             'hospitals': 'Hospitais',
             'health_centers': 'Centros de Saúde',
             'pharmacies': 'Farmácias',
             'dentists': 'Clínicas Dentárias',
             
-            // === Education ===
+            // === Educação ===
             'schools': 'Escolas Primárias e Secundárias',
-            'universities': 'Universidades e Institutos',
+            'universities': 'Universidades e Institutos Superiores',
             'kindergartens': 'Jardins de Infância e Creches',
             'libraries': 'Bibliotecas',
             
-            // === Commercial & Services ===
+            // === Comércio e Serviços ===
             'supermarkets': 'Supermercados',
             'malls': 'Centros Comerciais',
             'restaurants': 'Restaurantes e Cafés',
             'atms': 'Caixas de Multibanco',
             
-            // === Safety ===
+            // === Segurança ===
             'police_stations': 'Esquadras de Polícia',
             'fire_stations': 'Bombeiros',
             'civil_protection': 'Proteção Civil',
             
-            // === Public Administration ===
+            // === Administração Pública ===
             'parish_councils': 'Juntas de Freguesia',
             'city_halls': 'Câmaras Municipais',
             'post_offices': 'Correios',
             
-            // === Culture & Leisure ===
+            // === Cultura e Lazer ===
             'museums': 'Museus',
             'theaters': 'Teatros',
             'sports': 'Ginásios e Centros Desportivos',
             'parks': 'Parques',
             
-            // === Legacy support for old POI types ===
+            // === Suporte legado para tipos de POI antigos ===
             'hospital': 'Hospital',
             'clinic': 'Clínica',
             'pharmacy': 'Farmácia',
@@ -643,11 +643,11 @@ class IdealLocationFinder {
             'supermarket': 'Supermercado',
             'restaurant': 'Restaurante',
             'bank': 'Banco',
-            'shopping_mall': 'Shopping',
-            'bus_stop': 'Parada de Ônibus',
-            'subway_station': 'Estação Metro',
+            'shopping_mall': 'Centro Comercial',
+            'bus_stop': 'Paragem de Autocarro',
+            'subway_station': 'Estação de Metro',
             'post_office': 'Correios',
-            'fuel': 'Posto Combustível'
+            'fuel': 'Posto de Combustível'
         };
         return displayNames[type] || type;
     }
@@ -689,30 +689,30 @@ class IdealLocationFinder {
         }
     }
 
-    // Update map tiles based on selected provider
+    // Atualiza os 'tiles' do mapa com base no fornecedor selecionado
     updateMapTiles(provider) {
-        // If there's an existing tile layer, remove it
+        // Se houver uma camada de 'tiles' existente, remova-a
         if (this.currentTileLayer) {
             this.map.removeLayer(this.currentTileLayer);
         }
 
-        // Get the provider configuration
+        // Obter a configuração do fornecedor
         const tileConfig = MAP_TILE_PROVIDERS[provider] || MAP_TILE_PROVIDERS[DEFAULT_TILE_PROVIDER];
 
-        // Create and add the new tile layer
+        // Criar e adicionar a nova camada de 'tiles'
         this.currentTileLayer = L.tileLayer(tileConfig.url, {
             attribution: tileConfig.attribution,
             maxZoom: tileConfig.maxZoom
         }).addTo(this.map);
 
-        // Update the selectedTileProvider variable
+        // Atualizar a variável selectedTileProvider
         this.selectedTileProvider = provider;
 
-        // Update the map style selector UI
+        // Atualizar a interface de utilizador do seletor de estilo do mapa
         this.updateMapStyleSelector();
     }
 
-    // Update the map style selector buttons to show the active style
+    // Atualiza os botões do seletor de estilo do mapa para mostrar o estilo ativo
     updateMapStyleSelector() {
         document.querySelectorAll('.map-style-option').forEach(button => {
             const provider = button.getAttribute('data-provider');
@@ -725,15 +725,15 @@ class IdealLocationFinder {
     }
 
     /**
-     * Shows a tutorial explaining the concept and functionality of the Ideal Location Finder
+     * Mostra um tutorial que explica o conceito e a funcionalidade do Localizador Ideal
      */
     showIdealFinderTutorial() {
-        // Check if the user has seen the tutorial before
+        // Verificar se o utilizador já viu o tutorial antes
         if (localStorage.getItem('minu15_ideal_finder_tutorial_seen') === 'true') {
             return;
         }
         
-        // Create the tutorial container
+        // Criar o contentor do tutorial
         const tutorialBox = document.createElement('div');
         tutorialBox.id = 'ideal-finder-tutorial-box';
         tutorialBox.style.position = 'absolute';
@@ -750,7 +750,7 @@ class IdealLocationFinder {
         tutorialBox.style.opacity = '0';
         tutorialBox.style.transition = 'all 0.3s ease-out';
         
-        // Create tutorial content
+        // Criar conteúdo do tutorial
         tutorialBox.innerHTML = `
             <div style="position: relative;">
                 <div style="text-align: center; margin-bottom: 25px;">
@@ -768,7 +768,7 @@ class IdealLocationFinder {
                             <strong style="font-weight: 600; color: #2c3e50;">Conceito</strong>
                         </div>
                         <p style="margin: 0; color: #555; font-size: 14px;">
-                            O Localizador Ideal é uma ferramenta conceitual que permite descobrir as áreas que melhor satisfazem suas necessidades de acessibilidade a serviços e pontos de interesse. A ferramenta utiliza análises espaciais e algoritmos para gerar um mapa de calor mostrando as áreas mais adequadas.
+                            O Localizador Ideal é uma ferramenta conceptual que permite descobrir as áreas que melhor satisfazem suas necessidades de acessibilidade a serviços e pontos de interesse. A ferramenta utiliza análises espaciais e algoritmos para gerar um mapa de calor mostrando as áreas mais adequadas.
                         </p>
                     </div>
                 
@@ -818,24 +818,24 @@ class IdealLocationFinder {
             </div>
         `;
         
-        // Add to document
+        // Adicionar ao documento
         document.body.appendChild(tutorialBox);
         
-        // Add entrance animation
+        // Adicionar animação de entrada
         setTimeout(() => {
             tutorialBox.style.opacity = '1';
             tutorialBox.style.transform = 'translate(-50%, -50%) scale(1)';
             
-            // Dispatch event that tutorial is shown
+            // Enviar evento de que o tutorial foi mostrado
             document.dispatchEvent(new Event('tutorialShown'));
         }, 100);
         
-        // Prevent clicks on the tutorial from propagating to the map
+        // Prevenir cliques no tutorial de propagarem para o mapa
         tutorialBox.addEventListener('click', function(event) {
             event.stopPropagation();
         });
         
-        // Add hover effect to the button
+        // Adicionar efeito hover ao botão
         const tutorialBtn = document.getElementById('ideal-finder-tutorial-btn');
         tutorialBtn.addEventListener('mouseover', function() {
             this.style.backgroundColor = '#2980b9';
@@ -849,31 +849,31 @@ class IdealLocationFinder {
             this.style.boxShadow = 'none';
         });
         
-        // Close button event
+        // Evento do botão de fechar
         tutorialBtn.addEventListener('click', function(event) {
             event.stopPropagation();
             
-            // Add exit animation
+            // Adicionar animação de saída
             tutorialBox.style.opacity = '0';
             tutorialBox.style.transform = 'translate(-50%, -50%) scale(0.9)';
             
-            // Save preference if checkbox is checked
+            // Guardar preferência se a caixa de verificação estiver marcada
             if (document.getElementById('dont-show-ideal-finder-tutorial').checked) {
                 localStorage.setItem('minu15_ideal_finder_tutorial_seen', 'true');
             }
             
-            // Remove after animation completes
+            // Remover após a animação completar
             setTimeout(() => {
                 document.getElementById('ideal-finder-tutorial-box').remove();
                 
-                // Dispatch event that tutorial is closed
+                // Enviar evento de que o tutorial foi fechado
                 document.dispatchEvent(new Event('tutorialClosed'));
             }, 300);
         });
     }
 }
 
-// Initialize when page loads
+// Inicializar quando a página carrega
 let idealFinder;
 $(document).ready(() => {
     idealFinder = new IdealLocationFinder();

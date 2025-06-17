@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Localizador Ideal - Minu15</title>
     
-    <!-- jQuery UI for autocomplete -->
+    <!-- jQuery UI para preenchimento automático -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     
-    <!-- Leaflet CSS and JS -->
+    <!-- CSS e JS do Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Leaflet Heat plugin for heatmap -->
+    <!-- Plugin Leaflet Heat para mapa de calor -->
     <script src="https://cdn.jsdelivr.net/gh/Leaflet/Leaflet.heat/dist/leaflet-heat.js"></script>
     
     <!-- Google Fonts -->
@@ -25,24 +25,24 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Configuration Files -->
+    <!-- Ficheiros de Configuração -->
     <script src="config/api_config.js"></script>
     <script src="config/map_config.js"></script>
     
-    <!-- Custom CSS -->
+    <!-- CSS Personalizado -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/landing.css">
 </head>
 <body class="ideal-finder-page">
     <div id="map"></div>
     
-    <!-- Mobile menu toggle button -->
+    <!-- Botão para alternar o menu móvel -->
     <div class="mobile-menu-toggle" id="mobile-menu-toggle">
         <i class="fas fa-bars"></i>
     </div>
     
     <div class="overlay-panel" id="overlay-panel">
-        <!-- Close button for mobile -->
+        <!-- Botão de fechar para telemóvel -->
         <div class="mobile-panel-close" id="mobile-panel-close">
             <i class="fas fa-times"></i>
         </div>
@@ -53,14 +53,14 @@
             </a>
         </div>
         
-        <!-- POI Requirements Section -->
+        <!-- Secção de Requisitos de Pontos de Interesse -->
         <div class="panel-section">
             <div class="panel-header" id="poi-header">
                 <span><i class="fas fa-list-check"></i> Necessidades</span>
                 <span class="dropdown-arrow">▼</span>
             </div>
             <div class="panel-content" id="poi-content">
-                <!-- Health Category -->
+                <!-- Categoria Saúde -->
                 <div class="poi-category">
                     <div class="category-header">
                         <span><i class="fas fa-heart-pulse"></i> Saúde</span>
@@ -118,7 +118,7 @@
                     </div>
                 </div>
 
-                <!-- Education Category -->
+                <!-- Categoria Educação -->
                 <div class="poi-category">
                     <div class="category-header">
                         <span><i class="fas fa-graduation-cap"></i> Educação</span>
@@ -176,7 +176,7 @@
                     </div>
                 </div>
 
-                <!-- Commercial & Services Category -->
+                <!-- Categoria Comércio e Serviços -->
                 <div class="poi-category">
                     <div class="category-header">
                         <span><i class="fas fa-shopping-cart"></i> Comércio e Serviços</span>
@@ -235,7 +235,7 @@
                 </div>
 
 
-                <!-- Safety & Emergency Category -->
+                <!-- Categoria Segurança e Emergência -->
                 <div class="poi-category">
                     <div class="category-header">
                         <span><i class="fas fa-shield-alt"></i> Segurança e Serviços Públicos</span>
@@ -293,7 +293,7 @@
                     </div>
                 </div>
 
-                <!-- Public Administration Category -->
+                <!-- Categoria Administração Pública -->
                 <div class="poi-category">
                     <div class="category-header">
                         <span><i class="fas fa-landmark"></i> Administração Pública</span>
@@ -327,7 +327,7 @@
                     </div>
                 </div>
 
-                <!-- Culture & Leisure Category -->
+                <!-- Categoria Cultura e Lazer -->
                 <div class="poi-category">
                     <div class="category-header">
                         <span><i class="fas fa-theater-masks"></i> Cultura e Lazer</span>
@@ -387,7 +387,7 @@
             </div>
         </div>
         
-        <!-- Transport Mode Section -->
+        <!-- Secção de Modo de Transporte -->
         <div class="panel-section">
             <div class="panel-header">
                 <span><i class="fas fa-route"></i> Modo de Transporte</span>
@@ -408,7 +408,7 @@
             </div>
         </div>
         
-        <!-- Time Settings Section -->
+        <!-- Secção de Definições de Tempo -->
         <div class="panel-section">
             <div class="panel-header">
                 <span><i class="fas fa-clock"></i> Tempo Máximo</span>
@@ -417,7 +417,7 @@
             <div id="time-display">15 minutos</div>
         </div>
         
-        <!-- Map Style Section -->
+        <!-- Secção de Estilo do Mapa -->
         <div class="panel-section">
             <div class="panel-header" id="map-style-header">
                 <span><i class="fas fa-layer-group"></i> Estilo do Mapa</span>
@@ -465,7 +465,7 @@
             </div>
         </div>
         
-        <!-- Analysis Settings Section -->
+        <!-- Secção de Definições de Análise -->
         <div class="panel-section">
             <div class="panel-header" id="settings-header">
                 <span><i class="fas fa-sliders-h"></i> Configurações da Análise</span>
@@ -497,7 +497,7 @@
             </div>
         </div>
         
-        <!-- Analysis Button -->
+        <!-- Botão de Análise -->
         <div class="panel-section">
             <button id="analyze-btn" class="calculate-button">
                 <i class="fas fa-search"></i>
@@ -506,7 +506,7 @@
         </div>
     </div>
 
-    <!-- Results Panel -->
+    <!-- Painel de Resultados -->
     <div id="results-panel" class="results-panel">
         <div class="results-header">
             <h3><i class="fas fa-trophy"></i> Melhores Localizações</h3>
@@ -516,7 +516,7 @@
         </div>
         <div class="results-content">
             <div id="results-list" class="results-list">
-                <!-- Results will be populated here -->
+                <!-- Os resultados serão preenchidos aqui -->
             </div>
             <div class="heatmap-controls">
                 <button id="toggle-heatmap" class="control-btn">
@@ -531,7 +531,7 @@
         </div>
     </div>
 
-    <!-- Loading Overlay -->
+    <!-- Sobreposição de Carregamento -->
     <div id="loading-overlay" class="loading-overlay">
         <div class="loading-content">
             <div class="loading-spinner"></div>
@@ -544,13 +544,13 @@
         </div>
     </div>
 
-    <!-- Custom JavaScript -->
+    <!-- JavaScript Personalizado -->
     <script src="js/ideal_finder.js"></script>
     
-    <!-- Fix for the sidebar disappearing issue -->
+    <!-- Correção para o problema da barra lateral desaparecer -->
     <script>
         $(document).ready(function() {
-            // Ensure the sidebar is always visible on desktop
+            // Garante que a barra lateral esteja sempre visível no ambiente de trabalho
             function fixSidebar() {
                 if (window.innerWidth > 768) {
                     const panel = document.getElementById('overlay-panel');
@@ -564,18 +564,18 @@
                 }
             }
             
-            // Apply fix on page load
+            // Aplica a correção no carregamento da página
             fixSidebar();
             
-            // Listen for tutorial events
+            // Ouve eventos de tutorial
             document.addEventListener('tutorialClosed', fixSidebar);
             
-            // Apply fix when map is clicked
+            // Aplica a correção quando o mapa é clicado
             $('#map').on('click', function() {
                 setTimeout(fixSidebar, 100);
             });
             
-            // Watch for any changes to the sidebar visibility
+            // Observa quaisquer alterações na visibilidade da barra lateral
             const observer = new MutationObserver(function(mutations) {
                 mutations.forEach(function(mutation) {
                     if (mutation.type === 'attributes' && 
@@ -585,13 +585,13 @@
                 });
             });
             
-            // Start observing the sidebar for changes
+            // Começa a observar a barra lateral por alterações
             const panel = document.getElementById('overlay-panel');
             if (panel) {
                 observer.observe(panel, { attributes: true });
             }
             
-            // Add direct CSS rule to force sidebar visibility on desktop
+            // Adiciona regra CSS direta para forçar a visibilidade da barra lateral no ambiente de trabalho
             const styleElement = document.createElement('style');
             styleElement.textContent = `
                 @media (min-width: 769px) {

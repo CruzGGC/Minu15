@@ -1,44 +1,44 @@
 <?php
 /**
- * Ideal Location Analysis Endpoint
- * Performs grid-based analysis to find optimal locations based on POI requirements
+ * Endpoint de Análise de Localização Ideal
+ * Realiza análise baseada em grelha para encontrar localizações ótimas com base nos requisitos de POI
  */
 
-// Prevent any output before JSON response
+// Impede qualquer saída antes da resposta JSON
 error_reporting(0);
 ini_set('display_errors', 0);
 
-// Include database configuration
+// Inclui a configuração da base de dados
 require_once '../config/db_config.php';
 
-// Set headers for JSON response
+// Define os cabeçalhos para a resposta JSON
 header('Content-Type: application/json');
 
-// Check request method
+// Verifica o método do pedido
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         'success' => false,
-        'message' => 'Only POST method is allowed'
+        'message' => 'Apenas o método POST é permitido'
     ]);
     exit;
 }
 
-// Get JSON input
+// Obtém a entrada JSON
 $input = json_decode(file_get_contents('php://input'), true);
 
 if (!$input) {
     echo json_encode([
         'success' => false,
-        'message' => 'Invalid JSON input'
+        'message' => 'Entrada JSON inválida'
     ]);
     exit;
 }
 
-// Validate required parameters
+// Valida os parâmetros obrigatórios
 if (!isset($input['location']) || !isset($input['pois']) || empty($input['pois'])) {
     echo json_encode([
         'success' => false,
-        'message' => 'Location and POIs are required'
+        'message' => 'Localização e POIs são obrigatórios'
     ]);
     exit;
 }
@@ -98,11 +98,11 @@ try {
 }
 
 function getMaxDistanceForMode($mode, $timeMinutes) {
-    // Speed estimates in meters per minute
+    // Estimativas de velocidade em metros por minuto
     $speeds = [
         'foot-walking' => 80,    // ~5 km/h
         'cycling-regular' => 250, // ~15 km/h
-        'driving-car' => 500     // ~30 km/h in city
+        'driving-car' => 500     // ~30 km/h na cidade
     ];
     
     $speed = $speeds[$mode] ?? $speeds['foot-walking'];
@@ -113,17 +113,17 @@ function performGridAnalysis($conn, $centerLocation, $requiredPOIs, $bounds, $gr
     $gridScores = [];
     $heatmapData = [];
     
-    // Calculate grid step size
+    // Calcula o tamanho do passo da grelha
     $latStep = ($bounds['max_lat'] - $bounds['min_lat']) / $gridResolution;
     $lngStep = ($bounds['max_lng'] - $bounds['min_lng']) / $gridResolution;
     
-    // Get POI data for each type
+    // Obtém os dados de POI para cada tipo
     $poiData = [];
     foreach ($requiredPOIs as $poi) {
         $poiData[$poi['type']] = getPOIData($conn, $poi['type'], $bounds);
     }
     
-    // Analyze each grid point
+    // Analisa cada ponto da grelha
     for ($i = 0; $i < $gridResolution; $i++) {
         for ($j = 0; $j < $gridResolution; $j++) {
             $lat = $bounds['min_lat'] + ($i * $latStep);
@@ -139,9 +139,9 @@ function performGridAnalysis($conn, $centerLocation, $requiredPOIs, $bounds, $gr
                 'poi_scores' => $score['details']
             ];
             
-            // Add to heatmap if score > 0
+            // Adiciona ao mapa de calor se a pontuação > 0
             if ($score['total'] > 0) {
-                $heatmapData[] = [$lat, $lng, $score['total'] / 100.0]; // Normalize to 0-1
+                $heatmapData[] = [$lat, $lng, $score['total'] / 100.0]; // Normaliza para 0-1
             }
         }
     }
@@ -153,43 +153,43 @@ function performGridAnalysis($conn, $centerLocation, $requiredPOIs, $bounds, $gr
 }
 
 function getPOIData($conn, $poiType, $bounds) {
-    // Map POI types to OSM tags (synchronized with fetch_pois.php)
+    // Mapeia tipos de POI para tags OSM (sincronizado com fetch_pois.php)
     $osmTagMapping = [
-        // === Health ===
+        // === Saúde ===
         'hospitals' => "amenity = 'hospital'",
         'health_centers' => "amenity IN ('clinic', 'doctors')",
         'pharmacies' => "amenity = 'pharmacy'",
         'dentists' => "amenity = 'dentist'",
         
-        // === Education ===
+        // === Educação ===
         'schools' => "amenity = 'school'",
         'universities' => "amenity = 'university'",
         'kindergartens' => "amenity = 'kindergarten'",
         'libraries' => "amenity = 'library'",
         
-        // === Commercial & Services ===
+        // === Comércio e Serviços ===
         'supermarkets' => "shop = 'supermarket' OR shop = 'convenience' OR shop = 'grocery'",
         'malls' => "shop = 'mall' OR amenity = 'marketplace'",
         'restaurants' => "amenity IN ('restaurant', 'cafe', 'bar', 'fast_food')",
         'atms' => "amenity = 'atm' OR amenity = 'bank'",
         
-        // === Safety ===
+        // === Segurança ===
         'police_stations' => "amenity = 'police'",
         'fire_stations' => "amenity = 'fire_station'",
         'civil_protection' => "office = 'government' OR amenity = 'rescue_station' OR amenity = 'ambulance_station' OR amenity = 'emergency_service'",
         
-        // === Public Administration ===
+        // === Administração Pública ===
         'parish_councils' => "office = 'government' AND admin_level = '9'",
         'city_halls' => "office = 'government' AND admin_level = '8'",
         'post_offices' => "amenity = 'post_office'",
         
-        // === Culture & Leisure ===
+        // === Cultura e Lazer ===
         'museums' => "tourism = 'museum' OR amenity = 'arts_centre'",
         'theaters' => "amenity = 'theatre'",
         'sports' => "leisure IN ('sports_centre', 'stadium', 'pitch', 'swimming_pool', 'fitness_centre', 'fitness_station')",
         'parks' => "leisure IN ('park', 'garden', 'playground')",
         
-        // === Legacy support for old POI types ===
+        // === Suporte legado para tipos de POI antigos ===
         'hospital' => "amenity = 'hospital'",
         'clinic' => "amenity IN ('clinic', 'doctors')",
         'pharmacy' => "amenity = 'pharmacy'",
@@ -249,7 +249,7 @@ function getPOIData($conn, $poiType, $bounds) {
         return $pois;
         
     } catch (Exception $e) {
-        error_log("Error fetching POI data for $poiType: " . $e->getMessage());
+        error_log("Erro ao obter dados de POI para $poiType: " . $e->getMessage());
         return [];
     }
 }
@@ -268,10 +268,10 @@ function calculateLocationScore($location, $requiredPOIs, $poiData, $maxDistance
         $pois = $poiData[$poiType] ?? [];
         $nearestDistance = findNearestDistance($location, $pois);
         
-        // Calculate accessibility score (0-25 points based on importance)
+        // Calcula a pontuação de acessibilidade (0-25 pontos com base na importância)
         $accessibilityScore = 0;
         if ($nearestDistance !== null && $nearestDistance <= $maxDistance) {
-            // Linear decay: closer = better score
+            // Decaimento linear: mais perto = melhor pontuação
             $distanceRatio = max(0, ($maxDistance - $nearestDistance) / $maxDistance);
             $accessibilityScore = $distanceRatio * $maxPOIScore;
         }
@@ -285,7 +285,7 @@ function calculateLocationScore($location, $requiredPOIs, $poiData, $maxDistance
         ];
     }
     
-    // Normalize to 0-100 scale
+    // Normaliza para uma escala de 0-100
     $normalizedScore = $maxTotalScore > 0 ? ($totalScore / $maxTotalScore) * 100 : 0;
     
     return [
@@ -328,19 +328,19 @@ function haversineDistance($lat1, $lng1, $lat2, $lng2) {
 }
 
 function findTopLocations($gridScores, $topCount, $requiredPOIs) {
-    // Sort by score descending
+    // Ordena por pontuação decrescente
     usort($gridScores, function($a, $b) {
         return $b['score'] <=> $a['score'];
     });
     
-    // Filter out zero scores and get top locations
+    // Filtra pontuações zero e obtém as principais localizações
     $validScores = array_filter($gridScores, function($point) {
         return $point['score'] > 0;
     });
     
     $topLocations = array_slice($validScores, 0, $topCount);
     
-    // Format for frontend
+    // Formata para o frontend
     return array_map(function($location) {
         return [
             'lat' => $location['lat'],

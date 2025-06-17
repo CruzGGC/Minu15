@@ -1,25 +1,25 @@
 <?php
 /**
- * Mock Data Provider
+ * Fornecedor de Dados Simulados
  * 
- * This file provides sample data for testing when the database is not available.
- * It contains functions to generate realistic mock data for POIs and statistics.
+ * Este ficheiro fornece dados de exemplo para testes quando a base de dados não está disponível.
+ * Contém funções para gerar dados simulados realistas para POIs e estatísticas.
  */
 
 /**
- * Generate mock POI data for a given type and location
+ * Gera dados de POI simulados para um dado tipo e localização
  * 
- * @param string $type The POI type (e.g., 'hospitals', 'schools')
- * @param float $lat Latitude of the center point
- * @param float $lng Longitude of the center point
- * @param float $radius Radius in meters
- * @return array Array of POI objects
+ * @param string $type O tipo de POI (ex: 'hospitals', 'schools')
+ * @param float $lat Latitude do ponto central
+ * @param float $lng Longitude do ponto central
+ * @param float $radius Raio em metros
+ * @return array Array de objetos POI
  */
 function generateMockPOIs($type, $lat, $lng, $radius) {
-    // Convert radius from meters to degrees (approximate)
-    $radiusDeg = $radius / 111000; // ~111km per degree at the equator
+    // Converte o raio de metros para graus (aproximado)
+    $radiusDeg = $radius / 111000; // ~111km por grau no equador
     
-    // Define count ranges for different POI types
+    // Define os intervalos de contagem para diferentes tipos de POI
     $countRanges = [
         'hospitals' => [1, 3],
         'health_centers' => [2, 5],
@@ -50,13 +50,13 @@ function generateMockPOIs($type, $lat, $lng, $radius) {
         'default' => [1, 5]
     ];
     
-    // Get the count range for this POI type
+    // Obtém o intervalo de contagem para este tipo de POI
     $range = isset($countRanges[$type]) ? $countRanges[$type] : $countRanges['default'];
     
-    // Generate a random count within the range
+    // Gera uma contagem aleatória dentro do intervalo
     $count = rand($range[0], $range[1]);
     
-    // Define name prefixes for different POI types
+    // Define prefixos de nome para diferentes tipos de POI
     $namePrefixes = [
         'hospitals' => ['Hospital ', 'Centro Hospitalar ', 'Hospital Privado '],
         'health_centers' => ['Centro de Saúde ', 'Clínica ', 'Consultório Médico '],
@@ -87,20 +87,20 @@ function generateMockPOIs($type, $lat, $lng, $radius) {
         'default' => ['Local ', 'Ponto de Interesse ']
     ];
     
-    // Get the name prefixes for this POI type
+    // Obtém os prefixos de nome para este tipo de POI
     $prefixes = isset($namePrefixes[$type]) ? $namePrefixes[$type] : $namePrefixes['default'];
     
-    // Generate POIs
+    // Gera POIs
     $pois = [];
     for ($i = 0; $i < $count; $i++) {
-        // Generate a random position within the radius
+        // Gera uma posição aleatória dentro do raio
         $angle = rand(0, 360) * M_PI / 180;
-        $distance = sqrt(rand(0, 100) / 100) * $radiusDeg; // Square root for more realistic distribution
+        $distance = sqrt(rand(0, 100) / 100) * $radiusDeg; // Raiz quadrada para distribuição mais realista
         
         $poiLat = $lat + $distance * cos($angle);
         $poiLng = $lng + $distance * sin($angle);
         
-        // Generate a name
+        // Gera um nome
         $prefix = $prefixes[array_rand($prefixes)];
         $suffix = getRandomPortugueseName();
         
@@ -117,22 +117,22 @@ function generateMockPOIs($type, $lat, $lng, $radius) {
 }
 
 /**
- * Generate mock statistics data for an area
+ * Gera dados de estatísticas simulados para uma área
  * 
- * @param float $lat Latitude of the center point
- * @param float $lng Longitude of the center point
- * @param float $radius Radius in meters
- * @return array Statistics data
+ * @param float $lat Latitude do ponto central
+ * @param float $lng Longitude do ponto central
+ * @param float $radius Raio em metros
+ * @return array Dados de estatísticas
  */
 function generateMockStatistics($lat, $lng, $radius) {
-    // Calculate area in square kilometers
+    // Calcula a área em quilómetros quadrados
     $areaKm2 = M_PI * pow($radius / 1000, 2);
     
-    // Generate population based on area (assuming urban density)
-    $populationDensity = rand(1000, 5000); // people per km²
+    // Gera população com base na área (assumindo densidade urbana)
+    $populationDensity = rand(1000, 5000); // pessoas por km²
     $populationEstimate = round($areaKm2 * $populationDensity);
     
-    // Base statistics
+    // Estatísticas base
     $stats = [
         'area_km2' => round($areaKm2, 2),
         'population_estimate' => $populationEstimate,
@@ -141,7 +141,7 @@ function generateMockStatistics($lat, $lng, $radius) {
         'is_mock' => true
     ];
     
-    // Add counts for different POI types
+    // Adiciona contagens para diferentes tipos de POI
     $poiTypes = [
         'hospitals', 'health_centers', 'pharmacies', 'dentists',
         'schools', 'universities', 'kindergartens', 'libraries',
@@ -161,9 +161,9 @@ function generateMockStatistics($lat, $lng, $radius) {
 }
 
 /**
- * Get a random Portuguese name
+ * Obtém um nome português aleatório
  * 
- * @return string A random Portuguese name
+ * @return string Um nome português aleatório
  */
 function getRandomPortugueseName() {
     $names = [
@@ -183,9 +183,9 @@ function getRandomPortugueseName() {
 }
 
 /**
- * Get a random Portuguese parish name
+ * Obtém um nome de freguesia portuguesa aleatório
  * 
- * @return string A random Portuguese parish name
+ * @return string Um nome de freguesia portuguesa aleatório
  */
 function getRandomPortugueseParish() {
     $parishes = [
@@ -200,9 +200,9 @@ function getRandomPortugueseParish() {
 }
 
 /**
- * Get a random Portuguese municipality name
+ * Obtém um nome de município português aleatório
  * 
- * @return string A random Portuguese municipality name
+ * @return string Um nome de município português aleatório
  */
 function getRandomPortugueseMunicipality() {
     $municipalities = [

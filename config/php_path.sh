@@ -1,10 +1,10 @@
 #!/bin/bash
-# Configuration file for PHP path in WSL environment
-# This allows us to use a consistent PHP path across all scripts
+# Ficheiro de configuração para o caminho do PHP no ambiente WSL
+# Isto permite-nos usar um caminho PHP consistente em todos os scripts
 
-# Function to find PHP executable
+# Função para encontrar o executável PHP
 find_php_path() {
-    # Try common PHP locations in WSL
+    # Tentar localizações comuns do PHP no WSL
     local php_locations=(
         "/usr/bin/php"
         "/usr/local/bin/php"
@@ -12,14 +12,14 @@ find_php_path() {
         "/opt/php/bin/php"
     )
     
-    # Check Windows PHP if we're in WSL
+    # Verificar PHP do Windows se estivermos no WSL
     if grep -q Microsoft /proc/version; then
-        # Add potential Windows PHP paths
+        # Adicionar potenciais caminhos PHP do Windows
         if [ -n "$WINDIR" ]; then
             php_locations+=("$WINDIR/php/php.exe")
         fi
         
-        # Try to detect Windows Program Files PHP
+        # Tentar detetar PHP do Windows Program Files
         if [ -d "/mnt/c/Program Files/PHP" ]; then
             for dir in /mnt/c/Program\ Files/PHP/*; do
                 if [ -f "$dir/php.exe" ]; then
@@ -28,13 +28,13 @@ find_php_path() {
             done
         fi
         
-        # Try XAMPP PHP location
+        # Tentar localização do PHP do XAMPP
         if [ -f "/mnt/c/xampp/php/php.exe" ]; then
             php_locations+=("/mnt/c/xampp/php/php.exe")
         fi
     fi
     
-    # Find the first working PHP
+    # Encontrar o primeiro PHP funcional
     for php_path in "${php_locations[@]}"; do
         if [ -f "$php_path" ]; then
             echo "$php_path"
@@ -42,27 +42,27 @@ find_php_path() {
         fi
     done
     
-    # If no PHP found, return default and warn user
+    # Se nenhum PHP for encontrado, retornar o padrão e avisar o utilizador
     echo "/usr/bin/php"
     return 1
 }
 
-# Get PHP path
+# Obter o caminho do PHP
 PHP_PATH=$(find_php_path)
 
-# Check if PHP exists at the detected path
+# Verificar se o PHP existe no caminho detetado
 if [ ! -f "$PHP_PATH" ]; then
-    echo "Warning: PHP not found at $PHP_PATH"
-    echo "Please install PHP or update this script with the correct path"
-    echo "For WSL, you may need to: sudo apt update && sudo apt install -y php php-cli"
+    echo "Aviso: PHP não encontrado em $PHP_PATH"
+    echo "Por favor, instale o PHP ou atualize este script com o caminho correto"
+    echo "Para WSL, poderá precisar de: sudo apt update && sudo apt install -y php php-cli"
     
-    # If called with parameters, exit with error
+    # Se chamado com parâmetros, sair com erro
     if [ -n "$1" ]; then
         exit 1
     fi
 fi
 
-# If a parameter is passed, execute the PHP script
+# Se um parâmetro for passado, executar o script PHP
 if [ -n "$1" ]; then
     "$PHP_PATH" "$@"
 else

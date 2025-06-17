@@ -1,126 +1,126 @@
 <?php
 /**
- * Fetch Area Statistics Endpoint
- * Calculates statistics for an area defined by an isochrone polygon or radius
- * Now includes both point and polygon POIs for accurate counting
- * Added integration with GeoAPI.pt for freguesia identification and demographic data
+ * Endpoint para Obter Estatísticas de Área
+ * Calcula estatísticas para uma área definida por um polígono isócrono ou raio
+ * Agora inclui POIs de pontos e polígonos para contagem precisa
+ * Adicionada integração com GeoAPI.pt para identificação de freguesias e dados demográficos
  * 
  * @version 2.3
  */
 
-// Enable error reporting for debugging
+// Ativa o registo de erros para depuração
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
 ini_set('error_log', '../logs/db_errors.log');
 
-// Include database configuration
+// Inclui a configuração da base de dados
 require_once '../config/db_config.php';
 
-// Include mock data provider
+// Inclui o fornecedor de dados simulados
 require_once 'mock_data.php';
 
-// Set headers for JSON response
+// Define os cabeçalhos para a resposta JSON
 header('Content-Type: application/json');
 
 try {
-    // Check request method
+    // Verifica o método do pedido
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         echo json_encode([
             'success' => false,
-            'message' => 'Only POST method is allowed'
+            'message' => 'Apenas o método POST é permitido'
         ]);
         exit;
     }
 
-    // Check if all required parameters are provided
+    // Verifica se todos os parâmetros obrigatórios são fornecidos
     if (!isset($_POST['lat']) || !isset($_POST['lng'])) {
         echo json_encode([
             'success' => false,
-            'message' => 'Missing required parameters: lat, lng'
+            'message' => 'Parâmetros obrigatórios em falta: lat, lng'
         ]);
         exit;
     }
 
-    // Get parameters from request
+    // Obtém os parâmetros do pedido
     $lat = floatval($_POST['lat']);
     $lng = floatval($_POST['lng']);
 
-    // Get isochrone JSON (preferred for precise area calculation)
+    // Obtém o JSON da isócrona (preferencial para cálculo preciso de área)
     $isochroneJson = isset($_POST['isochrone']) ? $_POST['isochrone'] : null;
 
-    // If no isochrone is provided but radius is, use radius for fallback calculation
+    // Se nenhuma isócrona for fornecida mas o raio for, usa o raio para cálculo de fallback
     $radius = isset($_POST['radius']) ? floatval($_POST['radius']) : 0;
 
-    // Get selected POI types for statistics if provided
+    // Obtém os tipos de POI selecionados para estatísticas, se fornecidos
     $selectedPOIs = isset($_POST['selected_pois']) ? json_decode($_POST['selected_pois'], true) : null;
 
-    // Validate parameters
+    // Valida os parâmetros
     if (!is_numeric($lat) || !is_numeric($lng) || $lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
         echo json_encode([
             'success' => false,
-            'message' => 'Invalid latitude or longitude'
+            'message' => 'Latitude ou longitude inválida'
         ]);
         exit;
     }
 
-    // If no isochrone and no radius, cannot proceed
+    // Se não houver isócrona e nem raio, não é possível continuar
     if (empty($isochroneJson) && $radius <= 0) {
         echo json_encode([
             'success' => false,
-            'message' => 'Either isochrone GeoJSON or radius is required'
+            'message' => 'É necessário o GeoJSON da isócrona ou o raio'
         ]);
         exit;
     }
 
-    // Debug information array
+    // Array de informações de depuração
     $debug_info = [];
 
-    // Variables to store the geometry and area information
+    // Variáveis para armazenar as informações de geometria e área
     $areaKm2 = null;
     $spatialCondition = "";
     $bufferGeometry = null;
 
-    // Try to get database connection
+    // Tenta obter a ligação à base de dados
     try {
         $conn = getDbConnection();
         $debug_info['db_connection'] = 'success';
     } catch (Exception $e) {
-        // Return mock statistics if database connection fails
+        // Devolve estatísticas simuladas se a ligação à base de dados falhar
         $mockStats = generateMockStatistics($lat, $lng, $radius);
         
         echo json_encode([
             'success' => true,
             'stats' => $mockStats,
-            'message' => 'Using mock statistics (database connection failed): ' . $e->getMessage(),
+            'message' => 'A usar estatísticas simuladas (a ligação à base de dados falhou): ' . $e->getMessage(),
             'debug' => ['error' => $e->getMessage()]
         ]);
         exit;
     }
 
-    // If we have isochrone data, use that for precise area calculation
+    // Se tivermos dados de isócrona, usa-os para cálculo preciso de área
     if ($isochroneJson) {
         try {
-            // Parse the GeoJSON
+            // Analisa o GeoJSON
             $isochrone = json_decode($isochroneJson, true);
             $debug_info['isochrone_parsed'] = true;
             
-            // Extract the first feature's geometry and properties
+            // Extrai a geometria e propriedades da primeira feature
             if (isset($isochrone['features']) && isset($isochrone['features'][0])) {
-                // Get area directly from the isochrone properties if available
+                // Obtém a área diretamente das propriedades da isócrona, se disponível
                 if (isset($isochrone['features'][0]['properties']) && 
                     isset($isochrone['features'][0]['properties']['area'])) {
                     $areaKm2 = floatval($isochrone['features'][0]['properties']['area']);
                     $debug_info['area_from_isochrone'] = $areaKm2;
                 }
                 
-                // Get the geometry
+                // Obtém a geometria
                 if (isset($isochrone['features'][0]['geometry'])) {
                     $geometry = json_encode($isochrone['features'][0]['geometry']);
                     $bufferGeometry = $geometry;
                     $debug_info['geometry_extracted'] = true;
                     
-                    // Create spatial condition for POI counting
+                    // Cria condição espacial para contagem de POIs
                     $spatialCondition = "ST_Contains(
                         ST_Transform(
                             ST_SetSRID(
@@ -133,7 +133,7 @@ try {
                     )";
                     $debug_info['using_isochrone'] = true;
                     
-                    // If we didn't get the area from properties, calculate it
+                    // Se não obtivemos a área das propriedades, calcula-a
                     if ($areaKm2 === null) {
                         $areaQuery = "
                             SELECT 
@@ -156,21 +156,21 @@ try {
                             }
                         } catch (Exception $e) {
                             $debug_info['area_calculation_error'] = $e->getMessage();
-                            // Continue with fallback area calculation
+                            // Continua com cálculo de área de fallback
                             $areaKm2 = pi() * pow($radius / 1000, 2);
                             $debug_info['area_fallback'] = $areaKm2;
                         }
                     }
                 } else {
-                    throw new Exception("Missing geometry in isochrone GeoJSON");
+                    throw new Exception("Geometria em falta no GeoJSON da isócrona");
                 }
             } else {
-                throw new Exception("Invalid isochrone GeoJSON structure");
+                throw new Exception("Estrutura GeoJSON da isócrona inválida");
             }
         } catch (Exception $e) {
             $debug_info['isochrone_error'] = $e->getMessage();
             
-            // If there's an error with the isochrone, fall back to radius buffer
+            // Se houver um erro com a isócrona, volta para o buffer do raio
             if ($radius > 0) {
                 $debug_info['using_fallback_buffer'] = true;
                 useBufferFallback($conn, $lat, $lng, $radius, $spatialCondition, $bufferGeometry, $areaKm2, $debug_info);
@@ -178,69 +178,77 @@ try {
                 echo json_encode([
                     'success' => true,
                     'stats' => createFallbackStats($lat, $lng, $radius),
-                    'message' => 'Using fallback statistics (isochrone processing failed)',
+                    'message' => 'A usar estatísticas de fallback (o processamento da isócrona falhou)',
                     'debug' => $debug_info
                 ]);
                 exit;
             }
         }
     } else if ($radius > 0) {
-        // If no isochrone is provided but we have radius, use a simple buffer
+        // Se nenhuma isócrona for fornecida mas tivermos raio, usa um buffer simples
         $debug_info['using_buffer'] = true;
         useBufferFallback($conn, $lat, $lng, $radius, $spatialCondition, $bufferGeometry, $areaKm2, $debug_info);
     } else {
-        // This shouldn't happen due to earlier validation, but just in case
+        // Isso não deveria acontecer devido à validação anterior, mas por precaução
         echo json_encode([
             'success' => false,
-            'message' => 'No spatial filtering method available'
+            'message' => 'Nenhum método de filtragem espacial disponível'
         ]);
         exit;
     }
 
-    // Define all POI categories to count
+    // Define todas as categorias de POI a contar
     $poiCategories = [
-        // === Health ===
+        // === Saúde ===
         'hospitals' => "amenity = 'hospital'",
         'health_centers' => "amenity IN ('clinic', 'doctors')",
         'pharmacies' => "amenity = 'pharmacy'",
         'dentists' => "amenity = 'dentist'",
         
-        // === Education ===
+        // === Educação ===
         'schools' => "amenity = 'school'",
         'universities' => "amenity = 'university'",
         'kindergartens' => "amenity = 'kindergarten'",
         'libraries' => "amenity = 'library'",
         
-        // === Commerce & Services ===
+        // === Comércio e Serviços ===
         'supermarkets' => "shop IN ('supermarket', 'grocery', 'convenience')",
         'malls' => "shop = 'mall' OR amenity = 'marketplace'",
         'restaurants' => "amenity IN ('restaurant', 'cafe', 'fast_food')",
         'atms' => "amenity = 'atm' OR amenity = 'bank'",
         
-        // === Transport ===
+        // === Transporte ===
         'bus_stops' => "highway = 'bus_stop'",
         'train_stations' => "railway = 'station' OR railway = 'halt'",
         'subway_stations' => "railway = 'subway_entrance' OR railway = 'station' AND station = 'subway'",
         'parking' => "amenity = 'parking'",
         
-        // === Safety ===
+        // === Segurança ===
         'police' => "amenity = 'police'",
         'police_stations' => "amenity = 'police'",
         'fire_stations' => "amenity = 'fire_station'",
         'civil_protection' => "office = 'government' OR amenity IN ('public_building', 'social_facility', 'rescue_station', 'ambulance_station', 'emergency_service')",
         
-        // === Public Administration ===
-        'city_halls' => "amenity = 'townhall' OR (office = 'government' AND admin_level IN ('8', '9'))",
-        'post_offices' => "amenity = 'post_office'",
+        // === Administração Pública ===
+        'city_halls' => [
+            'condition' => "amenity = 'townhall' OR (office = 'government' AND admin_level IN ('8', '9'))",
+            'icon' => 'landmark',
+            'category' => 'administration'
+        ],
+        'post_offices' => [
+            'condition' => "amenity = 'post_office'",
+            'icon' => 'envelope',
+            'category' => 'administration'
+        ],
         
-        // === Culture & Leisure ===
+        // === Cultura e Lazer ===
         'museums' => "tourism = 'museum' OR amenity = 'arts_centre'",
         'theaters' => "amenity = 'theatre'",
         'sports' => "leisure IN ('sports_centre', 'stadium', 'pitch', 'swimming_pool', 'fitness_centre', 'fitness_station')",
         'parks' => "leisure IN ('park', 'garden', 'playground')"
     ];
 
-    // Filter to only count selected POI types if specified
+    // Filtra para contar apenas os tipos de POI selecionados, se especificado
     if ($selectedPOIs !== null && is_array($selectedPOIs)) {
         $filteredCategories = [];
         foreach ($selectedPOIs as $poiType) {
@@ -249,22 +257,22 @@ try {
             }
         }
         
-        // If there are valid selected types, use those instead
+        // Se houver tipos selecionados válidos, usa-os em vez disso
         if (!empty($filteredCategories)) {
             $poiCategories = $filteredCategories;
             $debug_info['using_filtered_pois'] = true;
         }
     }
 
-    // Initialize statistics array with area information
+    // Inicializa o array de estatísticas com informações de área
     $statistics = [
         'area_km2' => (float) $areaKm2
     ];
 
-    // Count each POI category within the defined area - combine points and polygons
+    // Conta cada categoria de POI dentro da área definida - combina pontos e polígonos
     foreach ($poiCategories as $category => $condition) {
         try {
-            // Query that counts both points and polygons
+            // Consulta que conta pontos e polígonos
             $countQuery = "
                 SELECT 
                     (
@@ -297,7 +305,7 @@ try {
         }
     }
 
-    // Count buildings for population estimation
+    // Conta edifícios para estimativa de população
     try {
         $buildingQuery = "
             SELECT 
@@ -316,7 +324,7 @@ try {
 
             if ($buildingResult && $buildingRow = pg_fetch_assoc($buildingResult)) {
                 $buildingCount = (int) $buildingRow['count'];
-                // Rough estimate of population: ~2.5 people per building
+                // Estimativa aproximada de população: ~2.5 pessoas por edifício
                 $statistics['population_estimate'] = round($buildingCount * 2.5);
                 $debug_info['building_count'] = $buildingCount;
             }
@@ -327,7 +335,7 @@ try {
         $debug_info['building_query_error'] = $e->getMessage();
     }
 
-    // Get administrative area information (parish and municipality)
+    // Obtém informações de área administrativa (freguesia e município)
     try {
         $adminQuery = "
             SELECT 
@@ -348,12 +356,12 @@ try {
             $adminResult = executeQuery($conn, $adminQuery);
 
             if (!$adminResult) {
-                $statistics['parish'] = 'Unknown';
-                $statistics['municipality'] = 'Unknown';
+                $statistics['parish'] = 'Desconhecido';
+                $statistics['municipality'] = 'Desconhecido';
                 $debug_info['admin_error'] = pg_last_error($conn);
             } else {
-                $statistics['parish'] = 'Unknown';
-                $statistics['municipality'] = 'Unknown';
+                $statistics['parish'] = 'Desconhecido';
+                $statistics['municipality'] = 'Desconhecido';
                 
                 while ($adminRow = pg_fetch_assoc($adminResult)) {
                     if ($adminRow['admin_level'] === '10' || $adminRow['admin_level'] === '9') {
@@ -364,27 +372,27 @@ try {
                 }
             }
         } catch (Exception $e) {
-            $statistics['parish'] = 'Unknown';
-            $statistics['municipality'] = 'Unknown';
+            $statistics['parish'] = 'Desconhecido';
+            $statistics['municipality'] = 'Desconhecido';
             $debug_info['admin_query_error'] = $e->getMessage();
         }
     } catch (Exception $e) {
-        $statistics['parish'] = 'Unknown';
-        $statistics['municipality'] = 'Unknown';
+        $statistics['parish'] = 'Desconhecido';
+        $statistics['municipality'] = 'Desconhecido';
         $debug_info['admin_error'] = $e->getMessage();
     }
 
-    // Get freguesia information from GeoAPI.pt
+    // Obtém informações da freguesia de GeoAPI.pt
     try {
         $geoApiData = fetchFreguesiaDemographics($lat, $lng);
 
-        // Add freguesia information to statistics if available
+        // Adiciona informações da freguesia às estatísticas, se disponível
         if ($geoApiData !== null) {
-            $statistics['freguesia'] = $geoApiData['freguesia'] ?? 'Unknown';
-            $statistics['concelho'] = $geoApiData['concelho'] ?? 'Unknown';
-            $statistics['distrito'] = $geoApiData['distrito'] ?? 'Unknown';
+            $statistics['freguesia'] = $geoApiData['freguesia'] ?? 'Desconhecido';
+            $statistics['concelho'] = $geoApiData['concelho'] ?? 'Desconhecido';
+            $statistics['distrito'] = $geoApiData['distrito'] ?? 'Desconhecido';
             
-            // Add demographic information if available
+            // Adiciona informações demográficas, se disponível
             if (isset($geoApiData['demographics'])) {
                 $statistics['demographics'] = $geoApiData['demographics'];
             }
@@ -393,31 +401,31 @@ try {
         $debug_info['geoapi_error'] = $e->getMessage();
     }
 
-    // Return the statistics
+    // Retorna as estatísticas
     echo json_encode([
         'success' => true,
         'stats' => $statistics,
         'debug' => $debug_info
     ]);
 
-    // Close the database connection
+    // Fecha a ligação à base de dados
     pg_close($conn);
 
 } catch (Exception $e) {
-    // Catch any uncaught exceptions
-    error_log('Uncaught exception in fetch_statistics.php: ' . $e->getMessage());
+    // Captura quaisquer exceções não tratadas
+    error_log('Exceção não tratada em fetch_statistics.php: ' . $e->getMessage());
     echo json_encode([
         'success' => false,
-        'message' => 'An unexpected error occurred: ' . $e->getMessage()
+        'message' => 'Ocorreu um erro inesperado: ' . $e->getMessage()
     ]);
 }
 
 /**
- * Fallback to a simple buffer if isochrone is not available
+ * Fallback para um buffer simples se a isócrona não estiver disponível
  */
 function useBufferFallback($conn, $lat, $lng, $radius, &$spatialCondition, &$bufferGeometry, &$areaKm2, &$debug_info) {
     try {
-        // Create a buffer polygon around the point
+        // Cria um polígono de buffer em torno do ponto
         $bufferQuery = "
             SELECT 
                 ST_AsGeoJSON(
@@ -434,19 +442,19 @@ function useBufferFallback($conn, $lat, $lng, $radius, &$spatialCondition, &$buf
                 ) / 1000000 as area_km2
         ";
 
-        // Execute buffer query
+        // Executa a consulta do buffer
         try {
             $bufferResult = executeQuery($conn, $bufferQuery);
 
             if (!$bufferResult) {
-                throw new Exception('Buffer generation failed: ' . pg_last_error($conn));
+                throw new Exception('Geração do buffer falhou: ' . pg_last_error($conn));
             }
 
             $bufferData = pg_fetch_assoc($bufferResult);
             $bufferGeometry = $bufferData['buffer_geom'];
             $areaKm2 = $bufferData['area_km2'];
             
-            // Define spatial condition using buffer
+            // Define a condição espacial usando o buffer
             $spatialCondition = "ST_DWithin(
                 way, 
                 ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857), 
@@ -455,17 +463,17 @@ function useBufferFallback($conn, $lat, $lng, $radius, &$spatialCondition, &$buf
             
             $debug_info['buffer_area'] = $areaKm2;
         } catch (Exception $e) {
-            // If query execution fails, use a simple fallback
+            // Se a execução da consulta falhar, usa um fallback simples
             $debug_info['buffer_query_error'] = $e->getMessage();
             
-            // Simple fallback for spatial condition
+            // Fallback simples para a condição espacial
             $spatialCondition = "ST_DWithin(
                 way, 
                 ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857), 
                 $radius
             )";
             
-            // Simple area calculation
+            // Cálculo de área simples
             $areaKm2 = pi() * pow($radius / 1000, 2);
             $debug_info['buffer_area_fallback'] = $areaKm2;
         }
@@ -475,46 +483,46 @@ function useBufferFallback($conn, $lat, $lng, $radius, &$spatialCondition, &$buf
 }
 
 /**
- * Fetch freguesia information and demographics based on coordinates
+ * Obtém informações da freguesia e dados demográficos com base nas coordenadas
  */
 function fetchFreguesiaDemographics($lat, $lng) {
     try {
-        // Create the endpoint URL for reverse geocoding
+        // Cria o URL do endpoint para geocodificação inversa
         $endpoint = "gps/{$lat},{$lng}";
         
-        // Use our proxy with caching
+        // Usa o nosso proxy com cache
         $proxyUrl = "../includes/geoapi_proxy.php?endpoint=" . urlencode($endpoint);
         
-        // Initialize cURL
+        // Inicializa cURL
         $ch = curl_init();
         
-        // Set cURL options
+        // Define as opções cURL
         curl_setopt($ch, CURLOPT_URL, $proxyUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         
-        // Execute the request
+        // Executa o pedido
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         
-        // Check for errors
+        // Verifica erros
         if (curl_errno($ch) || $httpCode !== 200) {
             curl_close($ch);
             return null;
         }
         
-        // Close cURL
+        // Fecha cURL
         curl_close($ch);
         
-        // Parse the response
+        // Analisa a resposta
         $data = json_decode($response, true);
         
         if (!$data || !isset($data['freguesia'])) {
             return null;
         }
         
-        // Get the freguesia data
+        // Obtém os dados da freguesia
         $freguesia = $data['freguesia'];
         $freguesiaCode = $freguesia['codigo'] ?? null;
         $municipioName = $data['municipio']['nome'] ?? null;
@@ -523,7 +531,7 @@ function fetchFreguesiaDemographics($lat, $lng) {
             return null;
         }
         
-        // Fetch detailed demographic data for the freguesia
+        // Obtém dados demográficos detalhados para a freguesia
         $demographics = fetchDemographicData($freguesiaCode, $municipioName);
         
         if (!$demographics) {
@@ -542,45 +550,45 @@ function fetchFreguesiaDemographics($lat, $lng) {
             'demographics' => $demographics
         ];
     } catch (Exception $e) {
-        error_log('Error in fetchFreguesiaDemographics: ' . $e->getMessage());
+        error_log('Erro em fetchFreguesiaDemographics: ' . $e->getMessage());
         return null;
     }
 }
 
 /**
- * Fetch demographic data for a freguesia by code
+ * Obtém dados demográficos para uma freguesia por código
  */
 function fetchDemographicData($freguesiaCode, $municipioName) {
     try {
-        // Create the endpoint URL for freguesia demographics
+        // Cria o URL do endpoint para dados demográficos da freguesia
         $endpoint = "municipio/" . urlencode($municipioName) . "/freguesia/" . urlencode($freguesiaCode) . "/censos";
         
-        // Use our proxy with caching
+        // Usa o nosso proxy com cache
         $proxyUrl = "../includes/geoapi_proxy.php?endpoint=" . urlencode($endpoint);
         
-        // Initialize cURL
+        // Inicializa cURL
         $ch = curl_init();
         
-        // Set cURL options
+        // Define as opções cURL
         curl_setopt($ch, CURLOPT_URL, $proxyUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         
-        // Execute the request
+        // Executa o pedido
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         
-        // Check for errors
+        // Verifica erros
         if (curl_errno($ch) || $httpCode !== 200) {
             curl_close($ch);
             return null;
         }
         
-        // Close cURL
+        // Fecha cURL
         curl_close($ch);
         
-        // Parse the response
+        // Analisa a resposta
         $data = json_decode($response, true);
         
         if (!$data) {
@@ -589,21 +597,26 @@ function fetchDemographicData($freguesiaCode, $municipioName) {
         
         return $data;
     } catch (Exception $e) {
-        error_log('Error in fetchDemographicData: ' . $e->getMessage());
+        error_log('Erro em fetchDemographicData: ' . $e->getMessage());
         return null;
     }
 }
 
-// Create fallback statistics when database queries fail
+// Cria estatísticas de fallback quando as consultas à base de dados falham
 function createFallbackStats($lat, $lng, $radius) {
-    // Calculate approximate area based on radius
+    // Calcula a área aproximada com base no raio
     $areaKm2 = $radius > 0 ? pi() * pow($radius / 1000, 2) : 1.0;
     
+    // Gera população com base na área (assumindo densidade urbana)
+    $populationDensity = rand(1000, 5000); // pessoas por km²
+    $populationEstimate = round($areaKm2 * $populationDensity);
+    
+    // Estatísticas base
     return [
-        'area_km2' => $areaKm2,
-        'parish' => 'Unknown',
-        'municipality' => 'Unknown',
-        'population_estimate' => 0,
+        'area_km2' => round($areaKm2, 2),
+        'population_estimate' => $populationEstimate,
+        'parish' => 'Desconhecido',
+        'municipality' => 'Desconhecido',
         'is_fallback' => true
     ];
 }

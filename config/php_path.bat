@@ -1,13 +1,13 @@
 @echo off
-:: Configuration file for PHP path
-:: This allows us to use a consistent PHP path across all scripts
+:: Ficheiro de configuração para o caminho do PHP
+:: Isto permite-nos usar um caminho PHP consistente em todos os scripts
 
-:: Set path to PHP executable - update this to your PHP installation path
+:: Definir o caminho para o executável PHP - atualize isto para o seu caminho de instalação do PHP
 set PHP_PATH=C:\xampp\php\php.exe
 
-:: If a parameter is passed, execute the PHP script
+:: Se um parâmetro for passado, executar o script PHP
 if not "%~1"=="" (
     "%PHP_PATH%" %*
 ) else (
-    echo PHP path is set to: %PHP_PATH%
+    echo O caminho do PHP está definido para: %PHP_PATH%
 )

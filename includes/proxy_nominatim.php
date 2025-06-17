@@ -1,95 +1,95 @@
 <?php
 /**
- * Nominatim API Proxy
- * Handles requests to Nominatim geocoding API to avoid CORS issues
- * Used for autocompletion feature
+ * Proxy da API Nominatim
+ * Lida com pedidos para a API de geocodificação Nominatim para evitar problemas de CORS
+ * Usado para a funcionalidade de autocompletar
  */
 
-// Prevent any output before JSON response
+// Impede qualquer saída antes da resposta JSON
 error_reporting(0);
 ini_set('display_errors', 0);
 
-// Set headers for JSON response
+// Define os cabeçalhos para a resposta JSON
 header('Content-Type: application/json');
 
-// Add a delay to avoid overloading Nominatim API
-usleep(300000); // 300ms delay
+// Adiciona um atraso para evitar sobrecarregar a API Nominatim
+usleep(300000); // Atraso de 300ms
 
-// Get the search term from the request
+// Obtém o termo de pesquisa do pedido
 $searchTerm = isset($_GET['term']) ? $_GET['term'] : null;
 
-// Check if search term is provided
+// Verifica se o termo de pesquisa foi fornecido
 if (empty($searchTerm)) {
     echo json_encode([
         'success' => false,
-        'message' => 'Missing required parameter: term'
+        'message' => 'Parâmetro obrigatório em falta: term'
     ]);
     exit;
 }
 
-// Ensure search term focuses on Portugal and is properly encoded
+// Garante que o termo de pesquisa se foca em Portugal e está devidamente codificado
 $encodedSearchTerm = urlencode($searchTerm . ', Portugal');
 
-// Construct the URL for the Nominatim API request
+// Constrói o URL para o pedido da API Nominatim
 $url = "https://nominatim.openstreetmap.org/search?format=json&q={$encodedSearchTerm}&limit=10&countrycodes=pt";
 
-// Initialize cURL session
+// Inicializa a sessão cURL
 $ch = curl_init($url);
 
-// Set cURL options
+// Define as opções cURL
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Accept: application/json',
-    'User-Agent: Minu15/1.0' // Identify your application as per Nominatim usage policy
+    'User-Agent: Minu15/1.0' // Identifica a tua aplicação de acordo com a política de utilização do Nominatim
 ]);
 
-// Execute the request
+// Executa o pedido
 $response = curl_exec($ch);
 $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-// Check for cURL errors
+// Verifica erros cURL
 if ($response === false) {
     echo json_encode([
         'success' => false,
-        'message' => 'Failed to connect to the Nominatim API server: ' . curl_error($ch)
+        'message' => 'Falha ao conectar ao servidor da API Nominatim: ' . curl_error($ch)
     ]);
     curl_close($ch);
     exit;
 }
 
-// Close cURL session
+// Fecha a sessão cURL
 curl_close($ch);
 
-// Check if we got a valid response
+// Verifica se obtivemos uma resposta válida
 if ($statusCode != 200) {
     echo json_encode([
         'success' => false,
-        'message' => 'API request failed with status code: ' . $statusCode
+        'message' => 'O pedido à API falhou com o código de estado: ' . $statusCode
     ]);
     exit;
 }
 
-// Decode the JSON response
+// Descodifica a resposta JSON
 $results = json_decode($response, true);
 
-// Check if JSON decoding failed
+// Verifica se a descodificação JSON falhou
 if (json_last_error() !== JSON_ERROR_NONE) {
     echo json_encode([
         'success' => false,
-        'message' => 'Invalid JSON in API response: ' . json_last_error_msg()
+        'message' => 'JSON inválido na resposta da API: ' . json_last_error_msg()
     ]);
     exit;
 }
 
-// Format the results for jQuery UI Autocomplete
+// Formata os resultados para o Autocomplete do jQuery UI
 $formattedResults = [];
 foreach ($results as $place) {
-    // Skip results with no display name or coordinates
+    // Ignora resultados sem nome de exibição ou coordenadas
     if (empty($place['display_name']) || !isset($place['lat']) || !isset($place['lon'])) {
         continue;
     }
     
-    // Format the results for jQuery UI Autocomplete
+    // Formata os resultados para o Autocomplete do jQuery UI
     $formattedResults[] = [
         'label' => $place['display_name'],
         'value' => $place['display_name'],
@@ -100,6 +100,6 @@ foreach ($results as $place) {
     ];
 }
 
-// Return the formatted results
+// Retorna os resultados formatados
 echo json_encode($formattedResults);
 ?> 

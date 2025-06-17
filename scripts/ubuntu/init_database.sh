@@ -1,26 +1,26 @@
 #!/bin/bash
-echo "Initializing 15-Minute City Explorer Database (WSL-compatible version)..."
+echo "A inicializar a Base de Dados do 15-Minute City Explorer (versão compatível com WSL)..."
 
-# Path to PHP executable - using the configured PHP path
-PHP_PATH=$(bash "$(dirname "$0")/../../config/php_path.sh")
+# Caminho para o executável PHP - usando o caminho PHP configurado
+PHP_PATH=$(bash "$(dirname "$0")"/../../config/php_path.sh")
 
-# Check if PostgreSQL is running in WSL
+# Verificar se o PostgreSQL está a ser executado no WSL
 pg_isready -h localhost -p 5432 > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-    echo "PostgreSQL is not running. Trying to start PostgreSQL service..."
+    echo "PostgreSQL não está a ser executado. A tentar iniciar o serviço PostgreSQL..."
     sudo service postgresql start
     sleep 3
     
-    # Check again
+    # Verificar novamente
     pg_isready -h localhost -p 5432 > /dev/null 2>&1
     if [ $? -ne 0 ]; then
-        echo "Could not start PostgreSQL. Please start it manually."
+        echo "Não foi possível iniciar o PostgreSQL. Por favor, inicie-o manualmente."
         exit 1
     fi
 fi
 
-# Run the initialization script (from the common directory)
-bash "$(dirname "$0")/../../config/php_path.sh" "$(dirname "$0")/../common/init_database.php"
+# Executar o script de inicialização (do diretório comum)
+bash "$(dirname "$0")"/../../config/php_path.sh" "$(dirname "$0")"/../common/init_database.php"
 
 echo ""
-echo "Database initialization completed."
+echo "Inicialização da base de dados concluída."

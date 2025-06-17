@@ -1,39 +1,39 @@
 /**
- * Map Configuration
- * Contains tile provider URLs and attributions
+ * Configuração do Mapa
+ * Contém URLs de provedores de tiles e atribuições
  */
 
-// Tile providers
+// Provedores de tiles
 const MAP_TILE_PROVIDERS = {
-    // OpenStreetMap (default)
+    // OpenStreetMap (padrão)
     osm: {
         name: 'OSM',
         url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
     },
-    // Carto Positron (light theme)
+    // Carto Positron (tema claro)
     positron: {
         name: 'Carto Light',
         url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
         attribution: '&copy; <a href="https://carto.com/legal">Carto</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         maxZoom: 19
     },
-    // Carto Dark Matter (dark theme)
+    // Carto Dark Matter (tema escuro)
     dark_matter: {
         name: 'Carto Dark',
         url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
         attribution: '&copy; <a href="https://carto.com/legal">Carto</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         maxZoom: 19
     },
-    // OpenTopoMap (topographic)
+    // OpenTopoMap (topográfico)
     topo: {
         name: 'Topo',
         url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
         attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
         maxZoom: 17
     },
-    // ESRI World Imagery (satellite)
+    // ESRI World Imagery (satélite)
     satellite: {
         name: 'Satélite',
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -54,14 +54,14 @@ const MAP_TILE_PROVIDERS = {
         attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012',
         maxZoom: 19
     },
-    // NEW: ESRI WorldGrayCanvas - Useful for data visualization (replacing watercolor)
+    // NOVO: ESRI WorldGrayCanvas - Útil para visualização de dados (substituindo watercolor)
     esri_gray: {
         name: 'ESRI Cinza',
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
         attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
         maxZoom: 16
     },
-    // NEW: OpenStreetMap HOT - Humanitarian style, good for disaster response (replacing terrain)
+    // NOVO: OpenStreetMap HOT - Estilo humanitário, bom para resposta a desastres (substituindo terrain)
     osm_hot: {
         name: 'OSM HOT',
         url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
@@ -70,5 +70,5 @@ const MAP_TILE_PROVIDERS = {
     }
 };
 
-// Set default tile provider
+// Definir provedor de tiles padrão
 const DEFAULT_TILE_PROVIDER = 'positron';

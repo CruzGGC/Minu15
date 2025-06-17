@@ -1,14 +1,14 @@
 @echo off
-echo Setting up weekly scheduled task for Geofabrik data update...
+echo A configurar tarefa agendada semanalmente para atualização de dados Geofabrik...
 
-:: Path to PHP executable - update this to your PHP installation path
+:: Caminho para o executável PHP - atualize isto para o seu caminho de instalação do PHP
 set PHP_PATH="C:\xampp\php\php.exe"
-:: Path to the update script (corrected path to common directory)
+:: Caminho para o script de atualização (caminho corrigido para o diretório comum)
 set SCRIPT_PATH="%~dp0..\common\update_geofabrik_data.php"
 
-:: Create a scheduled task that runs weekly
+:: Criar uma tarefa agendada que é executada semanalmente
 schtasks /create /tn "15MinCity_GeofabrikUpdate" /tr "%PHP_PATH% %SCRIPT_PATH%" /sc weekly /d SUN /st 03:00 /ru SYSTEM
 
-echo Task has been scheduled to run every Sunday at 3:00 AM.
-echo You can modify this schedule in Windows Task Scheduler.
+echo A tarefa foi agendada para ser executada todos os Domingos às 3:00 da manhã.
+echo Pode modificar este agendamento no Windows Task Scheduler.
 pause

@@ -1,90 +1,90 @@
 <?php
 /**
- * Database Initialization Script
- * Sets up the PostgreSQL database for the 15-minute city application
+ * Script de Inicialização da Base de Dados
+ * Configura a base de dados PostgreSQL para a aplicação 15-minute city
  */
 
-// Include database configuration
+// Incluir configuração da base de dados
 require_once dirname(__DIR__, 2) . '/config/db_config.php';
 
-// Log function
+// Função de log
 function log_message($message) {
     echo date('Y-m-d H:i:s') . " - $message\n";
 }
 
-log_message("Starting database initialization...");
+log_message("A iniciar a inicialização da base de dados...");
 
 try {
-    // First, connect to postgres database to create our GIS database if it doesn't exist
+    // Primeiro, conectar à base de dados postgres para criar a nossa base de dados GIS se não existir
     $conn_string = "host=" . DB_HOST . " port=" . DB_PORT . " dbname=postgres user=" . DB_USER . " password=" . DB_PASS;
     $conn = pg_connect($conn_string);
     
     if (!$conn) {
-        throw new Exception("Failed to connect to PostgreSQL: " . pg_last_error());
+        throw new Exception("Falha ao conectar ao PostgreSQL: " . pg_last_error());
     }
     
-    // Check if our database exists
+    // Verificar se a nossa base de dados existe
     $query = "SELECT 1 FROM pg_database WHERE datname = '" . DB_NAME . "'";
     $result = pg_query($conn, $query);
     
     if (!$result) {
-        throw new Exception("Failed to query PostgreSQL: " . pg_last_error($conn));
+        throw new Exception("Falha ao consultar o PostgreSQL: " . pg_last_error($conn));
     }
     
     if (pg_num_rows($result) == 0) {
-        // Database doesn't exist, create it
-        log_message("Creating database " . DB_NAME . "...");
+        // A base de dados não existe, criá-la
+        log_message("A criar a base de dados " . DB_NAME . "...");
         
         $create_db_query = "CREATE DATABASE " . DB_NAME . " WITH OWNER = " . DB_USER;
         $result = pg_query($conn, $create_db_query);
         
         if (!$result) {
-            throw new Exception("Failed to create database: " . pg_last_error($conn));
+            throw new Exception("Falha ao criar a base de dados: " . pg_last_error($conn));
         }
         
-        log_message("Database created successfully.");
+        log_message("Base de dados criada com sucesso.");
     } else {
-        log_message("Database already exists.");
+        log_message("A base de dados já existe.");
     }
     
-    // Close connection to postgres database
+    // Fechar conexão à base de dados postgres
     pg_close($conn);
     
-    // Connect to our database
+    // Conectar à nossa base de dados
     $conn = getDbConnection();
     
-    // Create necessary PostgreSQL extensions if they don't exist
-    log_message("Setting up PostgreSQL extensions...");
+    // Criar extensões PostgreSQL necessárias se não existirem
+    log_message("A configurar extensões PostgreSQL...");
     
-    // First check if PostGIS is available
+    // Primeiro verificar se o PostGIS está disponível
     $check_postgis_query = "SELECT 1 FROM pg_available_extensions WHERE name = 'postgis'";
     $check_result = pg_query($conn, $check_postgis_query);
     
     if (!$check_result || pg_num_rows($check_result) == 0) {
-        log_message("WARNING: PostGIS extension is not available on this PostgreSQL installation.");
-        log_message("Please install PostGIS using one of the following commands:");
-        log_message("For Ubuntu/Debian: sudo apt-get install postgresql-17-postgis-3");
-        log_message("For CentOS/RHEL: sudo dnf install postgis30_16");
-        log_message("For macOS (Homebrew): brew install postgis");
-        log_message("After installation, restart PostgreSQL and run this script again.");
+        log_message("AVISO: A extensão PostGIS não está disponível nesta instalação PostgreSQL.");
+        log_message("Por favor, instale o PostGIS usando um dos seguintes comandos:");
+        log_message("Para Ubuntu/Debian: sudo apt-get install postgresql-17-postgis-3");
+        log_message("Para CentOS/RHEL: sudo dnf install postgis30_16");
+        log_message("Para macOS (Homebrew): brew install postgis");
+        log_message("Após a instalação, reinicie o PostgreSQL e execute este script novamente.");
     } else {
-        // PostGIS extension (for spatial functions)
+        // Extensão PostGIS (para funções espaciais)
         $result = pg_query($conn, "CREATE EXTENSION IF NOT EXISTS postgis");
         if (!$result) {
-            throw new Exception("Failed to create PostGIS extension: " . pg_last_error($conn));
+            throw new Exception("Falha ao criar a extensão PostGIS: " . pg_last_error($conn));
         }
-        log_message("PostGIS extension set up successfully.");
+        log_message("Extensão PostGIS configurada com sucesso.");
     }
     
-    // hstore extension (for key-value pairs in OSM data)
+    // Extensão hstore (para pares chave-valor em dados OSM)
     $result = pg_query($conn, "CREATE EXTENSION IF NOT EXISTS hstore");
     if (!$result) {
-        throw new Exception("Failed to create hstore extension: " . pg_last_error($conn));
+        throw new Exception("Falha ao criar a extensão hstore: " . pg_last_error($conn));
     }
     
-    log_message("PostgreSQL extensions setup completed.");
+    log_message("Configuração das extensões PostgreSQL concluída.");
     
-    // Check if OSM tables exist (created by osm2pgsql)
+    // Verificar se as tabelas OSM existem (criadas por osm2pgsql)
     $check_table_query = "SELECT EXISTS (
         SELECT FROM information_schema.tables 
         WHERE table_schema = 'public' 
@@ -94,12 +94,12 @@ try {
     $row = pg_fetch_row($result);
     
     if ($row[0] == 'f') {
-        log_message("OSM tables don't exist. Please use osm2pgsql to import OpenStreetMap data.");
-        log_message("Example command: C:/Programs/Programs/osm2pgsql-bin/osm2pgsql.exe -c -d " . DB_NAME . " -U " . DB_USER . " -W -H " . DB_HOST . " -P " . DB_PORT . " -S default.style portugal-latest.osm.pbf");
+        log_message("As tabelas OSM não existem. Por favor, use o osm2pgsql para importar dados OpenStreetMap.");
+        log_message("Comando de exemplo: C:/Programs/Programs/osm2pgsql-bin/osm2pgsql.exe -c -d " . DB_NAME . " -U " . DB_USER . " -W -H " . DB_HOST . " -P " . DB_PORT . " -S default.style portugal-latest.osm.pbf");
     } else {
-        log_message("OSM tables already exist.");
+        log_message("As tabelas OSM já existem.");
         
-        // Count POIs in the database
+        // Contar POIs na base de dados
         $count_query = "
             SELECT
                 COUNT(*) as hospitals FROM planet_osm_point WHERE amenity = 'hospital',
@@ -113,15 +113,15 @@ try {
         $result = pg_query($conn, $count_query);
         if ($result) {
             $stats = pg_fetch_assoc($result);
-            log_message("Database statistics:");
+            log_message("Estatísticas da base de dados:");
             foreach ($stats as $key => $value) {
                 log_message("  - $key: $value");
             }
         }
     }
     
-    // Optional: Create indexes for better performance
-    log_message("Creating indexes for better performance...");
+    // Opcional: Criar índices para melhor desempenho
+    log_message("A criar índices para melhor desempenho...");
     
     $index_queries = [
         "CREATE INDEX IF NOT EXISTS idx_planet_osm_point_amenity ON planet_osm_point USING btree (amenity)",
@@ -134,16 +134,16 @@ try {
     foreach ($index_queries as $query) {
         $result = pg_query($conn, $query);
         if (!$result) {
-            log_message("Warning: Failed to create index: " . pg_last_error($conn));
+            log_message("Aviso: Falha ao criar índice: " . pg_last_error($conn));
         }
     }
     
-    log_message("Indexes created successfully.");
+    log_message("Índices criados com sucesso.");
     
-    log_message("Database initialization completed successfully.");
+    log_message("Inicialização da base de dados concluída com sucesso.");
     
 } catch (Exception $e) {
-    log_message("Error: " . $e->getMessage());
+    log_message("Erro: " . $e->getMessage());
     exit(1);
 } finally {
     if (isset($conn) && $conn) {

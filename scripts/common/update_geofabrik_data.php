@@ -1,30 +1,30 @@
 <?php
 /**
- * Script to download and update Portugal Geofabrik data on a weekly basis
- * This script can be scheduled using Windows Task Scheduler
+ * Script para descarregar e atualizar dados do Geofabrik de Portugal semanalmente
+ * Este script pode ser agendado usando o Windows Task Scheduler
  * 
- * Usage:
- *   - php update_geofabrik_data.php           # Download and import data
- *   - php update_geofabrik_data.php download_only  # Only download without importing
+ * Uso:
+ *   - php update_geofabrik_data.php           # Descarregar e importar dados
+ *   - php update_geofabrik_data.php download_only  # Apenas descarregar sem importar
  */
 
-// Configuration
+// Configuração
 $downloadDir = dirname(dirname(__DIR__)) . '/data/geofabrik/';
 $logFile = dirname(dirname(__DIR__)) . '/logs/geofabrik_update.log';
 $geofabrikUrl = 'https://download.geofabrik.de/europe/portugal-latest.osm.pbf';
-$osm2pgsqlPath = 'C:/Programs/Programs/osm2pgsql-bin/osm2pgsql.exe'; // Updated path to osm2pgsql
+$osm2pgsqlPath = 'C:/Programs/Programs/osm2pgsql-bin/osm2pgsql.exe'; // Caminho atualizado para osm2pgsql
 
-// Check command line arguments
+// Verificar argumentos da linha de comandos
 $downloadOnly = false;
 if (isset($argv[1]) && $argv[1] === 'download_only') {
     $downloadOnly = true;
-    echo "Running in download-only mode\n";
+    echo "A executar no modo apenas descarregar\n";
 }
 
-// Include database configuration
+// Incluir configuração da base de dados
 require_once dirname(dirname(__DIR__)) . '/config/db_config.php';
 
-// Create directories if they don't exist
+// Criar diretórios se não existirem
 if (!file_exists($downloadDir)) {
     mkdir($downloadDir, 0755, true);
 }
@@ -33,7 +33,7 @@ if (!file_exists(dirname($logFile))) {
     mkdir(dirname($logFile), 0755, true);
 }
 
-// Log function
+// Função de log
 function logMessage($message) {
     global $logFile;
     $timestamp = date('Y-m-d H:i:s');
@@ -42,22 +42,22 @@ function logMessage($message) {
     echo $logEntry;
 }
 
-// Download the latest data
-logMessage("Starting download of Portugal Geofabrik data");
+// Descarregar os dados mais recentes
+logMessage("A iniciar o descarregamento dos dados do Geofabrik de Portugal");
 
 $outputFile = $downloadDir . 'portugal-latest.osm.pbf';
 $previousFile = $downloadDir . 'portugal-previous.osm.pbf';
 
-// Backup previous file if it exists
+// Fazer backup do ficheiro anterior se existir
 if (file_exists($outputFile)) {
     if (file_exists($previousFile)) {
         unlink($previousFile);
     }
     rename($outputFile, $previousFile);
-    logMessage("Previous data backed up");
+    logMessage("Dados anteriores salvaguardados");
 }
 
-// Download new file
+// Descarregar novo ficheiro
 $ch = curl_init($geofabrikUrl);
 $fp = fopen($outputFile, 'w');
 
@@ -66,21 +66,21 @@ curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 
-logMessage("Downloading file from: $geofabrikUrl");
+logMessage("A descarregar ficheiro de: $geofabrikUrl");
 $success = curl_exec($ch);
 
 if ($success) {
-    logMessage("Download completed successfully");
+    logMessage("Descarregamento concluído com sucesso");
     
-    // Import the data into PostgreSQL using osm2pgsql if not in download-only mode
+    // Importar os dados para PostgreSQL usando osm2pgsql se não estiver no modo apenas descarregar
     if (!$downloadOnly) {
-        logMessage("Starting database import using osm2pgsql");
+        logMessage("A iniciar a importação da base de dados usando osm2pgsql");
         
-        // Create osm2pgsql command
+        // Criar comando osm2pgsql
         $styleFile = dirname(__FILE__) . "/default.style";
         $cmd = "\"$osm2pgsqlPath\" -c -d " . DB_NAME . " -U " . DB_USER . " -W -H " . DB_HOST . " -P " . DB_PORT . " -S \"$styleFile\" \"$outputFile\"";
         
-        // Execute the command
+        // Executar o comando
         $descriptorspec = array(
             0 => array("pipe", "r"),  // stdin
             1 => array("pipe", "w"),  // stdout
@@ -90,39 +90,39 @@ if ($success) {
         $process = proc_open($cmd, $descriptorspec, $pipes);
         
         if (is_resource($process)) {
-            // Send password to stdin
+            // Enviar palavra-passe para stdin
             fwrite($pipes[0], DB_PASS . "\n");
             fclose($pipes[0]);
             
-            // Get output
+            // Obter saída
             $output = stream_get_contents($pipes[1]);
             $error = stream_get_contents($pipes[2]);
             fclose($pipes[1]);
             fclose($pipes[2]);
             
-            // Close process
+            // Fechar processo
             $returnCode = proc_close($process);
             
             if ($returnCode === 0) {
-                logMessage("Database import successful");
-                logMessage("Output: " . $output);
+                logMessage("Importação da base de dados bem-sucedida");
+                logMessage("Saída: " . $output);
             } else {
-                logMessage("Database import failed with code: $returnCode");
-                logMessage("Output: " . $output);
-                logMessage("Error: " . $error);
+                logMessage("A importação da base de dados falhou com o código: $returnCode");
+                logMessage("Saída: " . $output);
+                logMessage("Erro: " . $error);
             }
         } else {
-            logMessage("Failed to execute osm2pgsql command");
+            logMessage("Falha ao executar o comando osm2pgsql");
         }
     } else {
-        logMessage("Skipping database import (download-only mode)");
+        logMessage("A ignorar a importação da base de dados (modo apenas descarregar)");
     }
 } else {
-    logMessage("Download failed: " . curl_error($ch));
+    logMessage("O descarregamento falhou: " . curl_error($ch));
 }
 
 curl_close($ch);
 fclose($fp);
 
-logMessage("Geofabrik data update process completed");
+logMessage("Processo de atualização de dados do Geofabrik concluído");
 ?>

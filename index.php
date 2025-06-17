@@ -13,14 +13,14 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Custom CSS -->
+    <!-- CSS Personalizado -->
     <link rel="stylesheet" href="css/landing.css">
 </head>
 <body>
-    <!-- Hero Cursor Effect Container -->
+    <!-- Contentor do Efeito de Cursor do Hero -->
     <div class="hero-cursor-effect"></div>
     
-    <!-- Navbar -->
+    <!-- Barra de Navegação -->
     <nav class="navbar">
         <div class="container">
             <div class="navbar-content">
@@ -31,7 +31,7 @@
         </div>
     </nav>
     
-    <!-- Hero Section with Parallax -->
+    <!-- Secção Hero com Parallax -->
     <section class="hero">
         <div class="hero-overlay"></div>
         <div class="hero-content">
@@ -54,7 +54,7 @@
         </div>
     </section>
     
-    <!-- About Section -->
+    <!-- Secção Sobre -->
     <section id="about" class="section">
         <div class="container">
             <div class="section-title">
@@ -67,7 +67,7 @@
         </div>
     </section>
     
-    <!-- Features Section -->
+    <!-- Secção Funcionalidades -->
     <section id="features" class="section features">
         <div class="container">
             <div class="section-title">
@@ -132,7 +132,7 @@
         </div>
     </section>
     
-    <!-- Parallax Section -->
+    <!-- Secção Parallax -->
     <section class="parallax">
         <div class="parallax-overlay"></div>
         <div class="parallax-content">
@@ -141,7 +141,7 @@
         </div>
     </section>
     
-    <!-- Tools Section -->
+    <!-- Secção Ferramentas -->
     <section id="tools" class="section">
         <div class="container">
             <div class="section-title">
@@ -176,7 +176,7 @@
         </div>
     </section>
     
-    <!-- How It Works Section -->
+    <!-- Secção Como Funciona -->
     <section id="how-it-works" class="section how-it-works">
         <div class="container">
             <div class="section-title">
@@ -208,7 +208,7 @@
         </div>
     </section>
     
-    <!-- Tech Section -->
+    <!-- Secção Tecnologia -->
     <section id="tech" class="section tech-section">
         <div class="container">
             <div class="section-title">
@@ -246,7 +246,7 @@
         </div>
     </section>
     
-    <!-- Screenshots Carousel Section -->
+    <!-- Secção Carrossel de Capturas de Ecrã -->
     <section id="screenshots" class="section">
         <div class="container">
             <div class="section-title">
@@ -333,7 +333,7 @@
         </div>
     </section>
     
-    <!-- FAQ Section -->
+    <!-- Secção de Perguntas Frequentes -->
     <section id="faq" class="section">
         <div class="container">
             <div class="section-title">
@@ -384,7 +384,7 @@
         </div>
     </section>
     
-    <!-- Footer -->
+    <!-- Rodapé -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
@@ -424,14 +424,14 @@
         </div>
     </footer>
     
-    <!-- Back to Top Button -->
+    <!-- Botão de Voltar ao Topo -->
     <div class="back-to-top">
         <i class="fas fa-arrow-up"></i>
     </div>
     
-    <!-- JavaScript for animations and scroll effects -->
+    <!-- JavaScript para animações e efeitos de rolagem -->
     <script>
-        // Navbar scroll effect
+        // Efeito de rolagem da barra de navegação
         window.addEventListener('scroll', function() {
             const navbar = document.querySelector('.navbar');
             if (window.scrollY > 50) {
@@ -440,7 +440,7 @@
                 navbar.classList.remove('scrolled');
             }
             
-            // Back to top button visibility
+            // Visibilidade do botão de voltar ao topo
             const backToTop = document.querySelector('.back-to-top');
             if (window.scrollY > 300) {
                 backToTop.classList.add('visible');
@@ -449,7 +449,7 @@
             }
         });
         
-        // Back to top functionality
+        // Funcionalidade de voltar ao topo
         document.querySelector('.back-to-top').addEventListener('click', function() {
             window.scrollTo({
                 top: 0,
@@ -457,7 +457,7 @@
             });
         });
         
-        // Intersection Observer for fade-in and zoom-in animations
+        // Intersection Observer para animações de fade-in e zoom-in
         const faders = document.querySelectorAll('.fade-in, .zoom-in');
         const appearOptions = {
             threshold: 0.15,
@@ -479,7 +479,7 @@
             appearOnScroll.observe(fader);
         });
         
-        // Smooth scrolling for anchor links
+        // Rolagem suave para links de âncora
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -490,7 +490,7 @@
             });
         });
         
-        // Hero cursor effect
+        // Efeito de cursor do hero
         const hero = document.querySelector('.hero');
         const cursorEffect = document.querySelector('.hero-cursor-effect');
         
@@ -508,44 +508,44 @@
             cursorEffect.style.opacity = '0';
         });
         
-        // FAQ Accordion
+        // Acordeão de Perguntas Frequentes
         const accordions = document.querySelectorAll('.accordion');
         
         accordions.forEach(accordion => {
             const header = accordion.querySelector('.accordion-header');
             
             header.addEventListener('click', () => {
-                // Close all accordions
+                // Fecha todos os acordeões
                 accordions.forEach(item => {
                     if (item !== accordion) {
                         item.classList.remove('active');
                     }
                 });
                 
-                // Toggle current accordion
+                // Alterna o acordeão atual
                 accordion.classList.toggle('active');
             });
         });
         
-        // Screenshots Carousel functionality
+        // Funcionalidade do Carrossel de Capturas de Ecrã
         const carousel = document.querySelector('.carousel');
         const carouselItems = document.querySelectorAll('.carousel-item');
         const carouselNav = document.querySelector('.carousel-nav');
         const carouselIndicators = document.querySelectorAll('.carousel-indicator');
         let currentIndex = 0;
         
-        // Show the first item by default
+        // Mostra o primeiro item por padrão
         carouselItems[currentIndex].classList.add('active');
         
-        // Function to update carousel
+        // Função para atualizar o carrossel
         function updateCarousel() {
-            // Remove active class from all items
+            // Remove a classe ativa de todos os itens
             carouselItems.forEach(item => item.classList.remove('active'));
             
-            // Add active class to the current item
+            // Adiciona a classe ativa ao item atual
             carouselItems[currentIndex].classList.add('active');
             
-            // Update indicators
+            // Atualiza os indicadores
             carouselIndicators.forEach((indicator, index) => {
                 if (index === currentIndex) {
                     indicator.classList.add('active');
@@ -555,19 +555,19 @@
             });
         }
         
-        // Next button functionality
+        // Funcionalidade do botão "Próximo"
         carouselNav.querySelector('.next-button').addEventListener('click', () => {
             currentIndex = (currentIndex + 1) % carouselItems.length;
             updateCarousel();
         });
         
-        // Previous button functionality
+        // Funcionalidade do botão "Anterior"
         carouselNav.querySelector('.prev-button').addEventListener('click', () => {
             currentIndex = (currentIndex - 1 + carouselItems.length) % carouselItems.length;
             updateCarousel();
         });
         
-        // Indicator functionality
+        // Funcionalidade do indicador
         carouselIndicators.forEach((indicator, index) => {
             indicator.addEventListener('click', () => {
                 currentIndex = index;
@@ -575,19 +575,19 @@
             });
         });
         
-        // Auto slideshow
+        // Apresentação automática
         let slideInterval = setInterval(() => {
             currentIndex = (currentIndex + 1) % carouselItems.length;
             updateCarousel();
         }, 5000);
         
-        // Pause slideshow when hovering over carousel
+        // Pausa a apresentação ao passar o rato sobre o carrossel
         const carouselContainer = document.querySelector('.carousel-container');
         carouselContainer.addEventListener('mouseenter', () => {
             clearInterval(slideInterval);
         });
         
-        // Resume slideshow when mouse leaves carousel
+        // Retoma a apresentação ao retirar o rato do carrossel
         carouselContainer.addEventListener('mouseleave', () => {
             slideInterval = setInterval(() => {
                 currentIndex = (currentIndex + 1) % carouselItems.length;

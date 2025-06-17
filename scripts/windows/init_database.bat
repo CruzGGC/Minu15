@@ -1,13 +1,13 @@
 @echo off
-echo Initializing 15-Minute City Explorer Database...
+echo A inicializar a Base de Dados do 15-Minute City Explorer...
 
-:: Path to PHP executable - update this to your PHP installation path
+:: Caminho para o executável PHP - atualize isto para o seu caminho de instalação do PHP
 set PHP_PATH="C:\xampp\php\php.exe"
 
-:: Run the initialization script (from the common directory)
+:: Executar o script de inicialização (do diretório comum)
 %PHP_PATH% "%~dp0..\common\init_database.php"
 
 echo.
-echo Database initialization completed.
-echo Press any key to exit...
+echo Inicialização da base de dados concluída.
+echo Prima qualquer tecla para sair...
 pause > nul

@@ -1,43 +1,43 @@
 <?php
 /**
- * Admin Cache Management Page
+ * Página de Gestão de Cache da Administração
  * 
- * This page provides access to the cache management interface.
+ * Esta página fornece acesso à interface de gestão de cache.
  */
 
-// Start session if not already started
+// Inicia a sessão se ainda não tiver sido iniciada
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check if the user is already authenticated
+// Verifica se o utilizador já está autenticado
 $isAuthenticated = false;
 if (isset($_SESSION['admin_authenticated']) && $_SESSION['admin_authenticated'] === true) {
     $isAuthenticated = true;
 }
 
-// Handle login form submission
+// Lida com o envio do formulário de autenticação
 if (!$isAuthenticated && isset($_POST['username']) && isset($_POST['password'])) {
-    // Replace with your actual authentication logic
-    // This is a simple example - in production, use a more secure method
+    // Substituir pela sua lógica de autenticação real
+    // Este é um exemplo simples - em produção, usar um método mais seguro
     if ($_POST['username'] === 'Guilherme' && $_POST['password'] === 'VaiPoCaralho69@@') {
         $_SESSION['admin_authenticated'] = true;
         $isAuthenticated = true;
         
-        // Set a cookie for convenience (optional)
-        setcookie('admin_authenticated', 'true', time() + 3600, '/'); // 1 hour
+        // Define um cookie para conveniência (opcional)
+        setcookie('admin_authenticated', 'true', time() + 3600, '/'); // 1 hora
         
-        // Redirect to avoid form resubmission
+        // Redireciona para evitar o reenvio do formulário
         header('Location: ' . $_SERVER['PHP_SELF']);
         exit;
     } else {
-        $loginError = 'Invalid username or password';
+        $loginError = 'Nome de utilizador ou palavra-passe inválidos';
     }
 }
 
-// Handle logout
+// Lida com o logout
 if (isset($_GET['logout']) && $_GET['logout'] === '1') {
-    // Clear session
+    // Limpa a sessão
     $_SESSION = [];
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();
@@ -48,26 +48,26 @@ if (isset($_GET['logout']) && $_GET['logout'] === '1') {
     }
     session_destroy();
     
-    // Clear cookie
+    // Limpa o cookie
     setcookie('admin_authenticated', '', time() - 3600, '/');
     
-    // Redirect to login page
+    // Redireciona para a página de autenticação
     header('Location: ' . $_SERVER['PHP_SELF']);
     exit;
 }
 
-// If authenticated, redirect to the cache management script
+// Se autenticado, redireciona para o script de gestão de cache
 if ($isAuthenticated && !isset($_GET['view'])) {
     header('Location: scripts/common/clear_cache.php');
     exit;
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Cache Management</title>
+    <title>Admin - Gestão de Cache</title>
     <style>
         body {
             font-family: Arial, sans-serif;

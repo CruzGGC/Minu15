@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minu15 - Cidade em 15 Minutos</title>
     
-    <!-- jQuery UI for autocomplete -->
+    <!-- jQuery UI para preenchimento automático -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     
-    <!-- Leaflet CSS and JS -->
+    <!-- CSS e JS do Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Turf.js for geospatial analysis -->
+    <!-- Turf.js para análise geoespacial -->
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
     
     <!-- Google Fonts -->
@@ -25,24 +25,24 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Configuration Files -->
+    <!-- Ficheiros de Configuração -->
     <script src="config/api_config.js"></script>
     <script src="config/map_config.js"></script>
     
-    <!-- Custom CSS -->
+    <!-- CSS Personalizado -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/landing.css">
 </head>
 <body>
     <div id="map"></div>
     
-    <!-- Mobile menu toggle button -->
+    <!-- Botão para alternar o menu móvel -->
     <div class="mobile-menu-toggle" id="mobile-menu-toggle">
         <i class="fas fa-bars"></i>
     </div>
     
     <div class="overlay-panel" id="overlay-panel">
-        <!-- Close button for mobile -->
+        <!-- Botão de fechar para telemóvel -->
         <div class="mobile-panel-close" id="mobile-panel-close">
             <i class="fas fa-times"></i>
         </div>
@@ -59,7 +59,7 @@
                 <span class="dropdown-arrow">▼</span>
             </div>
             <div class="panel-content" id="poi-content">
-                <!-- Saúde -->
+                <!-- Categoria Saúde -->
                 <div class="poi-category">
                     <div class="category-header">
                         <span>Saúde</span>
@@ -73,7 +73,7 @@
                     </div>
                 </div>
                 
-                <!-- Educação -->
+                <!-- Categoria Educação -->
                 <div class="poi-category">
                     <div class="category-header">
                         <span>Educação</span>
@@ -87,7 +87,7 @@
                     </div>
                 </div>
                 
-                <!-- Comércio e serviços -->
+                <!-- Categoria Comércio e serviços -->
                 <div class="poi-category">
                     <div class="category-header">
                         <span>Comércio e Serviços</span>
@@ -101,7 +101,7 @@
                     </div>
                 </div>
                 
-                <!-- Segurança e emergência -->
+                <!-- Categoria Segurança e serviços públicos -->
                 <div class="poi-category">
                     <div class="category-header">
                         <span>Segurança e Serviços Públicos</span>
@@ -115,7 +115,7 @@
                     </div>
                 </div>
                 
-                <!-- Administração pública -->
+                <!-- Categoria Administração pública -->
                 <div class="poi-category">
                     <div class="category-header">
                         <span>Administração Pública</span>
@@ -127,7 +127,7 @@
                     </div>
                 </div>
                 
-                <!-- Cultura e lazer -->
+                <!-- Categoria Cultura e lazer -->
                 <div class="poi-category">
                     <div class="category-header">
                         <span>Cultura e Lazer</span>
@@ -186,7 +186,7 @@
                 <span class="dropdown-arrow">▼</span>
             </div>
             <div class="panel-content" id="settings-content">
-                <!-- Location Data Settings -->
+                <!-- Definições de Dados de Localização -->
                 <div class="settings-group">
                     <h4>Dados de Localização</h4>
                     <div class="setting-row">
@@ -199,11 +199,11 @@
                     </div>
                 </div>
                 
-                <!-- Accessibility Score Settings -->
+                <!-- Definições de Pontuação de Acessibilidade -->
                 <div class="settings-group">
                     <h4>Pontuação de Acessibilidade</h4>
                     
-                    <!-- Saúde -->
+                    <!-- Categoria Saúde (maior peso - essencial) -->
                     <div class="weight-category">
                         <div class="weight-header">
                             <span>Saúde</span>
@@ -229,7 +229,7 @@
                         </div>
                     </div>
                     
-                    <!-- Educação -->
+                    <!-- Categoria Educação -->
                     <div class="weight-category">
                         <div class="weight-header">
                             <span>Educação</span>
@@ -255,7 +255,7 @@
                         </div>
                     </div>
                     
-                    <!-- Comércio -->
+                    <!-- Categoria Comércio e Serviços -->
                     <div class="weight-category">
                         <div class="weight-header">
                             <span>Comércio e Serviços</span>
@@ -281,7 +281,7 @@
                         </div>
                     </div>
                     
-                    <!-- Segurança -->
+                    <!-- Categoria Segurança e Serviços Públicos -->
                     <div class="weight-category">
                         <div class="weight-header">
                             <span>Segurança e Serviços Públicos</span>
@@ -303,7 +303,7 @@
                         </div>
                     </div>
                     
-                    <!-- Cultura e Lazer -->
+                    <!-- Categoria Cultura e Lazer -->
                     <div class="weight-category">
                         <div class="weight-header">
                             <span>Cultura e Lazer</span>
@@ -334,7 +334,7 @@
                     </button>
                 </div>
                 
-                <!-- Map Style Settings -->
+                <!-- Definições de Estilo do Mapa -->
                 <div class="settings-group">
                     <h4>Estilo do Mapa</h4>
                     <div class="map-style-selector">
@@ -379,13 +379,13 @@
             </div>
         </div>
         
-        <!-- Added footer attribution to the overlay panel -->
+        <!-- Atribuição do rodapé adicionada ao painel de sobreposição -->
         <div class="panel-section footer-in-overlay">
             <p>&copy; <?php echo date('Y'); ?> Minu15 | Dados de <a href="https://www.geofabrik.de/" target="_blank">Geofabrik</a></p>
         </div>
     </div>
 
-    <!-- Statistics Panel -->
+    <!-- Painel de Estatísticas -->
     <div class="statistics-panel" id="statistics-panel">
         <div class="statistics-title">
             <span>Estatísticas da Área</span>
@@ -396,7 +396,7 @@
         </div>
     </div>
 
-    <!-- Loading Overlay -->
+    <!-- Sobreposição de Carregamento -->
     <div class="loading-overlay" id="loading-overlay">
         <div class="loading-spinner-container">
             <div class="loading-spinner"></div>
@@ -404,19 +404,19 @@
         </div>
     </div>
     
-    <!-- Modal overlay for popups -->
+    <!-- Sobreposição modal para popups -->
     <div class="modal-overlay" id="modal-overlay"></div>
     
-    <!-- Custom JS -->
+    <!-- JS Personalizado -->
     <script src="js/map.js"></script>
     <script src="js/controls.js"></script>
     
-    <!-- jQuery-based direct fix for settings dropdown -->
+    <!-- Correção direta baseada em jQuery para o menu de configurações -->
     <script>
         $(document).ready(function() {
-            console.log('jQuery settings fix applied');
+            console.log('Correção jQuery para configurações aplicada');
 
-            // Default weights from map.js - used when localStorage values don't exist
+            // Pesos padrão de map.js - usados quando os valores do localStorage não existem
             const defaultWeights = {
                 // Saúde (maior peso - essencial)
                 hospitals: 10,
@@ -449,7 +449,7 @@
                 parks: 8
             };
             
-            // Initialize weight inputs from localStorage or use defaults
+            // Inicializa os inputs de peso a partir do localStorage ou usa os valores padrão
             $('.weight-input').each(function() {
                 const inputId = $(this).attr('id');
                 const weightKey = inputId.replace('weight-', '');
@@ -462,25 +462,25 @@
                 }
             });
 
-            // Initialize settings panel to collapsed and all weight categories to expanded
-            $('#settings-content').hide(); // Hide initially so slideToggle works correctly
+            // Inicializa o painel de configurações recolhido e todas as categorias de peso expandidas
+            $('#settings-content').hide(); // Esconde inicialmente para que o slideToggle funcione corretamente
             $('#settings-header').find('.dropdown-arrow').removeClass('up');
-            $('.weight-content').slideDown().addClass('expanded'); // Ensure all weight categories are expanded and visible
+            $('.weight-content').slideDown().addClass('expanded'); // Garante que todas as categorias de peso estão expandidas e visíveis
             $('.weight-header').find('.dropdown-arrow').addClass('up');
             
-            // Settings panel toggle
+            // Alternar o painel de configurações
             $('#settings-header').on('click', function() {
-                console.log('Settings header clicked (jQuery)');
+                console.log('Cabeçalho das configurações clicado (jQuery)');
                 const $settingsContent = $('#settings-content');
                 const $arrow = $(this).find('.dropdown-arrow');
 
                 if ($settingsContent.is(':hidden')) {
-                    // Expanding
+                    // A expandir
                     $settingsContent.addClass('expanded');
                     $arrow.addClass('up');
                     $settingsContent.slideDown(300);
                 } else {
-                    // Collapsing
+                    // A recolher
                     $settingsContent.slideUp(300, function() {
                         $settingsContent.removeClass('expanded');
                         $arrow.removeClass('up');
@@ -488,21 +488,21 @@
                 }
             });
             
-            // Weight category toggles
+            // Alternar as categorias de peso
             $('.weight-header').on('click', function(e) {
-                e.stopPropagation(); // Prevent event propagation to parent
-                console.log('Weight header clicked (jQuery)');
+                e.stopPropagation(); // Previne a propagação do evento para o pai
+                console.log('Cabeçalho da categoria de peso clicado (jQuery)');
                 $(this).next('.weight-content').toggleClass('expanded');
                 $(this).find('.dropdown-arrow').toggleClass('up');
             });
             
-            // Save weights to localStorage when changed
+            // Guarda os pesos no localStorage quando alterados
             $('.weight-input').on('change', function() {
                 const inputId = $(this).attr('id');
                 const weightKey = inputId.replace('weight-', '');
                 const value = parseInt($(this).val());
                 
-                // Validate value is between 1-10
+                // Valida que o valor está entre 1-10
                 if (value < 1) {
                     $(this).val(1);
                     localStorage.setItem('weight-' + weightKey, 1);
@@ -514,13 +514,13 @@
                 }
             });
             
-            // Reset weights button
+            // Botão para restaurar pesos
             $('#reset-weights').on('click', function() {
-                // Apply default values
+                // Aplica os valores padrão
                 $.each(defaultWeights, function(key, value) {
                     $('#weight-' + key).val(value);
                     
-                    // Also clear localStorage for this weight to ensure it uses default on next load
+                    // Também limpa o localStorage para este peso para garantir que usa o padrão no próximo carregamento
                     localStorage.removeItem('weight-' + key);
                 });
                 
@@ -529,10 +529,10 @@
         });
     </script>
     
-    <!-- Fix for the sidebar disappearing issue -->
+    <!-- Correção para o problema da barra lateral desaparecer -->
     <script>
         $(document).ready(function() {
-            // Ensure the sidebar is always visible on desktop
+            // Garante que a barra lateral esteja sempre visível no ambiente de trabalho
             function fixSidebar() {
                 if (window.innerWidth > 768) {
                     const panel = document.getElementById('overlay-panel');
@@ -546,18 +546,18 @@
                 }
             }
             
-            // Apply fix on page load
+            // Aplica a correção no carregamento da página
             fixSidebar();
             
-            // Listen for tutorial events
+            // Ouve eventos de tutorial
             document.addEventListener('tutorialClosed', fixSidebar);
             
-            // Apply fix when map is clicked
+            // Aplica a correção quando o mapa é clicado
             $('#map').on('click', function() {
-                setTimeout(fixSidebar, 100); // Small delay to let other event handlers execute
+                setTimeout(fixSidebar, 100); // Pequeno atraso para permitir que outros manipuladores de eventos sejam executados
             });
             
-            // Watch for any changes to the sidebar visibility
+            // Observa quaisquer alterações na visibilidade da barra lateral
             const observer = new MutationObserver(function(mutations) {
                 mutations.forEach(function(mutation) {
                     if (mutation.type === 'attributes' && 
@@ -567,16 +567,16 @@
                 });
             });
             
-            // Start observing the sidebar for changes
+            // Começa a observar a barra lateral por alterações
             const panel = document.getElementById('overlay-panel');
             if (panel) {
                 observer.observe(panel, { attributes: true });
             }
             
-            // Fix any issues when window is resized
+            // Corrige quaisquer problemas quando a janela é redimensionada
             $(window).on('resize', fixSidebar);
             
-            // Intercept all click events on the page to ensure sidebar stays visible
+            // Interceta todos os eventos de clique na página para garantir que a barra lateral permanece visível
             $(document).on('click', function(e) {
                 if (window.innerWidth > 768) {
                     setTimeout(fixSidebar, 10);
@@ -585,29 +585,29 @@
                 }
             });
             
-            // Add event handler to the got-it-btn when it's created
+            // Adiciona um manipulador de eventos ao botão #got-it-btn quando é criado
             $(document).on('click', '#got-it-btn', function(e) {
                 if (window.innerWidth > 768) {
-                    // Apply multiple delayed fixes to catch any timing issues
+                    // Aplica múltiplas correções com atraso para apanhar quaisquer problemas de temporização
                     for (let i = 1; i <= 10; i++) {
                         setTimeout(fixSidebar, i * 100);
                     }
                 }
             });
             
-            // Override the default map click behavior that might be hiding the panel
+            // Substitui o comportamento de clique padrão do mapa que pode estar a esconder o painel
             try {
-                // Wait for map to be fully initialized
+                // Espera que o mapa esteja totalmente inicializado
                 setTimeout(function() {
                     if (typeof map !== 'undefined' && map.getEvents && map.getEvents().click) {
                         const originalMapClick = map.getEvents().click;
                         if (originalMapClick && originalMapClick.length > 0) {
                             map.off('click');
                             map.on('click', function(e) {
-                                // Call the original handler
+                                // Chama o manipulador original
                                 originalMapClick[0].fn(e);
                                 
-                                // Fix the sidebar after a delay
+                                // Corrige a barra lateral após um atraso
                                 if (window.innerWidth > 768) {
                                     setTimeout(fixSidebar, 50);
                                     setTimeout(fixSidebar, 200);
@@ -615,15 +615,15 @@
                             });
                         }
                     }
-                }, 1000); // Wait 1 second for map to initialize
+                }, 1000); // Espera 1 segundo para o mapa inicializar
             } catch (e) {
-                console.log('Error overriding map click:', e);
+                console.log('Erro ao substituir o clique do mapa:', e);
             }
             
-            // Set an interval to periodically check and fix the sidebar
+            // Define um intervalo para verificar e corrigir periodicamente a barra lateral
             setInterval(fixSidebar, 500);
             
-            // Add direct CSS rule to force sidebar visibility on desktop
+            // Adiciona regra CSS direta para forçar a visibilidade da barra lateral no ambiente de trabalho
             const styleElement = document.createElement('style');
             styleElement.textContent = `
                 @media (min-width: 769px) {

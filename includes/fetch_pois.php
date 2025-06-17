@@ -1,78 +1,78 @@
 <?php
 /**
- * Fetch Points of Interest (POIs) Endpoint
- * Gets OSM points of interest that are strictly contained within the isochrone polygon
- * Now queries both point and polygon OSM data
+ * Endpoint para Obter Pontos de Interesse (POIs)
+ * Obtém pontos de interesse OSM que estão estritamente contidos no polígono da isócrona
+ * Agora consulta dados OSM de pontos e polígonos
  * 
  * @version 2.2
  */
 
-// Enable error reporting for debugging
+// Ativa o registo de erros para depuração
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
 ini_set('error_log', '../logs/db_errors.log');
 
-// Include database configuration
+// Inclui a configuração da base de dados
 require_once '../config/db_config.php';
 
-// Include mock data provider
+// Inclui o fornecedor de dados simulados
 require_once 'mock_data.php';
 
-// Set headers for JSON response
+// Define os cabeçalhos para a resposta JSON
 header('Content-Type: application/json');
 
 try {
-    // Check request method
+    // Verifica o método do pedido
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         echo json_encode([
             'success' => false,
-            'message' => 'Only POST method is allowed'
+            'message' => 'Apenas o método POST é permitido'
         ]);
         exit;
     }
 
-    // Check if all required parameters are provided
+    // Verifica se todos os parâmetros obrigatórios são fornecidos
     if (empty($_POST['type']) || !isset($_POST['lat']) || !isset($_POST['lng'])) {
         echo json_encode([
             'success' => false,
-            'message' => 'Missing required parameters: type, lat, lng'
+            'message' => 'Parâmetros obrigatórios em falta: type, lat, lng'
         ]);
         exit;
     }
 
-    // Get parameters from request
+    // Obtém os parâmetros do pedido
     $type = $_POST['type'];
     $lat = floatval($_POST['lat']);
     $lng = floatval($_POST['lng']);
 
-    // Get isochrone JSON (required for precise POI filtering)
+    // Obtém o JSON da isócrona (obrigatório para filtragem precisa de POIs)
     $isochroneJson = isset($_POST['isochrone']) ? $_POST['isochrone'] : null;
 
-    // If no isochrone is provided but radius is, get radius for fallback buffer
+    // Se nenhuma isócrona for fornecida mas o raio for, obtém o raio para o buffer de fallback
     $radius = isset($_POST['radius']) ? floatval($_POST['radius']) : 0;
 
-    // Validate parameters
+    // Valida os parâmetros
     if (!is_numeric($lat) || !is_numeric($lng) || $lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
         echo json_encode([
             'success' => false,
-            'message' => 'Invalid latitude or longitude'
+            'message' => 'Latitude ou longitude inválida'
         ]);
         exit;
     }
 
-    // If no isochrone and no radius, cannot proceed
+    // Se não houver isócrona e nem raio, não é possível continuar
     if (empty($isochroneJson) && $radius <= 0) {
         echo json_encode([
             'success' => false,
-            'message' => 'Either isochrone GeoJSON or radius is required'
+            'message' => 'É necessário o GeoJSON da isócrona ou o raio'
         ]);
         exit;
     }
 
-    // Define POI types with their PostgreSQL query conditions
+    // Define os tipos de POI com as suas condições de consulta PostgreSQL
     $poiTypes = [
-        // === Health ===
+        // === Saúde ===
         'hospitals' => [
             'condition' => "amenity = 'hospital'",
             'icon' => 'hospital',
@@ -94,7 +94,7 @@ try {
             'category' => 'health'
         ],
         
-        // === Education ===
+        // === Educação ===
         'schools' => [
             'condition' => "amenity = 'school'",
             'icon' => 'school',
@@ -116,7 +116,7 @@ try {
             'category' => 'education'
         ],
         
-        // === Commercial & Services ===
+        // === Comércio e Serviços ===
         'supermarkets' => [
             'condition' => "shop = 'supermarket' OR shop = 'convenience' OR shop = 'grocery'",
             'icon' => 'shopping-basket',
@@ -138,7 +138,7 @@ try {
             'category' => 'commercial'
         ],
         
-        // === Safety ===
+        // === Segurança ===
         'police' => [
             'condition' => "amenity = 'police'",
             'icon' => 'shield-alt',
@@ -160,7 +160,7 @@ try {
             'category' => 'safety'
         ],
         
-        // === Public Administration ===
+        // === Administração Pública ===
         'city_halls' => [
             'condition' => "amenity = 'townhall' OR (office = 'government' AND admin_level IN ('8', '9'))",
             'icon' => 'landmark',
@@ -172,7 +172,7 @@ try {
             'category' => 'administration'
         ],
         
-        // === Culture & Leisure ===
+        // === Cultura e Lazer ===
         'museums' => [
             'condition' => "tourism = 'museum' OR amenity = 'arts_centre'",
             'icon' => 'museum',
@@ -195,24 +195,24 @@ try {
         ]
     ];
 
-    // Check if the requested POI type exists
+    // Verifica se o tipo de POI solicitado existe
     if (!array_key_exists($type, $poiTypes)) {
         echo json_encode([
             'success' => false,
-            'message' => 'Invalid POI type: ' . $type
+            'message' => 'Tipo de POI inválido: ' . $type
         ]);
         exit;
     }
 
-    // Debug information for monitoring query execution
+    // Informações de depuração para monitorizar a execução da consulta
     $debug_info = [];
 
-    // Try to get database connection
+    // Tenta obter a ligação à base de dados
     try {
         $conn = getDbConnection();
         $debug_info['db_connection'] = 'success';
     } catch (Exception $e) {
-        // Return mock POI data if database connection fails
+        // Devolve dados de POI simulados se a ligação à base de dados falhar
         $mockPois = generateMockPOIs($type, $lat, $lng, $radius);
         
         echo json_encode([
@@ -220,23 +220,23 @@ try {
             'pois' => $mockPois,
             'count' => count($mockPois),
             'is_mock' => true,
-            'message' => 'Using mock data (database connection failed): ' . $e->getMessage(),
+            'message' => 'A usar dados simulados (a ligação à base de dados falhou): ' . $e->getMessage(),
             'debug' => ['error' => $e->getMessage()]
         ]);
         exit;
     }
 
-    // Prepare spatial condition based on isochrone or radius
+    // Prepara a condição espacial com base na isócrona ou raio
     $spatialCondition = "";
 
-    // If we have isochrone data, use that (preferred method)
+    // Se tivermos dados de isócrona, usa-os (método preferido)
     if ($isochroneJson) {
         try {
-            // Parse the GeoJSON
+            // Analisa o GeoJSON
             $isochrone = json_decode($isochroneJson, true);
             $debug_info['isochrone_parsed'] = true;
             
-            // Extract the geometry from the first feature
+            // Extrai a geometria da primeira feature
             if (isset($isochrone['features']) && 
                 isset($isochrone['features'][0]) && 
                 isset($isochrone['features'][0]['geometry'])) {
@@ -244,8 +244,8 @@ try {
                 $geometry = json_encode($isochrone['features'][0]['geometry']);
                 $debug_info['geometry_extracted'] = true;
                 
-                // Create a PostgreSQL spatial condition that uses ST_Contains to only
-                // include POIs that are strictly inside the isochrone polygon
+                // Cria uma condição espacial PostgreSQL que usa ST_Contains para apenas
+                // incluir POIs que estão estritamente dentro do polígono da isócrona
                 $spatialCondition = "ST_Contains(
                     ST_Transform(
                         ST_SetSRID(
@@ -258,12 +258,12 @@ try {
                 )";
                 $debug_info['using_isochrone'] = true;
             } else {
-                throw new Exception("Invalid isochrone GeoJSON structure");
+                throw new Exception("Estrutura GeoJSON da isócrona inválida");
             }
         } catch (Exception $e) {
             $debug_info['isochrone_error'] = $e->getMessage();
             
-            // If there's an error with the isochrone, fall back to radius buffer
+            // Se houver um erro com a isócrona, volta para o buffer do raio
             if ($radius > 0) {
                 $spatialCondition = "ST_DWithin(
                     way, 
@@ -274,14 +274,14 @@ try {
             } else {
                 echo json_encode([
                     'success' => false,
-                    'message' => 'Error processing isochrone and no fallback radius provided',
+                    'message' => 'Erro ao processar isócrona e nenhum raio de fallback fornecido',
                     'debug' => $debug_info
                 ]);
                 exit;
             }
         }
     } else if ($radius > 0) {
-        // If no isochrone is provided but we have radius, use a simple buffer
+        // Se nenhuma isócrona for fornecida mas tivermos raio, usa um buffer simples
         $spatialCondition = "ST_DWithin(
             way, 
             ST_Transform(ST_SetSRID(ST_MakePoint($lng, $lat), 4326), 3857), 
@@ -289,19 +289,19 @@ try {
         )";
         $debug_info['using_radius'] = true;
     } else {
-        // This shouldn't happen due to earlier validation, but just in case
+        // Isso não deveria acontecer devido à validação anterior, mas por precaução
         echo json_encode([
             'success' => false,
-            'message' => 'No spatial filtering method available'
+            'message' => 'Nenhum método de filtragem espacial disponível'
         ]);
         exit;
     }
 
-    // Get the condition for the requested POI type
+    // Obtém a condição para o tipo de POI solicitado
     $poiCondition = $poiTypes[$type]['condition'];
 
-    // Prepare the query to get POIs from both point and polygon tables
-    // Using UNION to combine results from both tables
+    // Prepara a consulta para obter POIs de ambas as tabelas de pontos e polígonos
+    // Usando UNION para combinar resultados de ambas as tabelas
     $query = "
         (
             SELECT 
@@ -332,23 +332,23 @@ try {
         )
     ";
 
-    // Execute the query
+    // Executa a consulta
     try {
         $result = executeQuery($conn, $query);
         $debug_info['query_executed'] = true;
     } catch (Exception $e) {
         echo json_encode([
             'success' => false,
-            'message' => 'Query execution failed: ' . $e->getMessage(),
+            'message' => 'A execução da consulta falhou: ' . $e->getMessage(),
             'debug' => array_merge($debug_info, ['query_error' => $e->getMessage()])
         ]);
         exit;
     }
 
-    // Process the results
+    // Processa os resultados
     $pois = [];
     while ($row = pg_fetch_assoc($result)) {
-        // Only add POIs that have coordinates
+        // Apenas adiciona POIs que têm coordenadas
         if (!empty($row['longitude']) && !empty($row['latitude'])) {
             $pois[] = [
                 'longitude' => (float) $row['longitude'],
@@ -360,10 +360,10 @@ try {
         }
     }
 
-    // Close the database connection
+    // Fecha a ligação à base de dados
     pg_close($conn);
 
-    // Return the POIs as JSON
+    // Devolve os POIs como JSON
     echo json_encode([
         'success' => true,
         'pois' => $pois,
@@ -372,11 +372,11 @@ try {
     ]);
 
 } catch (Exception $e) {
-    // Catch any uncaught exceptions
-    error_log('Uncaught exception in fetch_pois.php: ' . $e->getMessage());
+    // Captura quaisquer exceções não tratadas
+    error_log('Exceção não tratada em fetch_pois.php: ' . $e->getMessage());
     echo json_encode([
         'success' => false,
-        'message' => 'An unexpected error occurred: ' . $e->getMessage()
+        'message' => 'Ocorreu um erro inesperado: ' . $e->getMessage()
     ]);
 }
 ?>

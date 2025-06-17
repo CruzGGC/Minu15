@@ -1,71 +1,71 @@
 <?php
 /**
- * Cache Management Script
+ * Script de Gestão de Cache
  * 
- * This script provides functionality to clear API caches.
- * It can be run from the command line or via a web interface.
+ * Este script fornece funcionalidades para limpar caches da API.
+ * Pode ser executado a partir da linha de comandos ou através de uma interface web.
  */
 
-// Determine if the script is being run from the command line
+// Determinar se o script está a ser executado a partir da linha de comandos
 $isCli = (php_sapi_name() === 'cli');
 
-// Set up the environment
+// Configurar o ambiente
 if (!$isCli) {
-    // If running in a web server, set headers and check for admin access
+    // Se estiver a ser executado num servidor web, definir cabeçalhos e verificar acesso de administrador
     header('Content-Type: text/html; charset=utf-8');
     
-    // Simple authentication check - replace with your actual authentication method
+    // Verificação de autenticação simples - substitua pelo seu método de autenticação real
     $isAuthenticated = false;
     
-    // Check for admin cookie or session
+    // Verificar cookie ou sessão de administrador
     if (isset($_COOKIE['admin_authenticated']) || (isset($_SESSION['admin_authenticated']) && $_SESSION['admin_authenticated'] === true)) {
         $isAuthenticated = true;
     }
     
-    // If not authenticated, check for basic auth
+    // Se não autenticado, verificar autenticação básica
     if (!$isAuthenticated && isset($_SERVER['PHP_AUTH_USER'])) {
-        // Replace with your actual admin credentials check
+        // Substitua pela sua verificação de credenciais de administrador real
         if ($_SERVER['PHP_AUTH_USER'] === 'admin' && $_SERVER['PHP_AUTH_PW'] === 'adminpassword') {
             $isAuthenticated = true;
         }
     }
     
-    // If still not authenticated, require basic auth
+    // Se ainda não autenticado, exigir autenticação básica
     if (!$isAuthenticated) {
-        header('WWW-Authenticate: Basic realm="Cache Management"');
+        header('WWW-Authenticate: Basic realm="Gestão de Cache"');
         header('HTTP/1.0 401 Unauthorized');
-        echo '<h1>Authentication Required</h1>';
+        echo '<h1>Autenticação Necessária</h1>';
         exit;
     }
 }
 
-// Include the API cache class
+// Incluir a classe de cache da API
 require_once __DIR__ . '/../../includes/api_cache.php';
 
-// Define cache directories
+// Definir diretórios de cache
 $cacheDirs = [
     'location_data' => __DIR__ . '/../../cache/location_data/',
     'geoapi' => __DIR__ . '/../../cache/geoapi/',
     'api' => __DIR__ . '/../../cache/api/'
 ];
 
-// Function to clear a specific cache
+// Função para limpar uma cache específica
 function clearCache($cacheDir, $name) {
     if (!is_dir($cacheDir)) {
-        return ['success' => false, 'message' => "Cache directory '$name' doesn't exist"];
+        return ['success' => false, 'message' => "O diretório de cache '$name' não existe"];
     }
     
     $cache = new ApiCache($cacheDir);
     $result = $cache->clearAll();
     
     if ($result) {
-        return ['success' => true, 'message' => "Successfully cleared '$name' cache"];
+        return ['success' => true, 'message' => "Cache '$name' limpa com sucesso"];
     } else {
-        return ['success' => false, 'message' => "Failed to clear '$name' cache"];
+        return ['success' => false, 'message' => "Falha ao limpar a cache '$name'"];
     }
 }
 
-// Function to get cache statistics
+// Função para obter estatísticas da cache
 function getCacheStats($cacheDir, $name) {
     if (!is_dir($cacheDir)) {
         return ['name' => $name, 'exists' => false, 'count' => 0, 'size' => 0];
@@ -89,7 +89,7 @@ function getCacheStats($cacheDir, $name) {
     ];
 }
 
-// Function to format file size
+// Função para formatar o tamanho do ficheiro
 function formatSize($bytes) {
     $units = ['B', 'KB', 'MB', 'GB', 'TB'];
     $i = 0;
@@ -100,7 +100,7 @@ function formatSize($bytes) {
     return round($bytes, 2) . ' ' . $units[$i];
 }
 
-// Handle actions
+// Lidar com ações
 $action = $isCli ? ($argv[1] ?? '') : ($_GET['action'] ?? '');
 $target = $isCli ? ($argv[2] ?? '') : ($_GET['target'] ?? '');
 $result = null;
@@ -111,23 +111,23 @@ if ($action === 'clear') {
         foreach ($cacheDirs as $name => $dir) {
             $results[$name] = clearCache($dir, $name);
         }
-        $result = ['success' => true, 'message' => 'Cleared all caches', 'details' => $results];
+        $result = ['success' => true, 'message' => 'Todas as caches limpas', 'details' => $results];
     } else if (isset($cacheDirs[$target])) {
         $result = clearCache($cacheDirs[$target], $target);
     } else {
-        $result = ['success' => false, 'message' => "Unknown cache target: $target"];
+        $result = ['success' => false, 'message' => "Alvo de cache desconhecido: $target"];
     }
 }
 
-// Get cache statistics
+// Obter estatísticas da cache
 $stats = [];
 foreach ($cacheDirs as $name => $dir) {
     $stats[$name] = getCacheStats($dir, $name);
 }
 
-// Output the result
+// Saída do resultado
 if ($isCli) {
-    // Command-line output
+    // Saída da linha de comandos
     if ($result) {
         echo $result['message'] . PHP_EOL;
         if (isset($result['details'])) {
@@ -137,19 +137,19 @@ if ($isCli) {
         }
     }
     
-    echo PHP_EOL . "Cache Statistics:" . PHP_EOL;
+    echo PHP_EOL . "Estatísticas da Cache:" . PHP_EOL;
     foreach ($stats as $name => $stat) {
-        echo "  $name: " . ($stat['exists'] ? "{$stat['count']} files ({$stat['size']})" : "not found") . PHP_EOL;
+        echo "  $name: " . ($stat['exists'] ? "{$stat['count']} ficheiros ({$stat['size']})" : "não encontrado") . PHP_EOL;
     }
 } else {
-    // Web interface output
+    // Saída da interface web
     ?>
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="pt-PT">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>API Cache Management</title>
+        <title>Gestão de Cache da API</title>
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -228,7 +228,7 @@ if ($isCli) {
     </head>
     <body>
         <div class="container">
-            <h1>API Cache Management</h1>
+            <h1>Gestão de Cache da API</h1>
             
             <?php if ($result): ?>
                 <div class="message <?php echo $result['success'] ? 'success' : 'error'; ?>">
@@ -243,16 +243,16 @@ if ($isCli) {
                 </div>
             <?php endif; ?>
             
-            <h2>Cache Statistics</h2>
+            <h2>Estatísticas da Cache</h2>
             <table>
                 <thead>
                     <tr>
                         <th>Cache</th>
-                        <th>Files</th>
-                        <th>Size</th>
-                        <th>Oldest Entry</th>
-                        <th>Newest Entry</th>
-                        <th>Actions</th>
+                        <th>Ficheiros</th>
+                        <th>Tamanho</th>
+                        <th>Entrada Mais Antiga</th>
+                        <th>Entrada Mais Recente</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -265,7 +265,7 @@ if ($isCli) {
                             <td><?php echo $stat['exists'] ? htmlspecialchars($stat['newest']) : 'N/A'; ?></td>
                             <td>
                                 <?php if ($stat['exists'] && $stat['count'] > 0): ?>
-                                    <a href="?action=clear&target=<?php echo urlencode($name); ?>" class="btn btn-warning" onclick="return confirm('Are you sure you want to clear the <?php echo htmlspecialchars($name); ?> cache?');">Clear</a>
+                                    <a href="?action=clear&target=<?php echo urlencode($name); ?>" class="btn btn-warning" onclick="return confirm('Tem a certeza que deseja limpar a cache <?php echo htmlspecialchars($name); ?>?');">Limpar</a>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -274,8 +274,8 @@ if ($isCli) {
             </table>
             
             <div class="actions">
-                <a href="?action=clear&target=all" class="btn btn-danger" onclick="return confirm('Are you sure you want to clear ALL caches?');">Clear All Caches</a>
-                <a href="?" class="btn">Refresh</a>
+                <a href="?action=clear&target=all" class="btn btn-danger" onclick="return confirm('Tem a certeza que deseja limpar TODAS as caches?');">Limpar Todas as Caches</a>
+                <a href="?" class="btn">Atualizar</a>
             </div>
         </div>
     </body>

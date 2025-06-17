@@ -1,15 +1,15 @@
 <?php
 require_once 'includes/fetch_location_data.php';
 
-// Verificar se há um parâmetro de tipo e ID na URL
+// Verifica se existe um parâmetro de tipo e ID na URL
 $locationType = isset($_GET['type']) ? $_GET['type'] : null;
 $locationId = isset($_GET['id']) ? $_GET['id'] : null;
 
-// Preparar o container para os dados
+// Prepara o contentor para os dados
 $locationData = null;
 $error = null;
 
-// Buscar dados se os parâmetros foram fornecidos
+// Procura dados se os parâmetros foram fornecidos
 if ($locationType && $locationId) {
     $fetcher = new LocationFetcher();
     
@@ -22,7 +22,7 @@ if ($locationType && $locationId) {
                 $result = $fetcher->fetchByMunicipio($locationId);
                 break;
             case 'freguesia':
-                // Freguesia precisa de um município também
+                // A Freguesia também precisa de um município
                 $municipio = isset($_GET['municipio']) ? $_GET['municipio'] : null;
                 if ($municipio) {
                     $result = $fetcher->fetchByFreguesiaAndMunicipio($locationId, $municipio);
@@ -36,21 +36,21 @@ if ($locationType && $locationId) {
                 if (count($coords) == 2) {
                     $result = $fetcher->fetchByGps($coords[0], $coords[1]);
                 } else {
-                    $error = "Formato de coordenadas inválido. Use: latitude,longitude";
+                    $error = "Formato de coordenadas inválido. Utilize: latitude,longitude";
                 }
                 break;
             default:
                 $error = "Tipo de localização não suportado.";
         }
         
-        // Se temos um resultado, verificar se foi bem-sucedido
+        // Se temos um resultado, verifica se foi bem-sucedido
         if (isset($result) && $result['success']) {
             $locationData = $result['data'];
         } else if (isset($result)) {
-            $error = "Erro ao buscar dados: " . ($result['message'] ?? 'Erro desconhecido');
+            $error = "Erro ao procurar dados: " . ($result['message'] ?? 'Erro desconhecido');
         }
     } catch (Exception $e) {
-        $error = "Erro ao processar a solicitação: " . $e->getMessage();
+        $error = "Erro ao processar o pedido: " . $e->getMessage();
     }
 }
 
@@ -58,19 +58,19 @@ if ($locationType && $locationId) {
 function formatDemographicData($data) {
     $html = '';
     
-    // Adicionar população
+    // Adiciona população
     if (isset($data['N_INDIVIDUOS_RESIDENT']) || isset($data['N_INDIVIDUOS'])) {
         $population = $data['N_INDIVIDUOS_RESIDENT'] ?? $data['N_INDIVIDUOS'];
         $html .= "<p><strong>População:</strong> " . number_format($population, 0, ',', '.') . " habitantes</p>";
     }
     
-    // Adicionar edifícios
+    // Adiciona edifícios
     if (isset($data['N_EDIFICIOS_CLASSICOS']) || isset($data['N_EDIFICIOS'])) {
         $buildings = $data['N_EDIFICIOS_CLASSICOS'] ?? $data['N_EDIFICIOS'];
         $html .= "<p><strong>Edifícios:</strong> " . number_format($buildings, 0, ',', '.') . "</p>";
     }
     
-    // Adicionar alojamentos
+    // Adiciona alojamentos
     if (isset($data['N_ALOJAMENTOS_TOTAL']) || isset($data['N_ALOJAMENTOS'])) {
         $dwellings = $data['N_ALOJAMENTOS_TOTAL'] ?? $data['N_ALOJAMENTOS'];
         $html .= "<p><strong>Alojamentos:</strong> " . number_format($dwellings, 0, ',', '.') . "</p>";
@@ -95,7 +95,8 @@ function formatDemographicData($data) {
     // População idosa
     if (isset($data['N_INDIVIDUOS_65_OU_MAIS']) || isset($data['N_INDIVIDUOS_RESIDENT_65'])) {
         $elderlyPopulation = $data['N_INDIVIDUOS_65_OU_MAIS'] ?? $data['N_INDIVIDUOS_RESIDENT_65'];
-        $html .= "<p><strong>População idosa (65+):</strong> " . number_format($elderlyPopulation, 0, ',', '.') . "</p>";
+        $html .= "<p><strong>População idosa (65+):</strong> " . number_format($elderlyPopulation, 0, ',', '.') . "</p>
+";
     }
     
     return $html;
@@ -119,7 +120,7 @@ function formatDemographicData($data) {
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Custom CSS -->
+    <!-- CSS Personalizado -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/location.css">
     
@@ -169,7 +170,7 @@ function formatDemographicData($data) {
         }
         
         body {
-            overflow-y: scroll; /* Ensure vertical scrolling is always available */
+            overflow-y: scroll; /* Garante que a rolagem vertical esteja sempre disponível */
         }
         
         .container {

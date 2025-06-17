@@ -1,70 +1,70 @@
 <?php
 /**
- * OpenRouteService API Proxy
- * Handles requests to OpenRouteService API to avoid CORS issues
+ * Proxy da API OpenRouteService
+ * Lida com pedidos para a API OpenRouteService para evitar problemas de CORS
  */
 
-// Prevent any output before JSON response
+// Impede qualquer saída antes da resposta JSON
 error_reporting(0);
 ini_set('display_errors', 0);
 
-// Set headers for JSON response
+// Define os cabeçalhos para a resposta JSON
 header('Content-Type: application/json');
 
-// Include API configuration to get API key
+// Inclui a configuração da API para obter a chave da API
 require_once '../config/api_config.php';
 
-// Check if request method is POST
+// Verifica se o método do pedido é POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         'success' => false,
-        'message' => 'Only POST method is allowed'
+        'message' => 'Apenas o método POST é permitido'
     ]);
     exit;
 }
 
-// Get the OpenRouteService endpoint from the request
+// Obtém o endpoint do OpenRouteService do pedido
 $endpoint = isset($_POST['endpoint']) ? $_POST['endpoint'] : null;
 
-// Get the request data
+// Obtém os dados do pedido
 $requestData = isset($_POST['data']) ? $_POST['data'] : null;
 
-// Check if all required parameters are provided
+// Verifica se todos os parâmetros obrigatórios foram fornecidos
 if (empty($endpoint) || empty($requestData)) {
     echo json_encode([
         'success' => false,
-        'message' => 'Missing required parameters: endpoint, data'
+        'message' => 'Parâmetros obrigatórios em falta: endpoint, data'
     ]);
     exit;
 }
 
-// Try to decode the request data if it's a string
+// Tenta descodificar os dados do pedido se for uma string
 if (is_string($requestData)) {
     $requestData = json_decode($requestData, true);
     
-    // Check if JSON was invalid
+    // Verifica se o JSON era inválido
     if (json_last_error() !== JSON_ERROR_NONE) {
         echo json_encode([
             'success' => false,
-            'message' => 'Invalid JSON in request data: ' . json_last_error_msg()
+            'message' => 'JSON inválido nos dados do pedido: ' . json_last_error_msg()
         ]);
         exit;
     }
 }
 
-// Construct the full URL for the API request
+// Constrói o URL completo para o pedido da API
 $url = ORS_API_URL . $endpoint;
 
-// Debug info to help troubleshoot issues
+// Informações de depuração para ajudar a solucionar problemas
 $debug = [
     'requested_url' => $url,
     'request_data' => $requestData
 ];
 
-// Initialize cURL session
+// Inicializa a sessão cURL
 $ch = curl_init($url);
 
-// Set cURL options
+// Define as opções cURL
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($requestData));
@@ -74,88 +74,88 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Authorization: ' . ORS_API_KEY
 ]);
 
-// Execute the request
+// Executa o pedido
 $response = curl_exec($ch);
 $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
 
-// Get more info about the request for debugging
+// Obtém mais informações sobre o pedido para depuração
 $debug['status_code'] = $statusCode;
 $debug['content_type'] = $contentType;
 $debug['curl_error'] = curl_error($ch);
 $debug['curl_errno'] = curl_errno($ch);
 
-// Close cURL session
+// Fecha a sessão cURL
 curl_close($ch);
 
-// Check if we got a valid response
+// Verifica se obtivemos uma resposta válida
 if ($response === false) {
     echo json_encode([
         'success' => false,
-        'message' => 'Failed to connect to the API server',
+        'message' => 'Falha ao conectar ao servidor da API',
         'debug' => $debug
     ]);
     exit;
 }
 
-// Validate the response format is valid JSON
+// Valida se o formato da resposta é JSON válido
 $decodedResponse = json_decode($response, true);
 if (json_last_error() !== JSON_ERROR_NONE) {
     echo json_encode([
         'success' => false,
-        'message' => 'Invalid JSON in API response: ' . json_last_error_msg(),
+        'message' => 'JSON inválido na resposta da API: ' . json_last_error_msg(),
         'debug' => $debug,
-        'raw_response' => substr($response, 0, 1000) // Include first 1000 chars of raw response
+        'raw_response' => substr($response, 0, 1000) // Inclui os primeiros 1000 caracteres da resposta raw
     ]);
     exit;
 }
 
-// If error occurs, provide information about it
+// Se ocorrer um erro, fornece informações sobre ele
 if ($statusCode >= 400) {
     echo json_encode([
         'success' => false,
         'status' => $statusCode,
-        'message' => isset($decodedResponse['error']) ? $decodedResponse['error'] : 'API request failed',
+        'message' => isset($decodedResponse['error']) ? $decodedResponse['error'] : 'O pedido à API falhou',
         'details' => $decodedResponse,
         'debug' => $debug
     ]);
     exit;
 }
 
-// Make sure the response contains a valid GeoJSON structure
+// Garante que a resposta contém uma estrutura GeoJSON válida
 if (!isset($decodedResponse['type']) || !isset($decodedResponse['features'])) {
     echo json_encode([
         'success' => false,
-        'message' => 'Response is not a valid GeoJSON object',
+        'message' => 'A resposta não é um objeto GeoJSON válido',
         'debug' => $debug,
         'response_data' => $decodedResponse
     ]);
     exit;
 }
 
-// Ensure features array exists and is not empty
+// Garante que o array de features existe e não está vazio
 if (!is_array($decodedResponse['features']) || count($decodedResponse['features']) === 0) {
     echo json_encode([
         'success' => false,
-        'message' => 'GeoJSON features array is empty or invalid',
+        'message' => 'O array de features GeoJSON está vazio ou é inválido',
         'debug' => $debug,
         'response_data' => $decodedResponse
     ]);
     exit;
 }
 
-// Check if the features contain valid geometries
+// Verifica se as features contêm geometrias válidas
 if (!isset($decodedResponse['features'][0]['geometry']) || 
     !isset($decodedResponse['features'][0]['geometry']['coordinates'])) {
     echo json_encode([
         'success' => false,
-        'message' => 'Invalid geometry in GeoJSON response',
+        'message' => 'Geometria inválida na resposta GeoJSON',
         'debug' => $debug,
         'response_data' => $decodedResponse
     ]);
     exit;
 }
 
-// Return the API response as is
+// Retorna a resposta da API tal como está
 echo $response;
 ?>
