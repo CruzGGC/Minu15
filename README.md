@@ -357,13 +357,6 @@ Minu15/
 - **Solução**: Verifique se as categorias estão ativadas no painel lateral
 - **Alternativa**: Limpe a cache do navegador e recarregue a página
 
-## Equipa de Desenvolvimento
-
-- Guilherme Cruz
-- Pedro Sousa
-- Alexandra Dias
-- Rodrigo Ferreira
-
 ## Agradecimentos
 
 - GeoAPI.pt pela disponibilização de dados geográficos de Portugal
