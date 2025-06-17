@@ -2669,6 +2669,7 @@ body:has(.top-nav) #map {
     font-weight: 600;
     color: var(--primary-color);
     max-width: 90%;
+    pointer-events: none; /* Permite clicar através do indicador */
 }
 
 .poi-loading-spinner {

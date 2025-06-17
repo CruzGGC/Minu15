@@ -226,6 +226,8 @@ function initMap() {
     // Inicializar grupos de camadas de POI vazios
     Object.keys(poiTypes).forEach(type => {
         poiLayers[type] = L.layerGroup().addTo(map);
+        // Inicializar a propriedade loaded
+        poiLayers[type].loaded = true;
     });
     
     // Configurar evento de clique no mapa
@@ -492,6 +494,8 @@ function fetchPOIsWithinIsochrone(latlng, isochroneData) {
     // Limpar camadas de POI existentes
     Object.keys(poiTypes).forEach(type => {
         poiLayers[type].clearLayers();
+        // Resetar o estado de carregamento
+        poiLayers[type].loaded = false;
     });
     
     // Mostrar indicador de carregamento de POIs
@@ -516,6 +520,21 @@ function fetchPOIsWithinIsochrone(latlng, isochroneData) {
     // Serializar o GeoJSON da isócrona para enviar ao servidor
     const isochroneGeoJSON = JSON.stringify(isochroneData);
     
+    // Contagem de POIs ativos para controlar quando todos foram processados
+    let activePOICount = 0;
+    Object.keys(poiTypes).forEach(type => {
+        const checkbox = document.getElementById(`poi-${type}`);
+        if (checkbox && checkbox.checked) {
+            activePOICount++;
+        }
+    });
+    
+    // Se não houver POIs ativos, esconder o indicador imediatamente
+    if (activePOICount === 0) {
+        hidePOILoading();
+        return;
+    }
+    
     // Array de promessas para controlar todas as requisições de POIs
     const poiPromises = [];
     
@@ -527,20 +546,30 @@ function fetchPOIsWithinIsochrone(latlng, isochroneData) {
             const promise = fetchPOIsByType(type, latlng, radiusInMeters, isochroneGeoJSON)
                 .catch(error => {
                     console.error(`Erro ao buscar POIs do tipo ${type}:`, error);
+                    
+                    // Marcar esta camada como carregada mesmo em caso de erro
+                    poiLayers[type].loaded = true;
+                    
+                    // Verificar se todos os POIs foram carregados
+                    checkAllPOIsLoaded();
+                    
                     return { success: false, type: type, error: error.message };
                 });
             poiPromises.push(promise);
         }
     });
     
-    // Quando todas as requisições terminarem, esconder o indicador de carregamento de POIs
+    // Quando todas as requisições terminarem, verificar se ainda há POIs carregando
     Promise.all(poiPromises)
         .then(() => {
-            hidePOILoading();
+            // O indicador será ocultado por checkAllPOIsLoaded
+            // depois que todos os POIs forem adicionados ao mapa
+            checkAllPOIsLoaded();
         })
         .catch(error => {
             console.error("Erro ao buscar POIs:", error);
-            hidePOILoading();
+            // Verificar se todos os POIs estão carregados
+            checkAllPOIsLoaded();
         });
     
     // Atualizar estatísticas usando o polígono da isócrona
@@ -625,6 +654,8 @@ function fetchPOIs(latlng, showLoadingIndicator = true) {
     // Limpar camadas de POI existentes
     Object.keys(poiTypes).forEach(type => {
         poiLayers[type].clearLayers();
+        // Resetar o estado de carregamento
+        poiLayers[type].loaded = false;
     });
     
     // Mostrar indicador de carregamento de POIs se solicitado
@@ -637,6 +668,23 @@ function fetchPOIs(latlng, showLoadingIndicator = true) {
     const distanceInKm = (speedKmPerHour * selectedMaxDistance) / 60;
     const radiusInMeters = distanceInKm * 1000;
     
+    // Contagem de POIs ativos para controlar quando todos foram processados
+    let activePOICount = 0;
+    Object.keys(poiTypes).forEach(type => {
+        const checkbox = document.getElementById(`poi-${type}`);
+        if (checkbox && checkbox.checked) {
+            activePOICount++;
+        }
+    });
+    
+    // Se não houver POIs ativos, esconder o indicador imediatamente
+    if (activePOICount === 0) {
+        if (showLoadingIndicator) {
+            hidePOILoading();
+        }
+        return;
+    }
+    
     // Array de promessas para controlar todas as requisições de POIs
     const poiPromises = [];
     
@@ -648,23 +696,35 @@ function fetchPOIs(latlng, showLoadingIndicator = true) {
             const promise = fetchPOIsByType(type, latlng, radiusInMeters)
                 .catch(error => {
                     console.error(`Erro ao buscar POIs do tipo ${type}:`, error);
+                    
+                    // Marcar esta camada como carregada mesmo em caso de erro
+                    poiLayers[type].loaded = true;
+                    
+                    // Verificar se todos os POIs foram carregados
+                    if (showLoadingIndicator) {
+                        checkAllPOIsLoaded();
+                    }
+                    
                     return { success: false, type: type, error: error.message };
                 });
             poiPromises.push(promise);
         }
     });
     
-    // Quando todas as requisições terminarem, esconder o indicador de carregamento
+    // Quando todas as requisições terminarem, verificar se ainda há POIs carregando
     Promise.all(poiPromises)
         .then(() => {
+            // O indicador será ocultado por checkAllPOIsLoaded
+            // depois que todos os POIs forem adicionados ao mapa
             if (showLoadingIndicator) {
-                hidePOILoading();
+                checkAllPOIsLoaded();
             }
         })
         .catch(error => {
             console.error("Erro ao buscar POIs:", error);
+            // Verificar se todos os POIs estão carregados
             if (showLoadingIndicator) {
-                hidePOILoading();
+                checkAllPOIsLoaded();
             }
         });
 }
@@ -764,6 +824,31 @@ function addPOIsToMap(type, pois) {
         // Adicionar ao grupo de camadas
         marker.addTo(poiLayers[type]);
     });
+    
+    // Sinalizar que este tipo de POI foi carregado
+    poiLayers[type].loaded = true;
+    
+    // Verificar se todos os POIs foram carregados
+    checkAllPOIsLoaded();
+}
+
+// Verificar se todos os POIs solicitados foram carregados
+function checkAllPOIsLoaded() {
+    let allLoaded = true;
+    
+    // Verificar todos os tipos de POI ativos
+    Object.keys(poiTypes).forEach(type => {
+        const checkbox = document.getElementById(`poi-${type}`);
+        // Se o checkbox estiver ativo e os POIs deste tipo não estiverem carregados, então nem todos estão prontos
+        if (checkbox && checkbox.checked && poiLayers[type] && !poiLayers[type].loaded) {
+            allLoaded = false;
+        }
+    });
+    
+    // Se todos os POIs estiverem carregados, esconder o indicador de carregamento
+    if (allLoaded) {
+        hidePOILoading();
+    }
 }
 
 // Abrir direções no Google Maps
