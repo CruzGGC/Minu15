@@ -428,6 +428,7 @@ class IdealLocationFinder {
     }
 
     showLoading() {
+        console.log("showLoading called in Ideal Finder");
         document.getElementById('loading-overlay').style.display = 'flex';
         document.getElementById('analyze-btn').disabled = true;
         this.updateProgress(0, 'A iniciar a análise...');

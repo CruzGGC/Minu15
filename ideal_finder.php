@@ -532,7 +532,7 @@
     </div>
 
     <!-- Sobreposição de Carregamento -->
-    <div id="loading-overlay" class="loading-overlay">
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
         <div class="loading-content">
             <div class="loading-spinner"></div>
             <h3>Analisando Localizações Ideais</h3>
