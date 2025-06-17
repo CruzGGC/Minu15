@@ -91,6 +91,9 @@ function initializeMap() {
         
         console.log(`Mapa clicado nas coordenadas: ${lat}, ${lng}`);
         
+        // Focar o mapa na localização clicada e aumentar o zoom
+        map.setView([lat, lng], map.getZoom() + 3); // Aumenta o zoom em 3 níveis
+
         // Validar coordenadas (garantir que estão dentro da área aproximada de Portugal)
         const inPortugal = lat >= 36.8 && lat <= 42.2 && lng >= -9.6 && lng <= -6.1;
         
@@ -102,6 +105,11 @@ function initializeMap() {
         
         // Limpar seleção anterior
         clearLocationSelection();
+        
+        // Remover marcador anterior, se existir
+        if (locationMarker) {
+            map.removeLayer(locationMarker);
+        }
         
         // Armazenar as coordenadas clicadas
         currentClickedCoordinates = {
