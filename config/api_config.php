@@ -8,5 +8,5 @@
 
 // Configuração da API OpenRouteService
 define('ORS_API_URL', 'https://api.openrouteservice.org');
-define('ORS_API_KEY', '5b3ce3597851110001cf624850f24527ef9a4022921696fb1ba0e525');
+define('ORS_API_KEY', '');
 ?>
