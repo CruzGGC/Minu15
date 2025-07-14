@@ -8,7 +8,7 @@
 
 // Configuração da API OpenRouteService
 const ORS_API_URL = 'https://api.openrouteservice.org';
-const ORS_API_KEY = '5b3ce3597851110001cf624850f24527ef9a4022921696fb1ba0e525';
+const ORS_API_KEY = '';
 
 // Configuração do servidor de tiles (Opcional - atualmente a usar tiles OSM padrão)
 const MAP_TILES_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
